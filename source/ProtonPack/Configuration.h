@@ -75,10 +75,10 @@ bool b_powercell_colour_toggle = true;
  *
  * CYCLOTRON_DELAY_2021_12_LED is for the stock Haslab 12 LED setup.
  * CYCLOTRON_DELAY_2021_20_LED is for the Frutto Technology 20 LED setup.
- * CYCLOTRON_DELAY_2021_20_LED is for the Frutto Technology Max 36 LED setup.
+ * CYCLOTRON_DELAY_2021_36_LED is for the Frutto Technology Max 36 LED setup.
  * CYCLOTRON_DELAY_2021_40_LED is for a 40 LED NeoPixel ring.
  */
-const uint16_t i_1984_delay = 1050;
+const uint16_t i_1984_delay = 275;
 #define CYCLOTRON_DELAY_2021_12_LED 15 // For 12 LEDs.
 #define CYCLOTRON_DELAY_2021_20_LED 10 // For 20 LEDs.
 #define CYCLOTRON_DELAY_2021_36_LED 5 // For 36 LEDs.
@@ -302,12 +302,6 @@ const bool b_fade_cyclotron_led = true;
 bool b_cyclotron_single_led = true;
 
 /*
- * When fading is enabled for 1984 mode Cyclotron Lid lights, control the delay of the fading.
- */
-const uint16_t i_1984_fade_out_delay = 1110;
-const uint16_t i_1984_fade_in_delay = 210;
-
-/*
  * Set to true to enable the onboard amplifier on the WAV Trigger.
  * This is for the WAV Trigger only and does not affect GPStar Audio.
  * If you use the output pins directly on the WAV Trigger board to your speakers, you will need to enable the onboard amp.
@@ -452,7 +446,7 @@ const bool b_eeprom = true;
 
 /*
  * Changing the colour space with a CHSV Object affects the brightness slightly for non RGB pixels such as the ones used in the HasLab Cyclotron Lid.
- * When using 12 LEDs for the Cyclotron Lid, the system will default it to always red.
+ * When using 12 LEDs for the Cyclotron Lid, the system will default it to always white (which the HasLab LEDs display as red at full brightness).
  * Setting this to true will override it and allow CHSV colours to be applied to Cyclotron Lids with 12 LEDs.
  * Note that a NeoPixel Jewel will use the CHSV colour space which can make the default HasLab Cyclotron LEDs flicker when the jewel N-Filter vent-light strobes.
  */

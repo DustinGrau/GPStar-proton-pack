@@ -81,7 +81,7 @@
  *  1) The "pack" lights which consist of the Powercell, Cyclotron, and N-Filter.
  *  2) The inner cyclotron "cake" plus anything beyond that point.
  *
- * So for every 100 LEDs at 30μs each to update, that's 0.1ms of interrupt disruption. For
+ * So for every 100 LEDs at 30μs each to update, that's 3ms of interrupt disruption. For
  * a microcontroller that's a lot of time so we need to keep those updates to a minimum.
  * The best way to do that while still providing all of the lights desired is to keep those
  * chains of lights to a minimum where possible. Thus, we only support a certain # of LEDs.
@@ -127,10 +127,10 @@ CRGB pack_leds[FRUTTO_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX + JEWEL_NFIL
 
 /*
  * Inner Cyclotron LEDs (optional).
- * Max number of LEDs supported = 73.
+ * Max number of LEDs supported = 64.
  * Maximum expected LEDs for the Inner Switch Panel is 8.
- * Maximum allowed LEDs for the Inner Cyclotron Cake is 35.
- * Maximum allowed LEDs for the Inner Cyclotron Cavity is 30.
+ * Maximum allowed LEDs for the Inner Cyclotron Cake is 36.
+ * Maximum allowed LEDs for the Inner Cyclotron Cavity is 20.
  * Uses pin 13.
  */
 #define CYCLOTRON_LED_PIN 13
@@ -138,9 +138,9 @@ CRGB cyclotron_leds[INNER_CYCLOTRON_LED_PANEL_MAX + INNER_CYCLOTRON_CAKE_LED_MAX
 
 /*
  * Delay for fastled to update the addressable LEDs.
- * We have up to 90 addressable LEDs if using NeoPixel jewel in the N-Filter, a ring
- * for the Inner Cyclotron, and the optionalal "sparking" cyclotron cavity LEDs.
- * 0.03 ms to update 1 LED. So 3 ms should be okay. Let's bump it up to 6 just in case.
+ * We have up to 126 addressable LEDs if using NeoPixel jewel in the N-Filter, a ring
+ * for the Inner Cyclotron, and the optional "sparking" cyclotron cavity LEDs.
+ * 0.03 ms to update 1 LED. So 4 ms should be okay. Let's bump it up to 6 just in case.
  * For cyclotrons with high density LEDs, increase this based on the cyclotron speed multiplier to simulate a faster spinning cyclotron.
  */
 #define FAST_LED_UPDATE_MS 6
@@ -183,8 +183,8 @@ const uint16_t i_2021_ramp_down_length = 10500;
 const uint16_t i_1984_ramp_down_length = 2500;
 uint16_t i_outer_current_ramp_speed = i_2021_ramp_delay;
 uint8_t i_cyclotron_multiplier = 1;
-millisDelay ms_cyclotron_auto_speed_timer; // A timer that is active while firing only. Used to speed up the Cyclotron by small increments based on the power levels.
-const uint16_t i_cyclotron_auto_speed_timer_length = 4500;
+millisDelay ms_cyclotron_auto_speed_timer; // A timer that is active while firing only in Afterlife and Frozen Empire. Used to speed up the Cyclotron by small increments based on the wand power level.
+const uint16_t i_cyclotron_auto_speed_timer_length = 15000;
 bool b_2021_ramp_up = true;
 bool b_2021_ramp_up_start = true;
 bool b_2021_ramp_down_start = false;
