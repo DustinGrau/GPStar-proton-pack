@@ -32,7 +32,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Attenuator Settings</h1>
+  <h1 id="top">Attenuator Settings</h1>
   <div class="block left">
     <p>
       Change system configuration options using the available toggles and selectors.
@@ -101,6 +101,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
   </div>
 
   <div class="block">
+    <a href="#top">Top</a>
     <hr/>
     <a href="/">&laquo; Back</a>
     &nbsp;&nbsp;
