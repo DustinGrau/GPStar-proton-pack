@@ -299,7 +299,7 @@ void readEEPROM() {
       }
     }
 
-    if(obj_config_eeprom.system_mode > 0 && obj_config_eeprom.system_mode != 255 && b_gpstar_benchtest == true) {
+    if(obj_config_eeprom.system_mode > 0 && obj_config_eeprom.system_mode != 255) {
       if(obj_config_eeprom.system_mode > 1) {
         SYSTEM_MODE = MODE_ORIGINAL;
       }
@@ -317,7 +317,7 @@ void readEEPROM() {
       }
     }
 
-    if(obj_config_eeprom.default_system_volume > 0 && obj_config_eeprom.default_system_volume <= 100 && b_gpstar_benchtest == true) {
+    if(obj_config_eeprom.default_system_volume > 0 && obj_config_eeprom.default_system_volume <= 100) {
       i_volume_master_percentage = obj_config_eeprom.default_system_volume;
       i_volume_master_eeprom = MINIMUM_VOLUME - (MINIMUM_VOLUME * i_volume_master_percentage / 100);
       i_volume_revert = i_volume_master_eeprom;

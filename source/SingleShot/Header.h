@@ -209,8 +209,6 @@ Switch switch_activate(3);
 Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the wand.
 Switch switch_wand(A0); // Controls the beeping. Top right switch on the wand.
 Switch switch_mode(A6); // Changes firing modes, crosses streams, or used in settings menus.
-Switch switch_barrel(A7); // Checks whether barrel is retracted or not.
-bool b_switch_barrel_extended = true; // Set to true for bootup to prevent sound from playing erroneously. The Neutrona Wand will adjust as necessary.
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
 uint8_t ventSwitchedCount = 0;
 uint8_t wandSwitchedCount = 0;
@@ -378,33 +376,6 @@ uint8_t i_power_level = 1;
 uint8_t i_power_level_prev = 1;
 
 /*
- * Wand / Pack communication
- */
-SerialTransfer wandComs;
-
-/*
- * Wand Connection State
- * Used to identify the state of the wand as it connects to a Proton Pack.
- * These should be mutually exclusive and non-overlapping states for the wand communications.
- */
-enum WAND_CONN_STATES { NC_BENCHTEST, PACK_DISCONNECTED, SYNCHRONIZING, PACK_CONNECTED };
-enum WAND_CONN_STATES WAND_CONN_STATE;
-
-/*
- * Some pack flags which get transmitted to the wand depending on the pack status.
- */
-bool b_pack_on = false; // Denotes the pack has been powered on.
-bool b_pack_alarm = false; // Denotes the pack alarm is sounding (ribbon cable disconnected).
-bool b_pack_ion_arm_switch_on = false; // For MODE_ORIGINAL. Lets us know if the Proton Pack Ion Arm switch is on to give power to the pack & wand.
-bool b_pack_cyclotron_lid_on = false; // For SYSTEM_FROZEN_EMPIRE. Lets us know if the pack's cyclotron lid is on or not. Default to false to favor FE effects unless told otherwise.
-bool b_sync_light = false; // Toggle for the state of the white LED beside the vent light which gets blinked as a sync operation is attempted.
-uint8_t i_cyclotron_speed_up = 1; // For telling the pack to speed up or slow down the Cyclotron lights.
-millisDelay ms_packsync; // Timer for attempting synchronization with a connected pack.
-millisDelay ms_handshake; // Timer for attempting a keepalive handshake with a connected pack.
-const uint16_t i_sync_initial_delay = 750; // Delay to re-try the initial handshake with a proton pack.
-const uint16_t i_heartbeat_delay = 3250; // Delay to send a heartbeat (handshake) to a connected proton pack.
-
-/*
  * Wand Menu
  */
 enum WAND_MENU_LEVELS { MENU_LEVEL_1, MENU_LEVEL_2, MENU_LEVEL_3, MENU_LEVEL_4, MENU_LEVEL_5 };
@@ -428,6 +399,11 @@ bool b_sound_idle = false;
 bool b_beeping = false;
 bool b_sound_afterlife_idle_2_fade = true;
 bool b_wand_boot_error_on = false;
+
+/*
+ * Mini cyclotron flags and values.
+ */
+uint8_t i_cyclotron_speed_up = 1; // For telling the pack to speed up or slow down the Cyclotron lights.
 
 /*
  * Button Mashing Lock-out - Prevents excessive user input via the primary/secondary firing buttons.
@@ -461,10 +437,6 @@ const uint16_t i_ms_power_indicator_blink = 1000;
 /*
  * Function prototypes.
  */
-void wandSerialSend(uint8_t i_command, uint16_t i_value);
-void wandSerialSend(uint8_t i_command);
-void wandSerialSendData(uint8_t i_message);
-void checkPack();
 void checkWandAction();
 void ventSwitched(void* n = nullptr);
 void wandSwitched(void* n = nullptr);

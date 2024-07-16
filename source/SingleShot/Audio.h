@@ -196,12 +196,9 @@ void updateEffectsVolume() {
       audio.trackGain(S_IDLE_LOOP_GUN_4, i_volume_effects);
       audio.trackGain(S_IDLE_LOOP_GUN_5, i_volume_effects);
 
-      // Standalone wand has additional idle effects.
-      if(b_gpstar_benchtest) {
-        audio.trackGain(S_PACK_SLIME_TANK_LOOP, i_volume_effects);
-        audio.trackGain(S_STASIS_IDLE_LOOP, i_volume_effects);
-        audio.trackGain(S_MESON_IDLE_LOOP, i_volume_effects);
-      }
+      audio.trackGain(S_PACK_SLIME_TANK_LOOP, i_volume_effects);
+      audio.trackGain(S_STASIS_IDLE_LOOP, i_volume_effects);
+      audio.trackGain(S_MESON_IDLE_LOOP, i_volume_effects);
 
       // Special volume in use.
       audio.trackGain(S_AFTERLIFE_WAND_IDLE_1, i_volume_effects - i_wand_sound_level);
@@ -229,22 +226,19 @@ void playMusic() {
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
-        // Play music only on bench test wand setups. Let the pack play the music on full kit setups.
-        if(b_gpstar_benchtest == true) {
-          // Loop the music track.
-          if(b_repeat_track == true) {
-            audio.trackLoop(i_current_music_track, 1);
-          }
-          else {
-            audio.trackLoop(i_current_music_track, 0);
-          }
-
-          audio.trackGain(i_current_music_track, i_volume_music);
-          audio.trackPlayPoly(i_current_music_track, true);
-          audio.update();
-
-          audio.resetTrackCounter(true);
+        // Loop the music track.
+        if(b_repeat_track == true) {
+          audio.trackLoop(i_current_music_track, 1);
         }
+        else {
+          audio.trackLoop(i_current_music_track, 0);
+        }
+
+        audio.trackGain(i_current_music_track, i_volume_music);
+        audio.trackPlayPoly(i_current_music_track, true);
+        audio.update();
+
+        audio.resetTrackCounter(true);
       break;
 
       case A_NONE:
@@ -253,10 +247,8 @@ void playMusic() {
       break;
     }
 
-    if(b_gpstar_benchtest == true) {
-      // Keep track of music playback on the wand directly.
-      ms_music_status_check.start(i_music_check_delay * 10);
-    }
+    // Keep track of music playback on the wand directly.
+    ms_music_status_check.start(i_music_check_delay * 10);
   }
 }
 
@@ -264,13 +256,11 @@ void stopMusic() {
   switch(AUDIO_DEVICE) {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
-      if(b_gpstar_benchtest == true) {
-        if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
-          audio.trackStop(i_current_music_track);
-        }
-
-        audio.update();
+      if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
+        audio.trackStop(i_current_music_track);
       }
+
+      audio.update();
     break;
 
     case A_NONE:
@@ -289,13 +279,11 @@ void pauseMusic() {
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
-        if(b_gpstar_benchtest == true) {
-          if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
-            audio.trackPause(i_current_music_track);
-          }
-
-          audio.update();
+        if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
+          audio.trackPause(i_current_music_track);
         }
+
+        audio.update();
       break;
 
       case A_NONE:
@@ -314,15 +302,13 @@ void resumeMusic() {
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
-        if(b_gpstar_benchtest == true) {
-          audio.resetTrackCounter(true);
+        audio.resetTrackCounter(true);
 
-          if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
-            audio.trackResume(i_current_music_track);
-          }
-
-          audio.update();
+        if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
+          audio.trackResume(i_current_music_track);
         }
+
+        audio.update();
       break;
 
       case A_NONE:
@@ -333,10 +319,8 @@ void resumeMusic() {
 
     b_music_paused = false;
 
-    if(b_gpstar_benchtest == true) {
-      // Keep track of music playback on the wand directly.
-      ms_music_status_check.start(i_music_check_delay * 4);
-    }
+    // Keep track of music playback on the wand directly.
+    ms_music_status_check.start(i_music_check_delay * 4);
   }
 }
 
@@ -435,9 +419,7 @@ void updateMusicVolume() {
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
-        if(b_gpstar_benchtest == true) {
-          audio.trackGain(i_current_music_track, i_volume_music);
-        }
+        audio.trackGain(i_current_music_track, i_volume_music);
       break;
 
       case A_NONE:
@@ -626,19 +608,14 @@ void decreaseVolume() {
 
 void buildMusicCount(uint16_t i_num_tracks) {
   // Build the music track count.
-  if(b_gpstar_benchtest) {
-    i_music_count = i_num_tracks - i_last_effects_track;
+  i_music_count = i_num_tracks - i_last_effects_track;
 
-    if(i_music_count > 0 && i_music_count < 5000) {
-      i_current_music_track = i_music_track_start; // Set the first track of music as file 500_
-    }
-    else {
-      i_music_count = 0; // If the music count is corrupt, make it 0
-      debugln(F("Warning: Calculated music count exceeds 5000; SD card corruption likely!"));
-    }
+  if(i_music_count > 0 && i_music_count < 5000) {
+    i_current_music_track = i_music_track_start; // Set the first track of music as file 500_
   }
   else {
-    i_music_count = 0;
+    i_music_count = 0; // If the music count is corrupt, make it 0
+    debugln(F("Warning: Calculated music count exceeds 5000; SD card corruption likely!"));
   }
 }
 
@@ -795,8 +772,8 @@ bool setupAudioDevice() {
   // Onboard amplifier on or off. Only for the WAV Trigger.
   audio.setAmpPwr(b_onboard_amp_enabled);
 
-  // Enable track reporting if in bench test mode. Only for the WAV Trigger.
-  audio.setReporting(b_gpstar_benchtest);
+  // Enable track reporting, only for the WAV Trigger.
+  audio.setReporting(true);
 
   // Allow time for hello command and other data to return back.
   delay(350);
