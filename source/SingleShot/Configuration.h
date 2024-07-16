@@ -1,6 +1,6 @@
 /**
- *   GPStar Neutrona Wand - Ghostbusters Proton Pack & Neutrona Wand.
- *   Copyright (C) 2023 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   GPStar Single-Shot Blaster
+ *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ bool b_stream_effects = true;
  * Perfect if you want louder Neutrona Wand sounds or if your Neutrona Wand does not have a audio board.
  * The default setting is true.
  */
-bool b_extra_pack_sounds = true;
+bool b_extra_pack_sounds = false;
 
 /*
  * When set to true, the Neutrona Wand plays sound effects with the right-hand toggle switches in MODE_ORIGINAL.
@@ -225,4 +225,4 @@ const bool b_eeprom = true;
  * When set to true, the Neutrona Wand will function without a Proton Pack connected.
  * This prevents the Neutrona Wand from sending and reading serial data. Set to false return communication back to the Proton Pack.
  */
-const bool b_gpstar_benchtest = false;
+const bool b_gpstar_benchtest = true;

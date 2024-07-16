@@ -1,6 +1,6 @@
 /**
- *   GPStar Neutrona Wand - Ghostbusters Proton Pack & Neutrona Wand.
- *   Copyright (C) 2023 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   GPStar Single-Shot Blaster
+ *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ const uint8_t frutto_barrel[48] PROGMEM = {0, 25, 24, 48, 1, 26, 23, 47, 2, 27, 
  * Default setting is 5: for the Hasbro Neturona Wand.
  * Supported options: Stock (5) and Frutto Technology (48 + Strobe Tip)
  */
-uint8_t i_num_barrel_leds = 5;
+uint8_t i_num_barrel_leds = 48;
 enum WAND_BARREL_LED_COUNTS { LEDS_5, LEDS_48 };
 enum WAND_BARREL_LED_COUNTS WAND_BARREL_LED_COUNT;
 

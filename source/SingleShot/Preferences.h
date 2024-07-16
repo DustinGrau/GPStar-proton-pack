@@ -1,7 +1,6 @@
-#include "Header.h"
 /**
- *   GPStar Neutrona Wand - Ghostbusters Proton Pack & Neutrona Wand.
- *   Copyright (C) 2023 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   GPStar Single-Shot Blaster
+ *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -458,11 +457,11 @@ void readEEPROM() {
 
       switch(i_num_barrel_leds) {
         case 5:
-        default:
           WAND_BARREL_LED_COUNT = LEDS_5;
         break;
 
         case 48:
+        default:
           WAND_BARREL_LED_COUNT = LEDS_48;
         break;
       }
