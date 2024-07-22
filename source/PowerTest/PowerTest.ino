@@ -17,16 +17,16 @@
 #define debugln(x)
 #endif
 
+// Turn on debugging for the library
+#define INA219_DEBUG
+
 #include <millisDelay.h>
 #include <Wire.h>
 #include <INA219.h>
 
-/** Rated max for our shunt is 75mv for 50A current, measured up to 4A max: 
-  * we will mesure only up to 4A so max is about 75mV lets put some more (0.075 * (4 / 50))
-  */
 #define SHUNT_R     0.015 // Shunt resistor in ohms
-#define SHUNT_MAX_V 0.006  
-#define BUS_MAX_V   6.0   // With 5v nominal voltage this should be enough
+#define SHUNT_MAX_V 0.075 // Max based on 75mV for 50A current 
+#define BUS_MAX_V   16.0  // Plenty for 5V nominal voltage
 #define MAX_CURRENT 3.2   // Stated maximum is 3.2A
 
 INA219 monitor; // Power monitor object on i2c bus using the INA219 chip.
@@ -99,7 +99,7 @@ void powerReading(){
   f_AmpHours += (f_ShuntCurrent * i_power_read_tick) / 3600000.0;
   i_power_last_read = i_new_time;
 
-  // Prepare for next read -- this is security just in case the ina219 is reset by transient curent
+  // Prepare for next read -- this is security just in case the ina219 is reset by transient current
   monitor.recalibrate();
   monitor.reconfig();
 }
