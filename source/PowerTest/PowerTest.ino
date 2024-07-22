@@ -5,24 +5,75 @@
 * this code is public domain.
 **********************************************/
 
+// Set to 1 to enable built-in debug messages
+#define DEBUG 0
 
+// Debug macros
+#if DEBUG == 1
+#define debug(x) Serial.print(x)
+#define debugln(x) Serial.println(x)
+#else
+#define debug(x)
+#define debugln(x)
+#endif
+
+#include <millisDelay.h>
 #include <Wire.h>
 #include <INA219.h>
 
 /** Rated max for our shunt is 75mv for 50A current, measured up to 4A max: 
   * we will mesure only up to 4A so max is about 75mV lets put some more (0.075 * (4 / 50))
   */
+#define SHUNT_R     0.015 // Shunt resistor in ohms
 #define SHUNT_MAX_V 0.006  
 #define BUS_MAX_V   6.0   // With 5v nominal voltage this should be enough
 #define MAX_CURRENT 3.2   // Stated maximum is 3.2A
-#define SHUNT_R     0.015 // Shunt resistor in ohms
 
-INA219 monitor;
+INA219 monitor; // Power monitor object on i2c bus using the INA219 chip.
+const uint8_t i_power_reading_delay = 50; // How often to read the power levels (ms).
+const uint16_t i_power_display_delay = 1000; // How often to display the power levels.
+millisDelay ms_power_reading; // Timer for reading latest values from power meter.
+millisDelay ms_power_display; // Timer for generating output from power readings.
+
+// Power Values
+int16_t i_ShuntVoltageRaw = 0;
+int16_t i_BusVoltageRaw = 0;
+float f_ShuntVoltage = 0; // mV
+float f_ShuntCurrent = 0; // A
+float f_BusVoltage = 0; // V
+float f_BattVoltage = 0; // V
+float f_BusPower = 0; // mW
+float f_AmpHours = 0; // Ah
+unsigned long i_power_last_read = 0; // Used to calculate Ah est.
+unsigned long i_power_read_tick; // Current read time - last read
 
 void setup()
 {
   Serial.begin(57600);
-  monitor.begin();
+
+  if (!monitor.begin()){
+    Serial.println(F("Unable to find power monitoring device."));
+  }
+  else {
+    powerConfig();
+    ms_power_reading.start(i_power_display_delay);
+    i_power_last_read = millis();
+  }
+}
+
+void loop(){
+  if(ms_power_reading.justFinished()){
+    powerReading();
+    ms_power_reading.start(i_power_reading_delay);
+  }
+
+  if(ms_power_display.justFinished()){
+    powerDisplay();
+    ms_power_reading.start(i_power_display_delay);
+  }
+}
+
+void powerConfig(){
   // Set a custom configuration, default values are RANGE_32V, GAIN_8_320MV, ADC_12BIT, ADC_12BIT, CONT_SH_BUS
   monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_64SAMP, INA219::ADC_64SAMP, INA219::CONT_SH_BUS);
   
@@ -30,35 +81,65 @@ void setup()
   monitor.calibrate(SHUNT_R, SHUNT_MAX_V, BUS_MAX_V, MAX_CURRENT);
 }
 
-void loop(){
+void powerReading(){
+  unsigned long i_new_time;
+
+  // Reads the latest values from the monitor.  
+  i_ShuntVoltageRaw = monitor.shuntVoltageRaw();
+  i_BusVoltageRaw = monitor.busVoltageRaw();
+  f_ShuntVoltage = monitor.shuntVoltage() * 1000;
+  f_ShuntCurrent = monitor.shuntCurrent();
+  f_BusVoltage = monitor.busVoltage();
+  f_BattVoltage = f_BusVoltage + (f_ShuntVoltage / 1000);
+  f_BusPower = monitor.busPower() * 1000;
+
+  // Use time and values to calculate Ah estimate.
+  i_new_time = millis();
+  i_power_read_tick = i_new_time - i_power_last_read;
+  f_AmpHours += (f_ShuntCurrent * i_power_read_tick) / 3600000.0;
+  i_power_last_read = i_new_time;
+
+  // Prepare for next read -- this is security just in case the ina219 is reset by transient curent
+  monitor.recalibrate();
+  monitor.reconfig();
+}
+
+void powerDisplay(){
+  // Displays the latest gathered values.
   Serial.println("******************");
   
-  Serial.print("raw shunt voltage: ");
-  Serial.println(monitor.shuntVoltageRaw());
+  Serial.print("Raw Shunt Voltage: ");
+  Serial.println(i_ShuntVoltageRaw);
   
-  Serial.print("raw bus voltage:   ");
-  Serial.println(monitor.busVoltageRaw());
+  Serial.print("Raw Bus Voltage:   ");
+  Serial.println(i_BusVoltageRaw);
   
   Serial.println("--");
   
-  Serial.print("shunt voltage: ");
-  Serial.print(monitor.shuntVoltage() * 1000, 4);
+  Serial.print("Shunt Voltage: ");
+  Serial.print(f_ShuntVoltage, 4);
   Serial.println(" mV");
   
-  Serial.print("shunt current: ");
-  Serial.print(monitor.shuntCurrent() * 1000, 4);
-  Serial.println(" mA");
+  Serial.print("Shunt Current: ");
+  Serial.print(f_ShuntCurrent, 4);
+  Serial.println(" A");
   
-  Serial.print("bus voltage:   ");
-  Serial.print(monitor.busVoltage(), 4);
+  Serial.print("Bus Voltage:   ");
+  Serial.print(f_BusVoltage, 4);
   Serial.println(" V");
-  
-  Serial.print("bus power:     ");
-  Serial.print(monitor.busPower() * 1000, 4);
+
+  Serial.print("Batt Voltage:  ");
+  Serial.print(f_BattVoltage, 4);
+  Serial.println(" V");
+
+  Serial.print("Bus Power:     ");
+  Serial.print(f_BusPower, 4);
   Serial.println(" mW");
   
+  Serial.print("Amp Hours:     ");
+  Serial.print(f_AmpHours, 4);
+  Serial.println(" Ah");
+
   Serial.println(" ");
   Serial.println(" ");
-  
-  delay(1000);
 }
