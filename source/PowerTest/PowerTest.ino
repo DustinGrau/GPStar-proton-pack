@@ -1,12 +1,5 @@
-/**********************************************
-* INA219 library example
-* 9 January 2016 by Flavius Bindea
-*
-* this code is public domain.
-**********************************************/
-
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -22,7 +15,7 @@
 
 #include <millisDelay.h>
 #include <Wire.h>
-#include <INA219.h>
+#include <INA219.h> // https://github.com/flav1972/ArduinoINA219
 
 #define SHUNT_R     0.015 // Shunt resistor in ohms
 #define SHUNT_MAX_V 0.075 // Max based on 75mV for 50A current 
@@ -30,6 +23,7 @@
 #define MAX_CURRENT 3.2   // Stated maximum is 3.2A
 
 INA219 monitor; // Power monitor object on i2c bus using the INA219 chip.
+boolean b_power_meter = false; // Whether a power meter device exists on i2c bus.
 const uint8_t i_power_reading_delay = 50; // How often to read the power levels (ms).
 const uint16_t i_power_display_delay = 1000; // How often to display the power levels.
 millisDelay ms_power_reading; // Timer for reading latest values from power meter.
@@ -47,33 +41,44 @@ float f_AmpHours = 0; // Ah
 unsigned long i_power_last_read = 0; // Used to calculate Ah est.
 unsigned long i_power_read_tick; // Current read time - last read
 
-void setup()
-{
-  Serial.begin(57600);
+void setup(){
+  Serial.begin(9600);
 
-  if (!monitor.begin()){
-    Serial.println(F("Unable to find power monitoring device."));
+  uint8_t i_monitor_status = monitor.begin();
+  debugln("");
+  debug(F("Power Meter Result: "));
+  debugln(i_monitor_status);
+  if (i_monitor_status > 0){
+    // If returning a non-zero value, device could not be reset.
+    debugln(F("Unable to find power monitoring device."));
   }
   else {
     powerConfig();
-    ms_power_reading.start(i_power_display_delay);
-    i_power_last_read = millis();
+    i_power_last_read = millis(); // Used with 
+    ms_power_reading.start(i_power_reading_delay);
+    ms_power_display.start(i_power_display_delay);
   }
 }
 
 void loop(){
-  if(ms_power_reading.justFinished()){
-    powerReading();
-    ms_power_reading.start(i_power_reading_delay);
-  }
+  if(b_power_meter){
+    if(ms_power_reading.justFinished()){
+      powerReading();
+      ms_power_reading.start(i_power_reading_delay);
+    }
 
-  if(ms_power_display.justFinished()){
-    powerDisplay();
-    ms_power_reading.start(i_power_display_delay);
+    if(ms_power_display.justFinished()){
+      powerDisplay();
+      ms_power_display.start(i_power_display_delay);
+    }
   }
 }
 
 void powerConfig(){
+  debugln(F("Configure Power Meter"));
+
+  b_power_meter = true;
+
   // Set a custom configuration, default values are RANGE_32V, GAIN_8_320MV, ADC_12BIT, ADC_12BIT, CONT_SH_BUS
   monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_64SAMP, INA219::ADC_64SAMP, INA219::CONT_SH_BUS);
   
@@ -82,6 +87,10 @@ void powerConfig(){
 }
 
 void powerReading(){
+  if (!b_power_meter) { return; }
+
+  //debugln(F("Reading Power Meter"));
+
   unsigned long i_new_time;
 
   // Reads the latest values from the monitor.  
@@ -105,6 +114,10 @@ void powerReading(){
 }
 
 void powerDisplay(){
+  if (!b_power_meter) { return; }
+
+  debugln(F("Display Power Values"));
+
   // Displays the latest gathered values.
   Serial.println("******************");
   
