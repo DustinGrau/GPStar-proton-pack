@@ -1,10 +1,3 @@
-/**********************************************
-* INA219 library example
-* 9 January 2016 by Flavius Bindea
-*
-* this code is public domain.
-**********************************************/
-
 // Set to 1 to enable built-in debug messages
 #define DEBUG 0
 
@@ -24,18 +17,22 @@
 #include <Wire.h>
 #include <INA219.h>
 
-#define SHUNT_R     0.015 // Shunt resistor in ohms
-#define SHUNT_MAX_V 0.075 // Max based on 75mV for 50A current 
-#define BUS_MAX_V   16.0  // Plenty for 5V nominal voltage
-#define MAX_CURRENT 3.2   // Stated maximum is 3.2A
+// Custom values for calibrating the power meter
+#define SHUNT_R     0.1  // Shunt resistor in ohms (default: 0.1)
+#define SHUNT_MAX_V 0.2  // Max voltage across shunt (default: 0.2)
+#define BUS_MAX_V   16.0 // Sets max for a 12V battery (5V nominal)
+#define MAX_CURRENT 3.2  // Device maximum is stated as 3.2A
 
+/**
+ * Power Meter (using the INA219 chip)
+ * https://github.com/flav1972/ArduinoINA219
+ */
 INA219 monitor; // Power monitor object on i2c bus using the INA219 chip.
+boolean b_power_meter = false; // Whether a power meter device exists on i2c bus.
 const uint8_t i_power_reading_delay = 50; // How often to read the power levels (ms).
 const uint16_t i_power_display_delay = 1000; // How often to display the power levels.
 millisDelay ms_power_reading; // Timer for reading latest values from power meter.
 millisDelay ms_power_display; // Timer for generating output from power readings.
-
-// Power Values
 int16_t i_ShuntVoltageRaw = 0;
 int16_t i_BusVoltageRaw = 0;
 float f_ShuntVoltage = 0; // mV
@@ -47,41 +44,56 @@ float f_AmpHours = 0; // Ah
 unsigned long i_power_last_read = 0; // Used to calculate Ah est.
 unsigned long i_power_read_tick; // Current read time - last read
 
-void setup()
-{
-  Serial.begin(57600);
+void setup(){
+  Serial.begin(9600);
 
-  if (!monitor.begin()){
-    Serial.println(F("Unable to find power monitoring device."));
+  uint8_t i_monitor_status = monitor.begin();
+  debugln(" ");
+  debug(F("Power Meter Result: "));
+  debugln(i_monitor_status);
+  if (i_monitor_status > 0){
+    // If returning a non-zero value, device could not be reset.
+    debugln(F("Unable to find power monitoring device."));
   }
   else {
     powerConfig();
-    ms_power_reading.start(i_power_display_delay);
-    i_power_last_read = millis();
+    i_power_last_read = millis(); // Used with 
+    ms_power_reading.start(i_power_reading_delay);
+    ms_power_display.start(i_power_display_delay);
   }
 }
 
 void loop(){
-  if(ms_power_reading.justFinished()){
-    powerReading();
-    ms_power_reading.start(i_power_reading_delay);
-  }
+  if(b_power_meter){
+    if(ms_power_reading.justFinished()){
+      powerReading();
+      ms_power_reading.start(i_power_reading_delay);
+    }
 
-  if(ms_power_display.justFinished()){
-    powerDisplay();
-    ms_power_reading.start(i_power_display_delay);
+    if(ms_power_display.justFinished()){
+      powerDisplay();
+      ms_power_display.start(i_power_display_delay);
+    }
   }
 }
 
 void powerConfig(){
-  // Set a custom configuration, default values are RANGE_32V, GAIN_8_320MV, ADC_12BIT, ADC_12BIT, CONT_SH_BUS
-  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_64SAMP, INA219::ADC_64SAMP, INA219::CONT_SH_BUS);
+  debugln(F("Configure Power Meter"));
+
+  b_power_meter = true;
+
+  // Custom configuration, defaults are RANGE_32V, GAIN_8_320MV, ADC_12BIT, ADC_12BIT, CONT_SH_BUS
+  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_32SAMP, INA219::ADC_32SAMP, INA219::CONT_SH_BUS);
   
   // Calibrate with our chosen values
   monitor.calibrate(SHUNT_R, SHUNT_MAX_V, BUS_MAX_V, MAX_CURRENT);
 }
 
 void powerReading(){
+  if (!b_power_meter) { return; }
+
+  debugln(F("Reading Power Meter"));
+
   unsigned long i_new_time;
 
   // Reads the latest values from the monitor.  
@@ -104,39 +116,39 @@ void powerReading(){
   monitor.reconfig();
 }
 
+// Displays the latest gathered values.
 void powerDisplay(){
-  // Displays the latest gathered values.
-  Serial.println("******************");
+  if (!b_power_meter) { return; }
+
+  // Serial.print("Raw Shunt Voltage: ");
+  // Serial.println(i_ShuntVoltageRaw);
   
-  Serial.print("Raw Shunt Voltage: ");
-  Serial.println(i_ShuntVoltageRaw);
+  // Serial.print("Raw Bus Voltage:   ");
+  // Serial.println(i_BusVoltageRaw);
   
-  Serial.print("Raw Bus Voltage:   ");
-  Serial.println(i_BusVoltageRaw);
-  
-  Serial.println("--");
+  // Serial.println("--");
   
   Serial.print("Shunt Voltage: ");
   Serial.print(f_ShuntVoltage, 4);
   Serial.println(" mV");
   
-  Serial.print("Shunt Current: ");
+  Serial.print("Shunt Current:  ");
   Serial.print(f_ShuntCurrent, 4);
   Serial.println(" A");
   
-  Serial.print("Bus Voltage:   ");
+  Serial.print("Bus Voltage:    ");
   Serial.print(f_BusVoltage, 4);
   Serial.println(" V");
 
-  Serial.print("Batt Voltage:  ");
+  Serial.print("Batt Voltage:   ");
   Serial.print(f_BattVoltage, 4);
   Serial.println(" V");
 
-  Serial.print("Bus Power:     ");
-  Serial.print(f_BusPower, 4);
+  Serial.print("Bus Power:      ");
+  Serial.print(f_BusPower, 2);
   Serial.println(" mW");
   
-  Serial.print("Amp Hours:     ");
+  Serial.print("Amp Hours:      ");
   Serial.print(f_AmpHours, 4);
   Serial.println(" Ah");
 
