@@ -1,6 +1,7 @@
 /**
  *   GPStar Single-Shot Blaster
- *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   Copyright (C) 2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *                    & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -54,7 +55,6 @@ const uint8_t i_volume_master_percentage_max = 100; // Max percentage of master 
 
 /*
  * Music Control/Checking
- * Only for bench test mode. When bench test mode is disabled, the Pack controls the music checking and playback.
  */
 const uint16_t i_music_check_delay = 2000;
 const uint16_t i_music_next_track_delay = 500;
@@ -178,37 +178,6 @@ void updateEffectsVolume() {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
       // Since adjusting only happens while in the menu mode, only certain effects need to be adjusted on the fly.
-      audio.trackGain(S_BEEPS, i_volume_effects);
-      audio.trackGain(S_BEEPS_ALT, i_volume_effects);
-      audio.trackGain(S_BEEPS_LOW, i_volume_effects);
-      audio.trackGain(S_BEEPS_BARGRAPH, i_volume_effects);
-
-      audio.trackGain(S_AFTERLIFE_BEEP_WAND_S1, i_volume_effects);
-      audio.trackGain(S_AFTERLIFE_BEEP_WAND_S2, i_volume_effects);
-      audio.trackGain(S_AFTERLIFE_BEEP_WAND_S3, i_volume_effects);
-      audio.trackGain(S_AFTERLIFE_BEEP_WAND_S4, i_volume_effects);
-      audio.trackGain(S_AFTERLIFE_BEEP_WAND_S5, i_volume_effects);
-
-      audio.trackGain(S_IDLE_LOOP_GUN, i_volume_effects);
-      audio.trackGain(S_IDLE_LOOP_GUN_1, i_volume_effects);
-      audio.trackGain(S_IDLE_LOOP_GUN_2, i_volume_effects);
-      audio.trackGain(S_IDLE_LOOP_GUN_3, i_volume_effects);
-      audio.trackGain(S_IDLE_LOOP_GUN_4, i_volume_effects);
-      audio.trackGain(S_IDLE_LOOP_GUN_5, i_volume_effects);
-
-      audio.trackGain(S_PACK_SLIME_TANK_LOOP, i_volume_effects);
-      audio.trackGain(S_STASIS_IDLE_LOOP, i_volume_effects);
-      audio.trackGain(S_MESON_IDLE_LOOP, i_volume_effects);
-
-      // Special volume in use.
-      audio.trackGain(S_AFTERLIFE_WAND_IDLE_1, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_IDLE_2, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_1, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_2, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_2_FADE_IN, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_DOWN_1, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_DOWN_2, i_volume_effects - i_wand_sound_level);
-      audio.trackGain(S_AFTERLIFE_WAND_RAMP_DOWN_2_FADE_OUT, i_volume_effects - i_wand_sound_level);
     break;
 
     case A_NONE:

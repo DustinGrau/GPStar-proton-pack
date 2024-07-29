@@ -1,6 +1,7 @@
 /**
  *   GPStar Single-Shot Blaster
- *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   Copyright (C) 2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *                    & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -54,8 +55,7 @@ enum colours {
   C_REDGREEN,
   C_ORANGEPURPLE,
   C_PASTEL,
-  C_RAINBOW,
-  C_CUSTOM,
+  C_RAINBOW
 };
 
 uint8_t getBrightness(uint8_t i_percent = 100) {
@@ -82,10 +82,6 @@ CHSV getHue(uint8_t i_colour, uint8_t i_brightness = 255, uint8_t i_saturation =
     case C_WHITE:
     default:
       return CHSV(100, 0, i_brightness); // Just "on", which is white.
-    break;
-
-    case C_CUSTOM:
-      return CHSV(i_spectral_wand_custom_colour, i_spectral_wand_custom_saturation, i_brightness); // b_spectral_wand_custom is a global variable found in Configuration.h
     break;
 
     case C_BLACK:
@@ -270,19 +266,4 @@ CRGB getHueAsRGB(uint8_t i_colour, uint8_t i_brightness = 255, bool b_grb = fals
 CRGB getHueAsGRB(uint8_t i_colour, uint8_t i_brightness = 255) {
   // Forward to getHueAsRGB() with the flag set for GRB colour swap.
   return getHueAsRGB(i_colour, i_brightness, true);
-}
-
-CRGB getHueColour(uint8_t i_colour, WAND_BARREL_LED_COUNTS NUM_LEDS_ENUM, uint8_t i_brightness = 255) {
-  switch(NUM_LEDS_ENUM) {
-    case LEDS_48:
-      // All other LEDs are considered RGB
-      return getHueAsRGB(i_colour, i_brightness);
-    break;
-
-    //case LEDS_5:
-    default:
-      // Stock LEDs are GRB
-      return getHueAsGRB(i_colour, i_brightness);
-    break;
-  }
 }

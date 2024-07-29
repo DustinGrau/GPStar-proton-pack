@@ -1,6 +1,7 @@
 /**
  *   GPStar Single-Shot Blaster
- *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *   Copyright (C) 2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *                    & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -58,7 +59,7 @@ const uint8_t STARTUP_VOLUME_EFFECTS = 100;
  * If your pack is overpowering the wand at lower volumes, you can either increase the minimum value in the wand,
  * or decrease the minimum value for the pack.
  */
-const int8_t MINIMUM_VOLUME = -35;
+const int8_t MINIMUM_VOLUME = -60;
 
 /*
  * Percentage increments of main volume change.
@@ -86,45 +87,9 @@ bool b_bargraph_invert = false;
 bool b_vent_light_control = true;
 
 /*
- * When set to true, you can manually quick vent your Proton Pack and Neutrona Wand by
- * pressing the intensify button if the top right toggle switch is switched off.
- */
-bool b_quick_vent = true;
-
-/*
  * When set to true, the LED at the front of the Neutrona Wand body next to the Clippard valve will start blinking after 1 minute of inactivity while the Neutrona Wand and Proton Pack are powered off to indicate battery power is still feeding the system.
 */
 bool b_power_on_indicator = true;
-
-/*
- * When set to true, allows selection of special firing modes after the standard video game modes.
- * Nano builds of the wand do not get a full effect of the colours due to memory limitations.
- * gpstar Neutrona Wand boards will the full effect from the wand.
- * The Proton Pack needs RGB coloured LEDs to see the effects on the pack side.
- * Refer to the operational manual for more information regarding these special firing modes.
- * These settings can be controlled from the EEPROM menus.
- * Spectral modes are only supported by the gpstar Neutrona Wand board.
- */
-bool b_spectral_mode_enabled = false;
-bool b_holiday_mode_enabled = false;
-bool b_spectral_custom_mode_enabled = false;
-
-/*
- * The CHSV colour value for the Spectral custom mode.
- * This can be adjusted in the EEPROM LED menu. Any EEPROM settings will overwrite these values.
- * The Proton Pack custom spectral colours are stored on the Proton Pack EEPROM. So it is possible to mix and match different wands colours to different pack settings.
- * Value range: 1 <--> 254
- * Spectral modes are only supported by the gpstar Neutrona Wand board.
- */
-uint8_t i_spectral_wand_custom_colour = 200;
-
-/*
- * The CHSV saturation range for the Spectral custom mode.
- * This can be adjusted in the EEPROM LED menu. Any EEPROM settings will overwrite these values.
- * The Proton Pack custom spectral colours are stored on the Proton Pack EEPROM. The Neutrona Wand custom spectral colours are stored on the Neutrona Wand. So it is possible to mix and match different wands colours to different pack settings.
- * Value range: 1 <--> 254
- */
-uint8_t i_spectral_wand_custom_saturation = 254;
 
 /*
  * When enabled, the Neutrona Wand will vibrate at all times.
@@ -143,51 +108,10 @@ bool b_vibration_enabled = true;
 bool b_vibration_firing = true;
 
 /*
- * Set to true to enable overheating. Overheat settings are defined below.
- * Set to false to disable overheating. This will override any overheat settings below.
- * This can be controlled from the Neutrona Wand submenu system.
- */
-bool b_overheat_enabled = true;
-
-/*
  * Set to true to have your Neutrona Wand boot up with errors when the top right switch (beep switch) is on while you are turning on your wand.
  * When set to false, this will be ignored.
  */
 bool b_wand_boot_errors = true;
-
-/*
- * Set to true to have your bargraph blink on/off when the Neutrona Wand and Proton Pack overheat.
- * When false, the bargraph will ramp down instead.
- */
-bool b_overheat_bargraph_blink = false;
-
-/*
- * When set to false, the Neutrona Wand beeping will not loop in Afterlife mode.
-*/
-bool b_beep_loop = true;
-
-/*
- * Which power levels do you want to be able to overheat.
- * Set to true to allow the wand and pack to overheat in that power level.
- * Set to false to disable overheating in that power level. You will be able to continuously fire instead.
- */
-bool b_overheat_level_1 = false;
-bool b_overheat_level_2 = false;
-bool b_overheat_level_3 = false;
-bool b_overheat_level_4 = false;
-bool b_overheat_level_5 = true;
-
-/*
- * Time in milliseconds for when overheating will initiate if enabled for that power level.
- * Overheat only happens if enabled for that power level (see above).
- * Example: 60000 = (60 seconds)
- * Max is 60000 to keep within the uint16 integer type.
- */
-uint16_t i_ms_overheat_initiate_level_1 = 60000;
-uint16_t i_ms_overheat_initiate_level_2 = 50000;
-uint16_t i_ms_overheat_initiate_level_3 = 40000;
-uint16_t i_ms_overheat_initiate_level_4 = 35000;
-uint16_t i_ms_overheat_initiate_level_5 = 30000;
 
 /*
  * Set to false to disable the onboard amplifier on the WAV Trigger.
@@ -197,24 +121,6 @@ uint16_t i_ms_overheat_initiate_level_5 = 30000;
  * NOTE: The onboard mono audio amplifier and speaker connector specifications: 2W into 4 Ohms, 1.25W into 8 Ohms
  */
 const bool b_onboard_amp_enabled = true;
-
-/*
- * When set to true, various impact and other stream effects will overlap and mix randomly into the Proton Stream for an added experience.
- */
-bool b_stream_effects = true;
-
-/*
- * When set to true, the Neutrona Wand will tell the Proton Pack to play the Neutrona Wand sound effects.
- * Perfect if you want louder Neutrona Wand sounds or if your Neutrona Wand does not have a audio board.
- * The default setting is true.
- */
-bool b_extra_pack_sounds = false;
-
-/*
- * When set to true, the Neutrona Wand plays sound effects with the right-hand toggle switches in MODE_ORIGINAL.
- * Setting to false will mute the toggle switch sounds in MODE_ORIGINAL.
- */
-bool b_mode_original_toggle_sounds_enabled = true;
 
 /*
  * Set to false to ignore reading data from the EEPROM.
