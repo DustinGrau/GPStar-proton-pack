@@ -8,6 +8,7 @@ BINDIR="../binaries"
 SRCDIR="../source"
 
 mkdir -p ${BINDIR}/attenuator/extras
+mkdir -p ${BINDIR}/blaster
 mkdir -p ${BINDIR}/pack
 mkdir -p ${BINDIR}/wand/extras
 
@@ -73,6 +74,23 @@ sed -i -e 's/b_gpstar_benchtest = true/b_gpstar_benchtest = false/' ${SRCDIR}/Ne
 
 rm -f ${SRCDIR}/NeutronaWand/*.h-e
 
+echo "Done."
+echo ""
+
+# Single-Shot Blaster
+echo "Building Single-Shot Binary..."
+
+# --warnings none
+arduino-cli compile --output-dir ${BINDIR} --fqbn arduino:avr:mega --export-binaries ${SRCDIR}/SingleShot/SingleShot.ino
+
+rm -f ${BINDIR}/*.bin
+rm -f ${BINDIR}/*.eep
+rm -f ${BINDIR}/*.elf
+rm -f ${BINDIR}/*bootloader.hex
+
+if [ -f ${BINDIR}/SingleShot.ino.hex ]; then
+  mv ${BINDIR}/SingleShot.ino.hex ${BINDIR}/blaster/SingleShot.hex
+fi
 echo "Done."
 echo ""
 
