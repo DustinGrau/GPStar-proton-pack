@@ -44,10 +44,10 @@ enum sound_fx {
   S_VOICE_LEVEL_5,
   S_CLICK,
   S_VOICE_EEPROM_CONFIG_MENU,
-  S_WAND_SYNC
+  S_DEVICE_READY
 };
 
 /*
  * Need to keep track which is the last sound effect, so we can iterate over the effects to adjust the volume gain on them.
  */
-const uint16_t i_last_effects_track = S_WAND_SYNC;
+const uint16_t i_last_effects_track = S_DEVICE_READY;

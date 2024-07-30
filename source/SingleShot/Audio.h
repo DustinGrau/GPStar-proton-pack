@@ -106,7 +106,7 @@ void playEffect(uint16_t i_track_id, bool b_track_loop, int8_t i_track_volume, b
   switch(AUDIO_DEVICE) {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
-      if(b_fade_in == true) {
+      if(b_fade_in) {
         audio.trackGain(i_track_id, i_volume_abs_min);
         audio.trackPlayPoly(i_track_id, b_lock);
         audio.trackFade(i_track_id, i_track_volume, i_fade_time, 0);
@@ -116,7 +116,7 @@ void playEffect(uint16_t i_track_id, bool b_track_loop, int8_t i_track_volume, b
         audio.trackPlayPoly(i_track_id, b_lock);
       }
 
-      if(b_track_loop == true) {
+      if(b_track_loop) {
         audio.trackLoop(i_track_id, 1);
       }
       else {
@@ -158,7 +158,7 @@ void adjustGainEffect(uint16_t i_track_id, int8_t i_track_volume, bool b_fade, u
   switch(AUDIO_DEVICE) {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
-      if(b_fade == true) {
+      if(b_fade) {
         audio.trackFade(i_track_id, i_track_volume, i_fade_time, 0);
       }
       else {
@@ -196,7 +196,7 @@ void playMusic() {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
         // Loop the music track.
-        if(b_repeat_track == true) {
+        if(b_repeat_track) {
           audio.trackLoop(i_current_music_track, 1);
         }
         else {
@@ -243,7 +243,7 @@ void stopMusic() {
 }
 
 void pauseMusic() {
-  if(b_playing_music == true) {
+  if(b_playing_music) {
     // Pause music playback on the Neutrona Wand
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
@@ -266,7 +266,7 @@ void pauseMusic() {
 }
 
 void resumeMusic() {
-  if(b_playing_music == true) {
+  if(b_playing_music) {
     // Resume music playback on the Neutrona Wand
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
@@ -306,7 +306,7 @@ void musicNextTrack() {
   }
 
   // Switch to the next track.
-  if(b_playing_music == true) {
+  if(b_playing_music) {
     // Stops music using the current track number as the identifier.
     stopMusic();
 
@@ -334,7 +334,7 @@ void musicPrevTrack() {
   }
 
   // Switch to the previous track.
-  if(b_playing_music == true) {
+  if(b_playing_music) {
     // Stops music using the current track number as the identifier.
     stopMusic();
 
@@ -631,7 +631,7 @@ bool musicTrackStatus() {
 }
 
 void checkMusic() {
-  if(ms_check_music.justFinished() && ms_music_next_track.isRunning() != true) {
+  if(ms_check_music.justFinished() && !ms_music_next_track.isRunning()) {
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
@@ -640,8 +640,8 @@ void checkMusic() {
         musicTrackPlayingStatus();
 
         // Loop through all the tracks if the music is not set to repeat a track.
-        if(b_playing_music == true && b_repeat_track == false && b_music_paused != true) {
-          if(musicTrackStatus() != true && ms_music_status_check.justFinished() && musicGetTrackCounter() != true) {
+        if(b_playing_music && !b_repeat_track && !b_music_paused) {
+          if(!musicTrackStatus() && ms_music_status_check.justFinished() && !musicGetTrackCounter()) {
             ms_check_music.stop();
             ms_music_status_check.stop();
 
@@ -688,7 +688,7 @@ void toggleMusicLoop() {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
       // Loop the music track.
-      if(b_repeat_track == false) {
+      if(!b_repeat_track) {
         b_repeat_track = true;
 
         if(i_music_count > 0) {
@@ -706,7 +706,7 @@ void toggleMusicLoop() {
 
     case A_NONE:
     default:
-      if(b_repeat_track == false) {
+      if(!b_repeat_track) {
         b_repeat_track = true;
       }
       else {

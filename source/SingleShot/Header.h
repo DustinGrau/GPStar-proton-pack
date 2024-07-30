@@ -60,11 +60,12 @@ const uint16_t i_slo_blo_blink_delay = 500;
  * for the cyclotron (typically 7 LEDs) while the barrel is designed to use the GPStar single LED.
  */
 #define SYSTEM_LED_PIN 10
-#define SYSTEM_LEDS_MAX 8 // The maximum number of LEDs supported (Cyclotron + Barrel).
 #define CYCLOTRON_LED_COUNT 7 // NeoPixel Jewel
 #define BARREL_LED_COUNT 1 // GPStar Barrel LED
-CRGB system_leds[SYSTEM_LEDS_MAX];
-const uint8_t i_num_system_leds = SYSTEM_LEDS_MAX;
+CRGB system_leds[CYCLOTRON_LED_COUNT + BARREL_LED_COUNT];
+const uint8_t i_barrel_led = CYCLOTRON_LED_COUNT + 1; // This will be the last item on the chain after the cyclotron LEDs
+const uint8_t i_num_cyclotron_leds = CYCLOTRON_LED_COUNT; // This will be the number of cyclotron LEDs
+const uint8_t i_cyclotron_leds[i_num_cyclotron_leds] = {0, 1, 2, 3, 4, 5, 6};
 
 /*
  * Control for the primary blast sound effects.
@@ -111,7 +112,6 @@ const uint8_t led_barrel_tip = 24; // White LED at tip of the wand barrel. (Whit
  */
 const uint16_t i_afterlife_blink_interval = 146;
 const uint16_t i_classic_blink_intervals[5] = {333, 375, 417, 500, 666};
-uint8_t i_classic_blink_index = 0;
 uint16_t d_white_light_interval = i_afterlife_blink_interval;
 
 /*
@@ -149,11 +149,11 @@ bool b_vibration_switch_on = true;
 /*
  * Various Switches on the wand.
  */
-Switch switch_intensify(2);
-Switch switch_activate(3);
-Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the wand.
+Switch switch_intensify(2); // Considered a primary firing button, though for this device will be an alt-fire.
+Switch switch_activate(3); // Considered the primary power toggle on the right of the gun box.
 Switch switch_wand(A0); // Controls the beeping. Top right switch on the wand.
-Switch switch_mode(A6); // Hand-grip button and used in settings menus.
+Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the wand.
+Switch switch_grip(A6); // Hand-grip button to be the primary fire and used in settings menus.
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
 uint8_t ventSwitchedCount = 0;
 uint8_t wandSwitchedCount = 0;
@@ -252,7 +252,7 @@ const uint16_t i_single_shot_rate = 2000; // Single shot firing rate.
 const uint16_t i_firing_timer_length = 15000; // 15 seconds. Used by ms_firing_length_timer to determine which tail_end sound effects to play.
 const uint8_t d_firing_pulse = 18; // Used to drive semi-automatic firing stream effect timers. Default: 18ms.
 const uint8_t d_firing_stream = 100; // Used to drive all stream effects timers. Default: 100ms.
-uint8_t i_barrel_light = 0; // Used to keep track which LED in the barrel is currently lighting up.
+uint8_t i_cyclotron_light = 0; // Used to keep track which LED in the cyclotron is currently lighting up.
 uint8_t i_pulse_step = 0; // Used to keep track of which pulse animation step we are on.
 uint16_t i_last_firing_effect_mix = 0; // Used by standalone Neutrona Wand.
 
@@ -300,13 +300,13 @@ uint8_t i_cyclotron_speed_up = 1; // For telling the pack to speed up or slow do
  * otherwise an error mode will be engaged to provide a cool-down period. This does not apply to any
  * prolonged firing which would trigger the overheat or venting sequences; only rapid firing bursts.
  */
-millisDelay ms_bmash;                  // Timer for the button mash lock-out period.
+millisDelay ms_bmash;              // Timer for the button mash lock-out period.
 uint16_t i_bmash_delay = 2000;     // Time period in which we consider rapid firing.
 uint16_t i_bmash_cool_down = 3000; // Time period for the lock-out of user input.
-uint8_t i_bmash_count = 0;             // Current count for rapid firing bursts.
-uint8_t i_bmash_max = 7;               // Burst count we consider before the lock-out.
-uint8_t i_bmash_spark_index = 0;       // Current spark number for the spark effect (0~2).
-bool b_wand_mash_error = false;        // Indicates if wand is in a lock-out phase.
+uint8_t i_bmash_count = 0;         // Current count for rapid firing bursts.
+uint8_t i_bmash_max = 7;           // Burst count we consider before the lock-out.
+uint8_t i_bmash_spark_index = 0;   // Current spark number for the spark effect (0~2).
+bool b_wand_mash_error = false;    // Indicates if wand is in a lock-out phase.
 
 /*
  * Used during the overheating sequences.
