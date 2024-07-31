@@ -1293,12 +1293,9 @@ void firePulseEffect() {
     case 0:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_RED);
-        break;
-
-        default:
-          // Do nothing.
         break;
       }
     break;
@@ -1306,12 +1303,9 @@ void firePulseEffect() {
     case 1:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
-        break;
-
-        default:
-          // Do nothing.
         break;
       }
     break;
@@ -1319,12 +1313,9 @@ void firePulseEffect() {
     case 2:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
-        break;
-
-        default:
-          // Do nothing.
         break;
       }
     break;
@@ -1332,12 +1323,9 @@ void firePulseEffect() {
     case 3:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
-        break;
-
-        default:
-          // Do nothing.
         break;
       }
     break;
@@ -1345,15 +1333,12 @@ void firePulseEffect() {
     case 4:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_RED);
 
           // Bolt has reached barrel tip, so turn on tip light.
           wandTipOn();
-        break;
-
-        default:
-          // Do nothing.
         break;
       }
     break;
@@ -1361,95 +1346,11 @@ void firePulseEffect() {
     case 5:
       switch(STREAM_MODE) {
         case PROTON:
+        default:
           // Primary Blast.
           system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
         break;
-
-        default:
-          // Do nothing.
-        break;
       }
-    break;
-
-    case 6:
-      switch(STREAM_MODE) {
-        case PROTON:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
-        break;
-
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 7:
-      switch(STREAM_MODE) {
-        case PROTON:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
-        break;
-
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 8:
-      switch(STREAM_MODE) {
-        case PROTON:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
-        break;
-
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 9:
-      switch(STREAM_MODE) {
-        case PROTON:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
-          i_pulse_step = 14; // Immediately end.
-        break;
-
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 10:
-      switch(STREAM_MODE) {
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 11:
-      switch(STREAM_MODE) {
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 12:
-      switch(STREAM_MODE) {
-        default:
-          // Do nothing.
-        break;
-      }
-    break;
-
-    case 13:
-      system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
     break;
 
     default:
@@ -1459,7 +1360,7 @@ void firePulseEffect() {
 
   i_pulse_step++;
 
-  if(i_pulse_step < 14) {
+  if(i_pulse_step < i_pulse_step_max) {
     if(STREAM_MODE == PROTON) {
       // Primary Blast is much slower than the others.
       i_firing_pulse *= 2;
@@ -1583,6 +1484,7 @@ void barrelLightsOff() {
   ms_firing_effect_end.stop();
   ms_firing_lights_end.stop();
   ms_wand_heatup_fade.stop();
+
   i_cyclotron_light = 0;
   i_pulse_step = 0;
   i_heatup_counter = 0;

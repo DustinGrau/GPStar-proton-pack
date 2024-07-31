@@ -253,6 +253,7 @@ const uint16_t i_firing_timer_length = 15000; // 15 seconds. Used by ms_firing_l
 const uint8_t d_firing_pulse = 18; // Used to drive semi-automatic firing stream effect timers. Default: 18ms.
 const uint8_t d_firing_stream = 100; // Used to drive all stream effects timers. Default: 100ms.
 uint8_t i_cyclotron_light = 0; // Used to keep track which LED in the cyclotron is currently lighting up.
+const uint8_t i_pulse_step_max = 6; // Total number of steps per pulse animation.
 uint8_t i_pulse_step = 0; // Used to keep track of which pulse animation step we are on.
 uint16_t i_last_firing_effect_mix = 0; // Used by standalone Neutrona Wand.
 
