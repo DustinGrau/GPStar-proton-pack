@@ -51,15 +51,15 @@ uint16_t i_eepromAddress = 0; // The address in the EEPROM to start reading from
  * Data structure object for customizations which are saved into the EEPROM memory.
  */
 struct objConfigEEPROM {
-  uint8_t wand_boot_errors;
+  uint8_t device_boot_errors;
   uint8_t vent_light_auto_intensity;
   uint8_t invert_bargraph;
   uint8_t default_system_volume;
-  uint8_t wand_vibration;
+  uint8_t device_vibration;
 };
 
 /*
- * Read all user preferences from Proton Pack controller EEPROM.
+ * Read all user preferences from device controller EEPROM.
  */
 void readEEPROM() {
   // Get the stored CRC from the EEPROM.
@@ -72,12 +72,12 @@ void readEEPROM() {
     objConfigEEPROM obj_config_eeprom;
     EEPROM.get(i_eepromAddress, obj_config_eeprom);
 
-    if(obj_config_eeprom.wand_boot_errors > 0 && obj_config_eeprom.wand_boot_errors != 255) {
-      if(obj_config_eeprom.wand_boot_errors > 1) {
-        b_wand_boot_errors = true;
+    if(obj_config_eeprom.device_boot_errors > 0 && obj_config_eeprom.device_boot_errors != 255) {
+      if(obj_config_eeprom.device_boot_errors > 1) {
+        b_device_boot_errors = true;
       }
       else {
-        b_wand_boot_errors = false;
+        b_device_boot_errors = false;
       }
     }
 
@@ -106,33 +106,28 @@ void readEEPROM() {
       i_volume_master = i_volume_master_eeprom;
     }
 
-    if(obj_config_eeprom.wand_vibration > 0 && obj_config_eeprom.wand_vibration != 255) {
-      switch(obj_config_eeprom.wand_vibration) {
+    if(obj_config_eeprom.device_vibration > 0 && obj_config_eeprom.device_vibration != 255) {
+      switch(obj_config_eeprom.device_vibration) {
         case 3:
           b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
-          b_vibration_enabled = false; // Disable wand vibration.
+          b_vibration_enabled = false; // Disable device vibration.
           VIBRATION_MODE_EEPROM = VIBRATION_NONE;
         break;
 
         case 2:
-          b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
           b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
-          b_vibration_enabled = true; // Enable wand vibration.
+          b_vibration_enabled = true; // Enable device vibration.
           VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
         break;
 
         case 1:
         default:
-          b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
           b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
-          b_vibration_enabled = true; // Enable wand vibration.
+          b_vibration_enabled = true; // Enable device vibration.
           VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
         break;
       }
     }
-
-    // Reset the blinking white LED interval.
-    resetWhiteLEDBlinkRate();
   }
   else {
     // CRC doesn't match; let's clear the EEPROMs to be safe.
@@ -153,14 +148,14 @@ void clearConfigEEPROM() {
 
 void saveConfigEEPROM() {
   // 1 = false, 2 = true.
-  uint8_t i_wand_boot_errors = 2; // Assumed true by default.
+  uint8_t i_device_boot_errors = 2; // Assumed true by default.
   uint8_t i_vent_light_auto_intensity = 2; // Assumed true by default.
   uint8_t i_invert_bargraph = 1; // Assumed false by default.
   uint8_t i_default_system_volume = 100; // <- i_volume_master_percentage
-  uint8_t i_wand_vibration = 4; // 1 = always, 2 = when firing, 3 = off, 4 = default.
+  uint8_t i_device_vibration = 4; // 1 = always, 2 = when firing, 3 = off, 4 = default.
 
-  if(!b_wand_boot_errors) {
-    i_wand_boot_errors = 1;
+  if(!b_device_boot_errors) {
+    i_device_boot_errors = 1;
   }
 
   if(!b_vent_light_control) {
@@ -184,25 +179,25 @@ void saveConfigEEPROM() {
   switch(VIBRATION_MODE_EEPROM) {
     case VIBRATION_ALWAYS:
     default:
-      i_wand_vibration = 1;
+      i_device_vibration = 1;
     break;
 
     case VIBRATION_FIRING_ONLY:
-      i_wand_vibration = 2;
+      i_device_vibration = 2;
     break;
 
     case VIBRATION_NONE:
-      i_wand_vibration = 3;
+      i_device_vibration = 3;
     break;
   }
 
   // Write the data to the EEPROM if any of the values have changed.
   objConfigEEPROM obj_config_eeprom = {
-    i_wand_boot_errors,
+    i_device_boot_errors,
     i_vent_light_auto_intensity,
     i_invert_bargraph,
     i_default_system_volume,
-    i_wand_vibration
+    i_device_vibration
   };
 
   // Save and update our object in the EEPROM.

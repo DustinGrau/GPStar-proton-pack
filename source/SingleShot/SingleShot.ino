@@ -18,20 +18,12 @@
  *
  */
 
-/**
- * Please note, due to limitations of the ATMega328P, Arduino Nano builds are no
- * longer supported for the Neutrona Wand. Upgrading to the GPStar controller or
- * a Mega 2560 Pro Mini is the only viable solution for continued support.
- * The last supported version for the Arduino Nano is 2.2.0
- * https://github.com/gpstar81/haslab-proton-pack/releases/tag/V2.2.0
- */
-
 #if defined(__AVR_ATmega2560__)
-  #define GPSTAR_NEUTRONA_WAND_PCB
+  #define GPSTAR_NEUTRONA_DEVICE_PCB
 #endif
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -81,13 +73,13 @@ void setup() {
   BARGRAPH_MODE = BARGRAPH_SUPER_HERO;
   BARGRAPH_FIRING_ANIMATION = BARGRAPH_ANIMATION_SUPER_HERO;
   VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
-  WAND_MENU_LEVEL = MENU_LEVEL_1;
+  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
 
   // Set callback events for these toggles, which need to count the activations for EEPROM menu entry.
   switch_vent.setPushedCallback(&ventSwitched);
-  switch_wand.setPushedCallback(&wandSwitched);
+  switch_device.setPushedCallback(&deviceSwitched);
 
-  // Rotary encoder on the top of the wand.
+  // Rotary encoder on the top of the device.
   pinModeFast(r_encoderA, INPUT_PULLUP);
   pinModeFast(r_encoderB, INPUT_PULLUP);
 
@@ -122,25 +114,25 @@ void setup() {
 
   pinModeFast(led_slo_blo, OUTPUT); // Lower LED under the bargraph.
   pinModeFast(led_front_left, OUTPUT); // Front left LED underneath the Clippard valve.
-  pinModeFast(led_hat_1, OUTPUT); // Hat light at front of the wand near the barrel tip.
-  pinModeFast(led_hat_2, OUTPUT); // Hat light at top of the wand body (gun box).
-  pinModeFast(led_barrel_tip, OUTPUT); // LED at the tip of the wand barrel.
+  pinModeFast(led_hat_1, OUTPUT); // Hat light at front of barrel not used.
+  pinModeFast(led_hat_2, OUTPUT); // Hat light at top of the device body (gun box).
+  pinModeFast(led_barrel_tip, OUTPUT); // LED at the tip of the device barrel.
   pinMode(led_vent, OUTPUT); // Vent light could be either Digital or PWM based on user setting, so use default functions.
   pinModeFast(led_white, OUTPUT); // Alternative barrel tip light.
 
   pinMode(vibration, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.
 
   // Make sure lights are off.
-  wandLightsOff();
+  allLightsOff();
 
-  // Wand status.
-  WAND_STATUS = MODE_OFF;
-  WAND_ACTION_STATUS = ACTION_IDLE;
+  // Device status.
+  DEVICE_STATUS = MODE_OFF;
+  DEVICE_ACTION_STATUS = ACTION_IDLE;
 
-  // We bootup the wand in the classic proton mode.
+  // We bootup the device in the classic proton mode.
   STREAM_MODE = PROTON;
 
-  // Load any saved settings stored in the EEPROM memory of the GPStar Neutrona Wand.
+  // Load any saved settings stored in the EEPROM memory of the GPStar Single-Shot Blaster.
   if(b_eeprom) {
     readEEPROM();
   }
@@ -157,11 +149,11 @@ void setup() {
   // Check music timer for bench test mode only.
   ms_check_music.start(i_music_check_delay);
 
-  // No pack to do a volume sync with, so reset our master volume manually.
+  // Reset our master volume manually.
   resetMasterVolume();
 
   // System Power On Self Test
-  playEffect(S_DEVICE_READY);
+  systemPOST();
 }
 
 void loop() {
@@ -172,6 +164,43 @@ void loop() {
   mainLoop(); // Continue on to the main loop.
 }
 
+void systemPOST() {
+  // Play a sound to test the audio system.
+  playEffect(S_DEVICE_READY);
+
+  // These go HIGH to turn on.
+  digitalWriteFast(led_slo_blo, HIGH);
+  delay(100);
+  digitalWriteFast(led_front_left, HIGH);
+  delay(100);
+  digitalWriteFast(led_hat_2, HIGH);
+  delay(100);
+
+  // These go LOW to turn on.
+  digitalWrite(led_vent, LOW);
+  delay(100);
+  digitalWriteFast(led_white, LOW);
+  delay(100);
+
+  deviceTipOn();
+  delay(100);
+
+  // Sequentially turn on all LEDs in the cyclotron.
+  for(uint8_t i = 0; i < i_num_cyclotron_leds; i++) {
+    system_leds[i] = getHueAsRGB(C_RED);
+    FastLED.show();
+    delay(200);
+  }
+
+  // Turn on the front barrel.
+  system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
+  FastLED.show();
+
+  delay(1000);
+
+  allLightsOff();
+}
+
 void mainLoop() {
   // Get the current state of any input devices (toggles, buttons, and switches).
   switchLoops();
@@ -179,17 +208,17 @@ void mainLoop() {
   checkRotaryEncoder();
   checkMenuVibration();
 
-  if(WAND_ACTION_STATUS != ACTION_FIRING) {
+  if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
     if(ms_bmash.remaining() < 1) {
       // Clear counter until user begins firing (post any lock-out period).
       i_bmash_count = 0;
 
-      if(b_wand_mash_error) {
-        // Return the wand to a normal firing state after lock-out from button mashing.
-        b_wand_mash_error = false;
+      if(b_device_mash_error) {
+        // Return the device to a normal firing state after lock-out from button mashing.
+        b_device_mash_error = false;
 
-        WAND_STATUS = MODE_ON;
-        WAND_ACTION_STATUS = ACTION_IDLE;
+        DEVICE_STATUS = MODE_ON;
+        DEVICE_ACTION_STATUS = ACTION_IDLE;
 
         postActivation();
 
@@ -201,41 +230,41 @@ void mainLoop() {
     }
   }
 
-  switch(WAND_STATUS) {
+  switch(DEVICE_STATUS) {
     case MODE_OFF:
-      if(WAND_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
+      if(DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
         if(switch_grip.pushed()) {
-          if(WAND_ACTION_STATUS != ACTION_SETTINGS) {
+          if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
             playEffect(S_CLICK);
 
-            WAND_ACTION_STATUS = ACTION_SETTINGS;
-            WAND_MENU_LEVEL = MENU_LEVEL_1;
+            DEVICE_ACTION_STATUS = ACTION_SETTINGS;
+            DEVICE_MENU_LEVEL = MENU_LEVEL_1;
 
-            i_wand_menu = 5;
+            i_device_menu = 5;
             ms_settings_blinking.start(i_settings_blinking_delay);
 
             ms_bargraph.stop();
             bargraphClearAlt();
 
-            // Make sure some of the wand lights are off.
-            wandLightsOffMenuSystem();
+            // Make sure some of the device lights are off.
+            allLightsOffMenuSystem();
           }
           else {
-            // Only exit the settings menu when on menu #5 in the top menu or the pack ribbon cable alarm is active.
-            if(i_wand_menu == 5 && WAND_MENU_LEVEL == MENU_LEVEL_1 && WAND_ACTION_STATUS == ACTION_SETTINGS) {
-              wandExitMenu();
+            // Only exit the settings menu when on menu #5 in the top menu
+            if(i_device_menu == 5 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+              deviceExitMenu();
             }
           }
         }
       }
 
-      // Reset the count of the wand switch
+      // Reset the count of the device switch
       if(!switch_intensify.on()) {
-        wandSwitchedCount = 0;
+        deviceSwitchedCount = 0;
         ventSwitchedCount = 0;
       }
 
-      if(WAND_ACTION_STATUS != ACTION_SETTINGS && WAND_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU
+      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU
          && switch_intensify.on() && ventSwitchedCount >= 5) {
         stopEffect(S_BEEPS);
         playEffect(S_BEEPS);
@@ -243,19 +272,19 @@ void mainLoop() {
         stopEffect(S_VOICE_EEPROM_CONFIG_MENU);
         playEffect(S_VOICE_EEPROM_CONFIG_MENU);
 
-        i_wand_menu = 5;
+        i_device_menu = 5;
 
-        WAND_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
-        WAND_MENU_LEVEL = MENU_LEVEL_1;
+        DEVICE_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
+        DEVICE_MENU_LEVEL = MENU_LEVEL_1;
 
         ms_settings_blinking.start(i_settings_blinking_delay);
 
-        // Make sure some of the wand lights are off.
-        wandLightsOffMenuSystem();
+        // Make sure some of the device lights are off.
+        allLightsOffMenuSystem();
       }
 
-      // If the power indicator is enabled. Blink the LED on the Neutrona Wand body next to the clippard valve to indicator the system has battery power.
-      if(b_power_on_indicator && WAND_ACTION_STATUS == ACTION_IDLE) {
+      // If the power indicator is enabled. Blink the LED on the Single-Shot Blaster body next to the clippard valve to indicator the system has battery power.
+      if(b_power_on_indicator && DEVICE_ACTION_STATUS == ACTION_IDLE) {
         if(ms_power_indicator.isRunning() && ms_power_indicator.remaining() < 1) {
           if(!ms_power_indicator_blink.isRunning() || ms_power_indicator_blink.justFinished()) {
             ms_power_indicator_blink.start(i_ms_power_indicator_blink);
@@ -291,14 +320,14 @@ void mainLoop() {
       if(ms_hat_2.justFinished()) {
         ms_hat_2.start(i_hat_2_delay);
 
-        if(!b_wand_mash_error) {
+        if(!b_device_mash_error) {
           playEffect(S_BEEPS_LOW);
           playEffect(S_BEEPS);
         }
       }
 
       if(ms_hat_1.justFinished()) {
-        if(!b_wand_mash_error) {
+        if(!b_device_mash_error) {
           playEffect(S_BEEPS);
         }
 
@@ -310,7 +339,7 @@ void mainLoop() {
 
     case MODE_ON:
       if(!ms_hat_1.isRunning() && !ms_hat_2.isRunning()) {
-        // Hat 2 stays solid while the Neutrona Wand is on.
+        // Hat 2 stays solid while the Single-Shot Blaster is on.
         digitalWriteFast(led_hat_2, HIGH);
       }
 
@@ -329,7 +358,7 @@ void mainLoop() {
       if(ms_bargraph.justFinished()) {
         bargraphRampUp();
       }
-      else if(!ms_bargraph.isRunning() && WAND_ACTION_STATUS != ACTION_FIRING && WAND_ACTION_STATUS != ACTION_SETTINGS) {
+      else if(!ms_bargraph.isRunning() && DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
         // Bargraph idling loop.
         bargraphPowerCheck();
       }
@@ -338,10 +367,10 @@ void mainLoop() {
     break;
   }
 
-  // Handle button press events based on current wand state and menu level (for config/EEPROM purposes).
-  checkWandAction();
+  // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
+  checkDeviceAction();
 
-  if(b_firing && WAND_ACTION_STATUS != ACTION_FIRING) {
+  if(b_firing && DEVICE_ACTION_STATUS != ACTION_FIRING) {
     modeFireStop();
   }
 
@@ -367,21 +396,21 @@ void mainLoop() {
   }
 }
 
-void wandTipOn() {
-    // Illuminate the wand barrel tip LED.
+void deviceTipOn() {
+    // Illuminate the device barrel tip LED.
     digitalWriteFast(led_barrel_tip, HIGH);
 }
 
-void wandTipOff() {
-    // Turn off the wand barrel tip LED.
+void deviceTipOff() {
+    // Turn off the device barrel tip LED.
     digitalWriteFast(led_barrel_tip, LOW);
 }
 
-void wandTipSpark() {
+void deviceTipSpark() {
   i_heatup_counter = 0;
   i_heatdown_counter = 100;
   i_bmash_spark_index = 0;
-  ms_wand_heatup_fade.start(i_delay_heatup);
+  ms_device_heatup_fade.start(i_delay_heatup);
 }
 
 void settingsBlinkingLights() {
@@ -394,11 +423,11 @@ void settingsBlinkingLights() {
     bool b_solid_one = false;
 
     // Indicator for looping track setting.
-    if(b_repeat_track && i_wand_menu == 5 && WAND_ACTION_STATUS != ACTION_ERROR && WAND_MENU_LEVEL == MENU_LEVEL_1 && WAND_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
+    if(b_repeat_track && i_device_menu == 5 && DEVICE_ACTION_STATUS != ACTION_ERROR && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
       b_solid_five = true;
     }
 
-    if(i_volume_master == i_volume_abs_min && WAND_ACTION_STATUS == ACTION_SETTINGS && WAND_MENU_LEVEL == MENU_LEVEL_1) {
+    if(i_volume_master == i_volume_abs_min && DEVICE_ACTION_STATUS == ACTION_SETTINGS && DEVICE_MENU_LEVEL == MENU_LEVEL_1) {
       b_solid_one = true;
     }
 
@@ -464,7 +493,7 @@ void settingsBlinkingLights() {
     }
   }
   else {
-    switch(i_wand_menu) {
+    switch(i_device_menu) {
       case 5:
         if(b_28segment_bargraph) {
           for(uint8_t i = 0; i < i_bargraph_segments; i++) {
@@ -623,46 +652,46 @@ void settingsBlinkingLights() {
   }
 }
 
-// Change the WAND_STATE here based on switches changing or pressed.
+// Change the DEVICE_STATE here based on switches changing or pressed.
 void checkSwitches() {
   if(ms_slo_blo_blink.justFinished()) {
     ms_slo_blo_blink.start(i_slo_blo_blink_delay);
   }
 
-  switch(WAND_STATUS) {
+  switch(DEVICE_STATUS) {
     case MODE_OFF:
-      if(switch_activate.on() && WAND_ACTION_STATUS == ACTION_IDLE) {
-        // Turn wand on.
-        WAND_ACTION_STATUS = ACTION_ACTIVATE;
+      if(switch_activate.on() && DEVICE_ACTION_STATUS == ACTION_IDLE) {
+        // Turn device on.
+        DEVICE_ACTION_STATUS = ACTION_ACTIVATE;
       }
     break;
 
     case MODE_ERROR:
       if(!switch_activate.on()) {
-        b_wand_boot_error_on = false;
-        wandOff();
+        b_device_boot_error_on = false;
+        deviceOff();
       }
     break;
 
     case MODE_ON:
       gripButtonCheck();
 
-      // Determine the light status on the wand and any beeps.
-      wandLightControlCheck();
+      // Determine the light status on the device and any beeps.
+      deviceLightControlCheck();
 
-      // Check if we should fire, or if the wand and pack turn off.
+      // Check if we should fire, or if the device was turned off.
       fireControlCheck();
     break;
   }
 }
 
-// Determine the light status on the wand and any beeps.
-void wandLightControlCheck() {
+// Determine the light status on the device and any beeps.
+void deviceLightControlCheck() {
   // Vent light and first stage of the safety system.
   if(switch_vent.on()) {
     if(b_vent_light_control) {
       // Vent light on, brightness dependent on mode.
-      if(WAND_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
+      if(DEVICE_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
         analogWrite(led_vent, 0); // 0 = Full Power
       }
       else {
@@ -697,8 +726,8 @@ void wandLightControlCheck() {
   }
 }
 
-void wandOff() {
-  if(b_wand_boot_error_on) {
+void deviceOff() {
+  if(b_device_boot_error_on) {
     stopEffect(S_BEEPS_LOW);
     stopEffect(S_BEEPS);
     stopEffect(S_BEEPS);
@@ -709,28 +738,28 @@ void wandOff() {
 
   b_sound_afterlife_idle_2_fade = true;
 
-  if(WAND_ACTION_STATUS == ACTION_ERROR && !b_wand_boot_error_on && !b_wand_mash_error) {
-    // We are exiting Wand Boot Error, so change wand state back to off/idle without informing Proton Pack.
-    WAND_STATUS = MODE_OFF;
-    WAND_ACTION_STATUS = ACTION_IDLE;
+  if(DEVICE_ACTION_STATUS == ACTION_ERROR && !b_device_boot_error_on && !b_device_mash_error) {
+    // We are exiting Device Boot Error, so change device state back to off/idle.
+    DEVICE_STATUS = MODE_OFF;
+    DEVICE_ACTION_STATUS = ACTION_IDLE;
   }
-  else if(WAND_ACTION_STATUS != ACTION_ERROR && (b_wand_boot_error_on || b_wand_mash_error)) {
-    // We are entering either Wand Boot Error mode or Button Mash Timeout mode, so do nothing.
+  else if(DEVICE_ACTION_STATUS != ACTION_ERROR && (b_device_boot_error_on || b_device_mash_error)) {
+    // We are entering either Device Boot Error mode or Button Mash Timeout mode, so do nothing.
   }
   else {
-    // Full wand shutdown in all other situations.
-    WAND_STATUS = MODE_OFF;
-    WAND_ACTION_STATUS = ACTION_IDLE;
+    // Full device shutdown in all other situations.
+    DEVICE_STATUS = MODE_OFF;
+    DEVICE_ACTION_STATUS = ACTION_IDLE;
 
-    if(b_wand_mash_error) {
+    if(b_device_mash_error) {
       // stopEffect(S_SMASH_ERROR_LOOP);
       // stopEffect(S_SMASH_ERROR_RESTART);
     }
 
     // Turn off any barrel spark effects and reset the button mash lockout.
-    if(b_wand_mash_error) {
+    if(b_device_mash_error) {
       barrelLightsOff();
-      b_wand_mash_error = false;
+      b_device_mash_error = false;
     }
 
     stopEffect(S_SHUTDOWN);
@@ -741,13 +770,13 @@ void wandOff() {
 
   vibrationOff();
 
-  // Stop firing if the wand is turned off.
+  // Stop firing if the device is turned off.
   if(b_firing) {
     modeFireStop();
   }
 
-  if(WAND_ACTION_STATUS != ACTION_ERROR && b_wand_mash_error) {
-    // playEffect(S_WAND_MASH_ERROR);
+  if(DEVICE_ACTION_STATUS != ACTION_ERROR && b_device_mash_error) {
+    // playEffect(S_DEVICE_MASH_ERROR);
   }
 
   // Clear counter until user begins firing again.
@@ -760,21 +789,21 @@ void wandOff() {
   ms_hat_1.stop();
   ms_hat_2.stop();
 
-  switch(WAND_STATUS) {
+  switch(DEVICE_STATUS) {
     case MODE_OFF:
       // Turn off additional timers.
       ms_bargraph.stop();
       ms_bargraph_alt.stop();
 
-      // Turn off remaining lights.
-      wandLightsOff();
+      // Turn off all device lights.
+      allLightsOff();
 
       // Start the timer for the power on indicator option.
       if(b_power_on_indicator) {
         ms_power_indicator.start(i_ms_power_indicator);
       }
 
-      wandSwitchedCount = 0;
+      deviceSwitchedCount = 0;
       ventSwitchedCount = 0;
     break;
     default:
@@ -783,13 +812,13 @@ void wandOff() {
   }
 }
 
-// Called from checkSwitches(); Check if we should fire, or if the wand and pack turn off.
+// Called from checkSwitches(); Check if we should fire, or if the device was turned off.
 void fireControlCheck() {
-  // Firing action stuff and shutting cyclotron and the Neutrona Wand off.
-  if(WAND_ACTION_STATUS != ACTION_SETTINGS) {
-    // If Activate switch is down, turn wand off.
+  // Firing action stuff and shutting cyclotron and the Single-Shot Blaster off.
+  if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+    // If Activate switch is down, turn device off.
     if(!switch_activate.on()) {
-      WAND_ACTION_STATUS = ACTION_OFF;
+      DEVICE_ACTION_STATUS = ACTION_OFF;
       return;
     }
 
@@ -802,9 +831,9 @@ void fireControlCheck() {
         break;
       }
 
-      b_wand_mash_error = true;
+      b_device_mash_error = true;
       modeError();
-      wandTipSpark();
+      deviceTipSpark();
 
       // Adjust the cool down lockout period based on the power level.
       switch(i_power_level) {
@@ -831,12 +860,12 @@ void fireControlCheck() {
       }
     }
     else {
-      if(switch_intensify.on() && switch_wand.on() && switch_vent.on()) {
+      if(switch_intensify.on() && switch_device.on() && switch_vent.on()) {
         switch(STREAM_MODE) {
           case PROTON:
           default:
-            if(WAND_ACTION_STATUS != ACTION_FIRING) {
-              WAND_ACTION_STATUS = ACTION_FIRING;
+            if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
+              DEVICE_ACTION_STATUS = ACTION_FIRING;
             }
 
             if(ms_bmash.remaining() < 1) {
@@ -855,12 +884,12 @@ void fireControlCheck() {
         }
       }
 
-      if(STREAM_MODE == PROTON && WAND_ACTION_STATUS == ACTION_FIRING) {
+      if(STREAM_MODE == PROTON && DEVICE_ACTION_STATUS == ACTION_FIRING) {
         if(switch_grip.on()) {
           b_firing_alt = true;
         }
       }
-      else if(switch_grip.on() && switch_wand.on() && switch_vent.on()) {
+      else if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
         switch(STREAM_MODE) {
           case PROTON:
             // Handle Primary Blast fire start here.
@@ -886,7 +915,7 @@ void fireControlCheck() {
           default:
             if(b_firing && b_firing_intensify) {
               if(!b_firing_alt) {
-                WAND_ACTION_STATUS = ACTION_IDLE;
+                DEVICE_ACTION_STATUS = ACTION_IDLE;
               }
 
               b_firing_intensify = false;
@@ -909,19 +938,19 @@ void fireControlCheck() {
       }
     }
   }
-  else if(WAND_ACTION_STATUS == ACTION_SETTINGS) {
-    // If Activate switch is down, turn wand off.
+  else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+    // If Activate switch is down, turn device off.
     if(!switch_activate.on()) {
-      WAND_ACTION_STATUS = ACTION_OFF;
+      DEVICE_ACTION_STATUS = ACTION_OFF;
       return;
     }
 
-    if(WAND_ACTION_STATUS == ACTION_IDLE) {
+    if(DEVICE_ACTION_STATUS == ACTION_IDLE) {
       // Play a little spark effect if the user tries to fire while the ribbon cable is removed.
-      if((switch_intensify.pushed() || (switch_grip.pushed())) && !ms_wand_heatup_fade.isRunning() && switch_vent.on() && switch_wand.on()) {
-        // stopEffect(S_WAND_MASH_ERROR);
-        // playEffect(S_WAND_MASH_ERROR);
-        wandTipSpark();
+      if((switch_intensify.pushed() || (switch_grip.pushed())) && !ms_device_heatup_fade.isRunning() && switch_vent.on() && switch_device.on()) {
+        // stopEffect(S_DEVICE_MASH_ERROR);
+        // playEffect(S_DEVICE_MASH_ERROR);
+        deviceTipSpark();
       }
     }
   }
@@ -929,13 +958,13 @@ void fireControlCheck() {
 
 // Called from checkSwitches(); Used to enter the settings menu in MODE_SUPER_HERO.
 void gripButtonCheck() {
-  if(WAND_ACTION_STATUS != ACTION_FIRING && WAND_ACTION_STATUS != ACTION_OFF) {
-    if((!switch_wand.on() || !switch_vent.on()) && switch_grip.pushed()) {
+  if(DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_OFF) {
+    if((!switch_device.on() || !switch_vent.on()) && switch_grip.pushed()) {
       // Only exit the settings menu when on menu #5.
-      if(i_wand_menu == 5) {
+      if(i_device_menu == 5) {
         // Switch between firing mode and settings mode.
-        if(WAND_ACTION_STATUS != ACTION_SETTINGS) {
-          WAND_ACTION_STATUS = ACTION_SETTINGS;
+        if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+          DEVICE_ACTION_STATUS = ACTION_SETTINGS;
 
           ms_settings_blinking.start(i_settings_blinking_delay);
 
@@ -943,7 +972,7 @@ void gripButtonCheck() {
           bargraphClearAlt();
         }
         else {
-          WAND_ACTION_STATUS = ACTION_IDLE;
+          DEVICE_ACTION_STATUS = ACTION_IDLE;
           ms_settings_blinking.stop();
           bargraphClearAlt();
         }
@@ -951,9 +980,9 @@ void gripButtonCheck() {
         playEffect(S_CLICK);
       }
     }
-    else if(WAND_ACTION_STATUS == ACTION_SETTINGS && switch_vent.on() && switch_wand.on()) {
-      // Exit the settings menu if the user turns the wand switch back on.
-      WAND_ACTION_STATUS = ACTION_IDLE;
+    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && switch_vent.on() && switch_device.on()) {
+      // Exit the settings menu if the user turns the device switch back on.
+      DEVICE_ACTION_STATUS = ACTION_IDLE;
       ms_settings_blinking.stop();
       bargraphClearAlt();
     }
@@ -961,12 +990,12 @@ void gripButtonCheck() {
 }
 
 void modeError() {
-  wandOff();
+  deviceOff();
 
-  WAND_STATUS = MODE_ERROR;
-  WAND_ACTION_STATUS = ACTION_ERROR;
+  DEVICE_STATUS = MODE_ERROR;
+  DEVICE_ACTION_STATUS = ACTION_ERROR;
 
-  if(!b_wand_mash_error) {
+  if(!b_device_mash_error) {
     // This is used for controlling the bargraph beeping while in boot error mode.
     ms_hat_1.start(i_hat_2_delay * 4);
     ms_hat_2.start(i_hat_2_delay);
@@ -976,7 +1005,7 @@ void modeError() {
     playEffect(S_BEEPS);
     playEffect(S_BEEPS);
   }
-  else if(b_wand_mash_error) {
+  else if(b_device_mash_error) {
     // playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
   }
 }
@@ -984,30 +1013,30 @@ void modeError() {
 void modeActivate() {
   b_sound_afterlife_idle_2_fade = true;
 
-  // The wand was started while the top switch was already on, so let's put the wand into startup error mode.
-  if(switch_wand.on() && b_wand_boot_errors) {
-    b_wand_boot_error_on = true;
+  // The device was started while the top switch was already on, so let's put the device into startup error mode.
+  if(switch_device.on() && b_device_boot_errors) {
+    b_device_boot_error_on = true;
     modeError();
   }
   else {
-    WAND_STATUS = MODE_ON;
+    DEVICE_STATUS = MODE_ON;
 
-    // Proper startup. Continue booting up the wand.
-    WAND_ACTION_STATUS = ACTION_IDLE;
+    // Proper startup. Continue booting up the device.
+    DEVICE_ACTION_STATUS = ACTION_IDLE;
 
     // Clear counter until user begins firing.
     i_bmash_count = 0;
   }
 
-  b_wand_mash_error = false;
+  b_device_mash_error = false;
 
-  postActivation(); // Enable lights and bargraph after wand activation.
+  postActivation(); // Enable lights and bargraph after device activation.
 }
 
 void postActivation() {
   i_bargraph_multiplier_current  = i_bargraph_multiplier_ramp_2021;
 
-  if(WAND_STATUS != MODE_ERROR) {
+  if(DEVICE_STATUS != MODE_ERROR) {
     bargraphRampUp();
     if(switch_vent.on()) {
       b_all_switch_activation = true; // If vent switch is already on when Activate is flipped, set to true for soundIdleLoop() to use
@@ -1020,7 +1049,7 @@ void postActivation() {
     digitalWriteFast(led_front_left, HIGH);
 
     // Top white light.
-    ms_white_light.start(d_white_light_interval);
+    ms_white_light.start(i_top_blink_interval);
     digitalWriteFast(led_white, LOW);
 
     // Reset the hat light timers.
@@ -1162,7 +1191,7 @@ void modeFireStopSounds() {
 }
 
 void modeFireStop() {
-  WAND_ACTION_STATUS = ACTION_IDLE;
+  DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   b_firing = false;
   b_firing_intensify = false;
@@ -1194,7 +1223,7 @@ void modeFireStop() {
 
   digitalWriteFast(led_hat_2, HIGH); // Make sure we turn on hat light 2 in case it's off as well.
 
-  wandTipOff();
+  deviceTipOff();
 
   ms_hat_1.stop();
 
@@ -1282,9 +1311,6 @@ void firePulseEffect() {
         bargraphRampUp();
       break;
     }
-
-    // Turn on hat light 1.
-    digitalWriteFast(led_hat_1, HIGH);
   }
 
   uint8_t i_firing_pulse = d_firing_pulse; // Stores a calculated value based on firing mode.
@@ -1338,7 +1364,7 @@ void firePulseEffect() {
           system_leds[i_barrel_led] = getHueAsRGB(C_RED);
 
           // Bolt has reached barrel tip, so turn on tip light.
-          wandTipOn();
+          deviceTipOn();
         break;
       }
     break;
@@ -1369,7 +1395,7 @@ void firePulseEffect() {
   }
   else {
     // Animation has concluded, so reset our timer and variable.
-    wandTipOff();
+    deviceTipOff();
     ms_firing_pulse.stop();
     i_pulse_step = 0;
   }
@@ -1483,7 +1509,7 @@ void barrelLightsOff() {
   ms_firing_stream_effects.stop();
   ms_firing_effect_end.stop();
   ms_firing_lights_end.stop();
-  ms_wand_heatup_fade.stop();
+  ms_device_heatup_fade.stop();
 
   i_cyclotron_light = 0;
   i_pulse_step = 0;
@@ -1493,8 +1519,8 @@ void barrelLightsOff() {
   // Turn off the barrel LED.
   system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
 
-  // Turn off the wand barrel tip LED.
-  wandTipOff();
+  // Turn off the device barrel tip LED.
+  deviceTipOff();
 }
 
 void fireStreamStart(CRGB c_colour) {
@@ -1642,8 +1668,8 @@ void fireStreamEnd(CRGB c_colour) {
     if(i_cyclotron_light == i_num_cyclotron_leds) {
       i_cyclotron_light = 0;
 
-      // Turn off wand tip in case it's still on.
-      wandTipOff();
+      // Turn off device tip in case it's still on.
+      deviceTipOff();
 
       ms_firing_lights_end.stop();
 
@@ -1657,7 +1683,7 @@ void bargraphSuperHeroRampFiringAnimation() {
   if(b_28segment_bargraph) {
     switch(i_bargraph_status_alt) {
       case 0:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(13));
         ht_bargraph.setLed(bargraphLookupTable(14));
@@ -1678,11 +1704,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         b_bargraph_up = true;
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 1:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(12));
         ht_bargraph.setLed(bargraphLookupTable(15));
@@ -1710,11 +1736,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 2:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(11));
         ht_bargraph.setLed(bargraphLookupTable(16));
@@ -1742,11 +1768,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 3:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(10));
         ht_bargraph.setLed(bargraphLookupTable(17));
@@ -1774,11 +1800,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 4:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(9));
         ht_bargraph.setLed(bargraphLookupTable(18));
@@ -1806,11 +1832,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 5:
-        vibrationWand(i_vibration_level + 110);
+        vibrationDevice(i_vibration_level + 110);
 
         ht_bargraph.setLed(bargraphLookupTable(8));
         ht_bargraph.setLed(bargraphLookupTable(19));
@@ -1838,11 +1864,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 6:
-        vibrationWand(i_vibration_level + 112);
+        vibrationDevice(i_vibration_level + 112);
 
         ht_bargraph.setLed(bargraphLookupTable(7));
         ht_bargraph.setLed(bargraphLookupTable(20));
@@ -1870,11 +1896,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 7:
-        vibrationWand(i_vibration_level + 112);
+        vibrationDevice(i_vibration_level + 112);
 
         ht_bargraph.setLed(bargraphLookupTable(6));
         ht_bargraph.setLed(bargraphLookupTable(21));
@@ -1902,11 +1928,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 8:
-        vibrationWand(i_vibration_level + 112);
+        vibrationDevice(i_vibration_level + 112);
 
         ht_bargraph.setLed(bargraphLookupTable(5));
         ht_bargraph.setLed(bargraphLookupTable(22));
@@ -1934,11 +1960,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 9:
-        vibrationWand(i_vibration_level + 112);
+        vibrationDevice(i_vibration_level + 112);
 
         ht_bargraph.setLed(bargraphLookupTable(4));
         ht_bargraph.setLed(bargraphLookupTable(23));
@@ -1966,11 +1992,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 10:
-        vibrationWand(i_vibration_level + 112);
+        vibrationDevice(i_vibration_level + 112);
 
         ht_bargraph.setLed(bargraphLookupTable(3));
         ht_bargraph.setLed(bargraphLookupTable(24));
@@ -1998,11 +2024,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 11:
-        vibrationWand(i_vibration_level + 115);
+        vibrationDevice(i_vibration_level + 115);
 
         ht_bargraph.setLed(bargraphLookupTable(2));
         ht_bargraph.setLed(bargraphLookupTable(25));
@@ -2030,11 +2056,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOff();
+        deviceTipOff();
       break;
 
       case 12:
-        vibrationWand(i_vibration_level + 115);
+        vibrationDevice(i_vibration_level + 115);
 
         ht_bargraph.setLed(bargraphLookupTable(1));
         ht_bargraph.setLed(bargraphLookupTable(26));
@@ -2062,11 +2088,11 @@ void bargraphSuperHeroRampFiringAnimation() {
         }
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
+        deviceTipOn();
       break;
 
       case 13:
-        vibrationWand(i_vibration_level + 115);
+        vibrationDevice(i_vibration_level + 115);
 
         ht_bargraph.setLed(bargraphLookupTable(0));
         ht_bargraph.setLed(bargraphLookupTable(27));
@@ -2085,76 +2111,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         b_bargraph_up = false;
 
         ht_bargraph.sendLed(); // Commit the changes.
-        wandTipOn();
-      break;
-    }
-  }
-  else {
-    // Hasbro 5 LED Bargraph.
-    switch(i_bargraph_status) {
-      case 1:
-        vibrationWand(i_vibration_level + 110);
-
-        digitalWriteFast(bargraphLookupTable(1-1), LOW);
-        digitalWriteFast(bargraphLookupTable(2-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(3-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(4-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(5-1), LOW);
-        i_bargraph_status++;
-
-        wandTipOn();
-      break;
-
-      case 2:
-        vibrationWand(i_vibration_level + 112);
-
-        digitalWriteFast(bargraphLookupTable(1-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(2-1), LOW);
-        digitalWriteFast(bargraphLookupTable(3-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(4-1), LOW);
-        digitalWriteFast(bargraphLookupTable(5-1), HIGH);
-        i_bargraph_status++;
-
-        wandTipOff();
-      break;
-
-      case 3:
-        vibrationWand(i_vibration_level + 115);
-
-        digitalWriteFast(bargraphLookupTable(1-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(2-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(3-1), LOW);
-        digitalWriteFast(bargraphLookupTable(4-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(5-1), HIGH);
-        i_bargraph_status++;
-
-        wandTipOn();
-      break;
-
-      case 4:
-        vibrationWand(i_vibration_level + 112);
-
-        digitalWriteFast(bargraphLookupTable(1-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(2-1), LOW);
-        digitalWriteFast(bargraphLookupTable(3-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(4-1), LOW);
-        digitalWriteFast(bargraphLookupTable(5-1), HIGH);
-        i_bargraph_status++;
-
-        wandTipOff();
-      break;
-
-      case 5:
-        vibrationWand(i_vibration_level + 110);
-
-        digitalWriteFast(bargraphLookupTable(1-1), LOW);
-        digitalWriteFast(bargraphLookupTable(2-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(3-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(4-1), HIGH);
-        digitalWriteFast(bargraphLookupTable(5-1), LOW);
-        i_bargraph_status = 1;
-
-        wandTipOn();
+        deviceTipOn();
       break;
     }
   }
@@ -2610,29 +2567,29 @@ void bargraphModeOriginalRampFiringAnimation() {
     }
 
     if(i_bargraph_status_alt > 22) {
-      vibrationWand(i_vibration_level + 115);
+      vibrationDevice(i_vibration_level + 115);
     }
     else if(i_bargraph_status_alt > 11) {
-      vibrationWand(i_vibration_level + 112);
+      vibrationDevice(i_vibration_level + 112);
     }
     else {
-      vibrationWand(i_vibration_level + 110);
+      vibrationDevice(i_vibration_level + 110);
     }
   }
 
   if(i_bargraph_status > 3) {
-    vibrationWand(i_vibration_level + 115);
+    vibrationDevice(i_vibration_level + 115);
   }
   else if(i_bargraph_status > 1) {
-    vibrationWand(i_vibration_level + 112);
+    vibrationDevice(i_vibration_level + 112);
   }
   else {
-    vibrationWand(i_vibration_level + 110);
+    vibrationDevice(i_vibration_level + 110);
   }
 }
 
 // Bargraph ramping during firing.
-// Optional barrel LED tip strobing is controlled from here to give it a ramp effect if the Proton Pack and Neutrona Wand are going to overheat.
+// Optional barrel LED tip strobing is controlled from here to give it a ramp effect if the device is going to overheat.
 void bargraphRampFiring() {
   switch(BARGRAPH_FIRING_ANIMATION) {
     case BARGRAPH_ANIMATION_SUPER_HERO:
@@ -2644,10 +2601,10 @@ void bargraphRampFiring() {
 
       // Strobe the optional tip light on even barrel LED numbers.
       if((i_cyclotron_light & 0x01) == 0) {
-        wandTipOn();
+        deviceTipOn();
       }
       else {
-        wandTipOff();
+        deviceTipOff();
       }
     break;
   }
@@ -2659,7 +2616,7 @@ void bargraphRampFiring() {
     i_ramp_interval = d_bargraph_ramp_interval_alt;
   }
 
-  // If in a power level on the wand that can overheat, change the speed of the bargraph ramp during firing based on time remaining before we overheat.
+  // If in a power level on the device that can overheat, change the speed of the bargraph ramp during firing based on time remaining before we overheat.
   if(b_28segment_bargraph) {
     switch(i_power_level) {
       case 5:
@@ -2704,7 +2661,7 @@ void cyclotronSpeedRevert() {
 // Checks if we ramp up or down when changing power levels.
 // Forces the bargraph to redraw itself to the current power level.
 void bargraphPowerCheck2021Alt(bool b_override) {
-  if((WAND_ACTION_STATUS != ACTION_FIRING && WAND_ACTION_STATUS != ACTION_SETTINGS) || b_override) {
+  if((DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_SETTINGS) || b_override) {
     if(i_power_level != i_power_level_prev || b_override) {
       if(i_power_level > i_power_level_prev) {
         b_bargraph_up = true;
@@ -3018,19 +2975,19 @@ void bargraphRampUp() {
         b_bargraph_status[i_bargraph_status_alt] = true;
 
         if(i_bargraph_status_alt > 22) {
-          vibrationWand(i_vibration_level + 80);
+          vibrationDevice(i_vibration_level + 80);
         }
         else if(i_bargraph_status_alt > 16) {
-          vibrationWand(i_vibration_level + 40);
+          vibrationDevice(i_vibration_level + 40);
         }
         else if(i_bargraph_status_alt > 11) {
-          vibrationWand(i_vibration_level + 30);
+          vibrationDevice(i_vibration_level + 30);
         }
         else if(i_bargraph_status_alt > 4) {
-          vibrationWand(i_vibration_level + 20);
+          vibrationDevice(i_vibration_level + 20);
         }
         else if(i_bargraph_status_alt > 0) {
-          vibrationWand(i_vibration_level + 10);
+          vibrationDevice(i_vibration_level + 10);
         }
 
         i_bargraph_status_alt++;
@@ -3061,7 +3018,7 @@ void bargraphRampUp() {
               b_bargraph_up = true;
               i_bargraph_status_alt = 0;
 
-              vibrationWand(i_vibration_level);
+              vibrationDevice(i_vibration_level);
             }
             else {
               ms_bargraph.start(i_bargraph_interval * i_bargraph_multiplier_current);
@@ -3075,7 +3032,7 @@ void bargraphRampUp() {
 }
 
 void prepBargraphRampDown() {
-  if(WAND_STATUS == MODE_ON && WAND_ACTION_STATUS == ACTION_IDLE) {
+  if(DEVICE_STATUS == MODE_ON && DEVICE_ACTION_STATUS == ACTION_IDLE) {
     // If bargraph is set to ramp down during ribbon cable error, we need to set a few things.
     soundIdleLoopStop();
 
@@ -3092,7 +3049,7 @@ void prepBargraphRampDown() {
 }
 
 void prepBargraphRampUp() {
-  if(WAND_STATUS == MODE_ON && WAND_ACTION_STATUS == ACTION_IDLE) {
+  if(DEVICE_STATUS == MODE_ON && DEVICE_ACTION_STATUS == ACTION_IDLE) {
     bargraphClearAlt();
 
     ms_settings_blinking.stop();
@@ -3102,20 +3059,25 @@ void prepBargraphRampUp() {
   }
 }
 
-void wandLightsOff() {
+void allLightsOff() {
   if(b_28segment_bargraph) {
     bargraphClearAlt();
   }
 
+  // These go LOW to turn off.
   digitalWriteFast(led_slo_blo, LOW);
   digitalWriteFast(led_front_left, LOW); // Turn off the front left LED under the Clippard valve.
-
-  digitalWriteFast(led_hat_1, LOW); // Turn off hat light 1.
+  digitalWriteFast(led_hat_1, LOW); // Turn off hat light 1 (not used, but just make sure).
   digitalWriteFast(led_hat_2, LOW); // Turn off hat light 2.
-  wandTipOff();
 
+  // These go HIGH to turn off.
   digitalWrite(led_vent, HIGH);
   digitalWriteFast(led_white, HIGH);
+
+  deviceTipOff(); // Not used normally, but make sure it's off.
+
+  // Clear all addressable LEDs by filling the array with black.
+  fill_solid(system_leds, CYCLOTRON_LED_COUNT + BARREL_LED_COUNT, CRGB::Black);
 
   i_bargraph_status = 0;
   i_bargraph_status_alt = 0;
@@ -3125,8 +3087,8 @@ void wandLightsOff() {
   }
 }
 
-void wandLightsOffMenuSystem() {
-  // Make sure some of the wand lights are off, specifically for the Menu systems.
+void allLightsOffMenuSystem() {
+  // Make sure some of the device lights are off, specifically for the Menu systems.
   digitalWriteFast(led_slo_blo, LOW);
   digitalWrite(led_vent, HIGH);
   digitalWriteFast(led_white, HIGH);
@@ -3170,45 +3132,45 @@ int8_t readRotary() {
    return 0;
 }
 
-// Top rotary dial on the wand.
+// Top rotary dial on the device.
 void checkRotaryEncoder() {
   static int8_t c, val;
 
   if((val = readRotary())) {
     c += val;
-    switch(WAND_ACTION_STATUS) {
+    switch(DEVICE_ACTION_STATUS) {
       case ACTION_CONFIG_EEPROM_MENU:
         // Counter clockwise.
         if(prev_next_code == 0x0b) {
-          if(WAND_MENU_LEVEL == MENU_LEVEL_3 && i_wand_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-            // If there is no Pack, we need to adjust the volume manually
+          if(DEVICE_MENU_LEVEL == MENU_LEVEL_3 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
+            // Adjust the volume manually
             decreaseVolumeEEPROM();
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(i_wand_menu - 1 < 1) {
-            switch(WAND_MENU_LEVEL) {
+          else if(i_device_menu - 1 < 1) {
+            switch(DEVICE_MENU_LEVEL) {
               case MENU_LEVEL_1:
-                WAND_MENU_LEVEL = MENU_LEVEL_2;
-                i_wand_menu = 5;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+                i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3232,8 +3194,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_2:
-                WAND_MENU_LEVEL = MENU_LEVEL_3;
-                i_wand_menu = 5;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+                i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3257,8 +3219,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_3:
-                WAND_MENU_LEVEL = MENU_LEVEL_4;
-                i_wand_menu = 5;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+                i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3282,8 +3244,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_4:
-                WAND_MENU_LEVEL = MENU_LEVEL_5;
-                i_wand_menu = 5;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_5;
+                i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3307,46 +3269,46 @@ void checkRotaryEncoder() {
               // Menu 5 the deepest level.
               case MENU_LEVEL_5:
               default:
-                i_wand_menu = 1;
+                i_device_menu = 1;
               break;
             }
           }
           else {
-            i_wand_menu--;
+            i_device_menu--;
           }
         }
 
         // Clockwise.
         if(prev_next_code == 0x07) {
-          if(WAND_MENU_LEVEL == MENU_LEVEL_3 && i_wand_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-            // If there is no Pack, we need to adjust the volume manually
+          if(DEVICE_MENU_LEVEL == MENU_LEVEL_3 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
+            // Adjust the volume manually
             increaseVolumeEEPROM();
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(WAND_MENU_LEVEL == MENU_LEVEL_4 && i_wand_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
+          else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
           }
-          else if(i_wand_menu + 1 > 5) {
-            switch(WAND_MENU_LEVEL) {
+          else if(i_device_menu + 1 > 5) {
+            switch(DEVICE_MENU_LEVEL) {
               case MENU_LEVEL_5:
-                WAND_MENU_LEVEL = MENU_LEVEL_4;
-                i_wand_menu = 1;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+                i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3370,8 +3332,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_4:
-                WAND_MENU_LEVEL = MENU_LEVEL_3;
-                i_wand_menu = 1;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+                i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3395,8 +3357,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_3:
-                WAND_MENU_LEVEL = MENU_LEVEL_2;
-                i_wand_menu = 1;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+                i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
                 digitalWriteFast(led_slo_blo, HIGH); // Level 2
@@ -3420,8 +3382,8 @@ void checkRotaryEncoder() {
               break;
 
               case MENU_LEVEL_2:
-                WAND_MENU_LEVEL = MENU_LEVEL_1;
-                i_wand_menu = 1;
+                DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+                i_device_menu = 1;
 
                 // Turn off the other lights.
                 digitalWriteFast(led_slo_blo, LOW); // Level 2
@@ -3445,12 +3407,12 @@ void checkRotaryEncoder() {
               case MENU_LEVEL_1:
               default:
                 // Cannot go any further than menu level 1.
-                i_wand_menu = 5;
+                i_device_menu = 5;
               break;
             }
           }
           else {
-            i_wand_menu++;
+            i_device_menu++;
           }
         }
       break;
@@ -3458,26 +3420,26 @@ void checkRotaryEncoder() {
       case ACTION_SETTINGS:
         // Counter clockwise.
         if(prev_next_code == 0x0b) {
-          if(i_wand_menu == 4 && WAND_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-            // Tell pack to dim the selected lighting. (Power Cell, Cyclotron or Inner Cyclotron)
+          if(i_device_menu == 4 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
+            // No-op
           }
-          else if(i_wand_menu == 3 && WAND_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
+          else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
             // Lower the sound effects volume.
             decreaseVolumeEffects();
           }
-          else if(i_wand_menu == 3 && WAND_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
+          else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
             // Decrease the music volume.
             decreaseVolumeMusic();
           }
-          else if(i_wand_menu - 1 < 1) {
-            // We are entering the sub menu. Only accessible when the Neutrona Wand is powered down.
-            if(WAND_STATUS == MODE_OFF) {
-              switch(WAND_MENU_LEVEL) {
+          else if(i_device_menu - 1 < 1) {
+            // We are entering the sub menu. Only accessible when the Single-Shot Blaster is powered down.
+            if(DEVICE_STATUS == MODE_OFF) {
+              switch(DEVICE_MENU_LEVEL) {
                 case MENU_LEVEL_1:
-                  WAND_MENU_LEVEL = MENU_LEVEL_2;
-                  i_wand_menu = 5;
+                  DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+                  i_device_menu = 5;
 
-                  // Turn on the slo blow led to indicate we are in the Neutrona Wand sub menu.
+                  // Turn on the slo blow led to indicate we are in the Single-Shot Blaster sub menu.
                   digitalWriteFast(led_slo_blo, HIGH);
 
                   // Play an indication beep to notify we have changed menu levels.
@@ -3496,42 +3458,42 @@ void checkRotaryEncoder() {
                 case MENU_LEVEL_2:
                 default:
                   // Cannot go further than level 2 for this menu.
-                  i_wand_menu = 1;
+                  i_device_menu = 1;
                 break;
               }
             }
             else {
-              i_wand_menu = 1;
+              i_device_menu = 1;
             }
           }
           else {
-            i_wand_menu--;
+            i_device_menu--;
           }
         }
 
         // Clockwise.
         if(prev_next_code == 0x07) {
-          if(i_wand_menu == 4 && WAND_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-            // Tell pack to dim the selected lighting. (Power Cell, Cyclotron or Inner Cyclotron)
+          if(i_device_menu == 4 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
+            // No-op
           }
-          else if(i_wand_menu == 3 && WAND_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
+          else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
             // Increase sound effects volume.
             increaseVolumeEffects();
           }
-          else if(i_wand_menu == 3 && WAND_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
+          else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
             // Increase music volume.
             increaseVolumeMusic();
           }
-          else if(i_wand_menu + 1 > 5) {
-            // We are leaving changing menu levels. Only accessible when the Neutrona Wand is powered down.
-            if(WAND_STATUS == MODE_OFF) {
-              switch(WAND_MENU_LEVEL) {
+          else if(i_device_menu + 1 > 5) {
+            // We are leaving changing menu levels. Only accessible when the Single-Shot Blaster is powered down.
+            if(DEVICE_STATUS == MODE_OFF) {
+              switch(DEVICE_MENU_LEVEL) {
                 case MENU_LEVEL_2:
-                  WAND_MENU_LEVEL = MENU_LEVEL_1;
+                  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
 
-                  i_wand_menu = 1;
+                  i_device_menu = 1;
 
-                  // Turn off the slo blow led to indicate we are no longer in the Neutrona Wand sub menu.
+                  // Turn off the slo blow led to indicate we are no longer in the Single-Shot Blaster sub menu.
                   digitalWriteFast(led_slo_blo, LOW);
 
                   // Play an indication beep to notify we have changed menu levels.
@@ -3550,43 +3512,43 @@ void checkRotaryEncoder() {
                 case MENU_LEVEL_1:
                 default:
                   // Level 1 is the first menu and nothing above it.
-                  i_wand_menu = 5;
+                  i_device_menu = 5;
                 break;
               }
             }
             else {
-              i_wand_menu = 5;
+              i_device_menu = 5;
             }
           }
           else {
-            i_wand_menu++;
+            i_device_menu++;
           }
         }
       break;
 
       default:
-        if(WAND_STATUS == MODE_ON && switch_intensify.on() && !switch_vent.on() && !switch_wand.on()) {
+        if(DEVICE_STATUS == MODE_ON && switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
             // Counter clockwise.
             if(prev_next_code == 0x0b) {
-              // Decrease the master system volume of both the Proton Pack and Neutrona Wand.
+              // Decrease the master system volume.
               decreaseVolume();
             }
             else if(prev_next_code == 0x07) {
-              // Increase the master system volume of both the Proton Pack and Neutrona Wand.
+              // Increase the master system volume.
               increaseVolume();
             }
         }
         else {
-          if(WAND_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
+          if(DEVICE_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
             // Do nothing, we are locked in full power level while firing.
           }
           // Counter clockwise.
           else if(prev_next_code == 0x0b) {
-            if(switch_wand.on() && switch_vent.on() && switch_activate.on()) {
+            if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
               // Check to see the minimal power level depending on which system mode.
               uint8_t i_tmp_power_level_min = i_power_level_min;
 
-              if(i_power_level - 1 >= i_tmp_power_level_min && WAND_STATUS == MODE_ON) {
+              if(i_power_level - 1 >= i_tmp_power_level_min && DEVICE_STATUS == MODE_ON) {
                 i_power_level_prev = i_power_level;
                 i_power_level--;
 
@@ -3599,30 +3561,30 @@ void checkRotaryEncoder() {
                 soundIdleLoop(false);
               }
             }
-            else if(!switch_wand.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && WAND_STATUS == MODE_ON) {
+            else if(!switch_device.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && DEVICE_STATUS == MODE_ON) {
               // Counter clockwise firing mode selection.
               STREAM_MODE = PROTON;
               ms_firing_mode_switch.start(i_firing_mode_switch_delay);
             }
 
-            // Decrease the music volume if the wand/pack is off. A quick easy way to adjust the music volume on the go.
-            if(WAND_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
+            // Decrease the music volume if the device is off. A quick easy way to adjust the music volume on the go.
+            if(DEVICE_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
               decreaseVolumeMusic();
             }
-            else if(WAND_STATUS == MODE_OFF && switch_intensify.on()) {
-              // Decrease the master volume of the Neutrona Wand only.
+            else if(DEVICE_STATUS == MODE_OFF && switch_intensify.on()) {
+              // Decrease the master volume of the device.
               decreaseVolume();
             }
           }
 
-          if(WAND_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
+          if(DEVICE_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
             // Do nothing, we are locked in full power level while firing.
           }
           // Clockwise.
           else if(prev_next_code == 0x07) {
-            if(switch_wand.on() && switch_vent.on() && switch_activate.on()) {
-              if(i_power_level + 1 <= i_power_level_max && WAND_STATUS == MODE_ON) {
-                if(i_power_level + 1 == i_power_level_max && WAND_ACTION_STATUS == ACTION_FIRING) {
+            if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
+              if(i_power_level + 1 <= i_power_level_max && DEVICE_STATUS == MODE_ON) {
+                if(i_power_level + 1 == i_power_level_max && DEVICE_ACTION_STATUS == ACTION_FIRING) {
                   // Do nothing, we do not want to go into max power level if firing in a lower power level already.
                 }
                 else {
@@ -3639,16 +3601,16 @@ void checkRotaryEncoder() {
                 }
               }
             }
-            else if(!switch_wand.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && WAND_STATUS == MODE_ON) {
+            else if(!switch_device.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && DEVICE_STATUS == MODE_ON) {
               ms_firing_mode_switch.start(i_firing_mode_switch_delay);
             }
 
-            // Increase the music volume if the wand/pack is off. A quick easy way to adjust the music volume on the go.
-            if(WAND_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
+            // Increase the music volume if the device is off. A quick easy way to adjust the music volume on the go.
+            if(DEVICE_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
               increaseVolumeMusic();
             }
-            else if(WAND_STATUS == MODE_OFF && switch_intensify.on()) {
-              // Increase the master volume of the Neutrona Wand only.
+            else if(DEVICE_STATUS == MODE_OFF && switch_intensify.on()) {
+              // Increase the master volume of the Single-Shot Blaster only.
               increaseVolume();
             }
           }
@@ -3658,11 +3620,11 @@ void checkRotaryEncoder() {
   }
 }
 
-void vibrationWand(uint8_t i_level) {
-  if(b_vibration_enabled && b_vibration_switch_on && i_level > 0) {
-    // Vibrate the wand during firing only when enabled. (When enabled by the pack)
+void vibrationDevice(uint8_t i_level) {
+  if(b_vibration_enabled && i_level > 0) {
+    // Vibrate the device during firing only when enabled.
     if(b_vibration_firing) {
-      if(WAND_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
+      if(DEVICE_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
         if(ms_semi_automatic_firing.isRunning()) {
           analogWrite(vibration, 180);
         }
@@ -3676,7 +3638,7 @@ void vibrationWand(uint8_t i_level) {
       }
     }
     else {
-      // Wand vibrates even when idling, etc. (When enabled by the pack)
+      // Device vibrates even when idling, etc.
       if(i_level != i_vibration_level_prev) {
         i_vibration_level_prev = i_level;
         analogWrite(vibration, i_level);
@@ -3689,27 +3651,27 @@ void vibrationWand(uint8_t i_level) {
 }
 
 void vibrationSetting() {
-  if(!ms_bargraph.isRunning() && WAND_ACTION_STATUS != ACTION_FIRING) {
+  if(!ms_bargraph.isRunning() && DEVICE_ACTION_STATUS != ACTION_FIRING) {
     switch(i_power_level) {
       case 1:
       default:
-        vibrationWand(i_vibration_level);
+        vibrationDevice(i_vibration_level);
       break;
 
       case 2:
-        vibrationWand(i_vibration_level + 5);
+        vibrationDevice(i_vibration_level + 5);
       break;
 
       case 3:
-        vibrationWand(i_vibration_level + 10);
+        vibrationDevice(i_vibration_level + 10);
       break;
 
       case 4:
-        vibrationWand(i_vibration_level + 12);
+        vibrationDevice(i_vibration_level + 12);
       break;
 
       case 5:
-        vibrationWand(i_vibration_level + 25);
+        vibrationDevice(i_vibration_level + 25);
       break;
     }
   }
@@ -3734,7 +3696,7 @@ void switchLoops() {
   switch_intensify.poll();
   switch_activate.poll();
   switch_vent.poll();
-  switch_wand.poll();
+  switch_device.poll();
   switch_grip.poll();
 }
 
@@ -3743,47 +3705,37 @@ void ventSwitched(void* n) {
   ventSwitchedCount++;
 }
 
-void wandSwitched(void* n) {
+void deviceSwitched(void* n) {
   (void)(n); // Suppress unused variable warning
-  wandSwitchedCount++;
+  deviceSwitchedCount++;
 }
 
-// Exit the wand menu system while the wand is off.
-void wandExitMenu() {
-  i_wand_menu = 5;
+// Exit the device menu system while the device is off.
+void deviceExitMenu() {
+  i_device_menu = 5;
 
   playEffect(S_CLICK);
 
-  WAND_ACTION_STATUS = ACTION_IDLE;
+  DEVICE_ACTION_STATUS = ACTION_IDLE;
 
-  wandLightsOff();
-
-  // Reset the white LED blink rate setting in case we changed years.
-  resetWhiteLEDBlinkRate();
+  allLightsOff();
 }
 
-// Exit the wand menu EEPROM system while the wand is off.
-void wandExitEEPROMMenu() {
+// Exit the device menu EEPROM system while the device is off.
+void deviceExitEEPROMMenu() {
   playEffect(S_BEEPS);
 
-  wandSwitchedCount = 0;
+  deviceSwitchedCount = 0;
   ventSwitchedCount = 0;
 
   vibrationOff(); // Make sure we stop any menu-related vibration, if any.
 
-  i_wand_menu = 5;
+  i_device_menu = 5;
 
-  WAND_ACTION_STATUS = ACTION_IDLE;
+  DEVICE_ACTION_STATUS = ACTION_IDLE;
 
-  wandLightsOff();
-
-  // Reset the white LED blink rate setting in case we changed years.
-  resetWhiteLEDBlinkRate();
+  allLightsOff();
 }
 
-void resetWhiteLEDBlinkRate() {
-  d_white_light_interval = i_afterlife_blink_interval;
-}
-
-// Included last as the contained logic will control all aspects of the pack using the defined functions above.
+// Included last as the contained logic will control all aspects of the device using the defined functions above.
 #include "Actions.h"

@@ -49,8 +49,8 @@ const int8_t i_volume_abs_max = 10; // System (absolute) maximum volume possible
 bool b_playing_music = false;
 bool b_music_paused = false;
 bool b_repeat_track = false;
-uint8_t i_wand_beep_level = 10; // 10 for WAV Trigger. 40 for GPStar Audio. This lowers the volume of certain Neutrona Wand beep sounds that the Proton Pack can play.
-uint8_t i_wand_sound_level = 0; // 1 for WAV Trigger. 0 For GPStar Audio.
+uint8_t i_device_beep_level = 10; // 10 for WAV Trigger. 40 for GPStar Audio.
+uint8_t i_device_sound_level = 0; // 1 for WAV Trigger. 0 For GPStar Audio.
 const uint8_t i_volume_master_percentage_max = 100; // Max percentage of master volume.
 
 /*
@@ -216,7 +216,7 @@ void playMusic() {
       break;
     }
 
-    // Keep track of music playback on the wand directly.
+    // Keep track of music playback on the device directly.
     ms_music_status_check.start(i_music_check_delay * 10);
   }
 }
@@ -244,7 +244,7 @@ void stopMusic() {
 
 void pauseMusic() {
   if(b_playing_music) {
-    // Pause music playback on the Neutrona Wand
+    // Pause music playback on the Single-Shot Blaster
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
@@ -267,7 +267,7 @@ void pauseMusic() {
 
 void resumeMusic() {
   if(b_playing_music) {
-    // Resume music playback on the Neutrona Wand
+    // Resume music playback on the Single-Shot Blaster
     switch(AUDIO_DEVICE) {
       case A_WAV_TRIGGER:
       case A_GPSTAR_AUDIO:
@@ -288,7 +288,7 @@ void resumeMusic() {
 
     b_music_paused = false;
 
-    // Keep track of music playback on the wand directly.
+    // Keep track of music playback on the device directly.
     ms_music_status_check.start(i_music_check_delay * 4);
   }
 }
@@ -405,7 +405,7 @@ void increaseVolumeMusic() {
 
     // Provide feedback at maximum volume.
     stopEffect(S_BEEPS_ALT);
-    playEffect(S_BEEPS_ALT, false, i_volume_master - i_wand_beep_level);
+    playEffect(S_BEEPS_ALT, false, i_volume_master - i_device_beep_level);
   }
   else {
     i_volume_music_percentage = i_volume_music_percentage + VOLUME_MUSIC_MULTIPLIER;
@@ -422,7 +422,7 @@ void decreaseVolumeMusic() {
 
     // Provide feedback at minimum volume.
     stopEffect(S_BEEPS_ALT);
-    playEffect(S_BEEPS_ALT, false, i_volume_master - i_wand_beep_level);
+    playEffect(S_BEEPS_ALT, false, i_volume_master - i_device_beep_level);
   }
   else {
     i_volume_music_percentage = i_volume_music_percentage - VOLUME_MUSIC_MULTIPLIER;
@@ -448,8 +448,8 @@ void increaseVolumeEEPROM() {
   i_volume_master_eeprom = MINIMUM_VOLUME - (MINIMUM_VOLUME * i_volume_master_percentage / 100);
   i_volume_revert = i_volume_master_eeprom;
 
-  if(WAND_STATUS == MODE_OFF) {
-    // Provide feedback when the Neutrona Wand is not running.
+  if(DEVICE_STATUS == MODE_OFF) {
+    // Provide feedback when the Single-Shot Blaster is not running.
     stopEffect(S_BEEPS_ALT);
     playEffect(S_BEEPS_ALT, false, i_volume_master_eeprom);
   }
@@ -499,8 +499,8 @@ void decreaseVolumeEEPROM() {
     }
   }
 
-  if(WAND_STATUS == MODE_OFF) {
-    // Provide feedback when the Neutrona Wand is not running.
+  if(DEVICE_STATUS == MODE_OFF) {
+    // Provide feedback when the Single-Shot Blaster is not running.
     stopEffect(S_BEEPS_ALT);
     playEffect(S_BEEPS_ALT, false, i_volume_master_eeprom);
   }
@@ -521,8 +521,8 @@ void increaseVolume() {
   i_volume_master = MINIMUM_VOLUME - (MINIMUM_VOLUME * i_volume_master_percentage / 100);
   i_volume_revert = i_volume_master;
 
-  if(WAND_STATUS == MODE_OFF) {
-    // Provide feedback when the Neutrona Wand is not running.
+  if(DEVICE_STATUS == MODE_OFF) {
+    // Provide feedback when the Single-Shot Blaster is not running.
     stopEffect(S_BEEPS_ALT);
     playEffect(S_BEEPS_ALT, false, i_volume_master);
   }
@@ -568,8 +568,8 @@ void decreaseVolume() {
     }
   }
 
-  if(WAND_STATUS == MODE_OFF) {
-    // Provide feedback when the Neutrona Wand is not running.
+  if(DEVICE_STATUS == MODE_OFF) {
+    // Provide feedback when the Single-Shot Blaster is not running.
     stopEffect(S_BEEPS_ALT);
     playEffect(S_BEEPS_ALT, false, i_volume_master);
   }
@@ -578,7 +578,8 @@ void decreaseVolume() {
 void buildMusicCount(uint16_t i_num_tracks) {
   // Build the music track count.
   i_music_count = i_num_tracks - i_last_effects_track;
-
+debug("i_music_count: ");
+debugln(i_music_count);
   if(i_music_count > 0 && i_music_count < 5000) {
     i_current_music_track = i_music_track_start; // Set the first track of music as file 500_
   }
@@ -678,7 +679,7 @@ void checkMusic() {
     ms_music_next_track.stop();
     ms_check_music.start(i_music_check_delay);
 
-    // Play the appropriate track on the wand.
+    // Play the appropriate track on the device.
     playMusic();
   }
 }
@@ -758,7 +759,7 @@ bool setupAudioDevice() {
     }
 
     AUDIO_DEVICE = A_WAV_TRIGGER;
-    i_wand_sound_level = 1; // This gets subtracted from certain sound volume levels.
+    i_device_sound_level = 1; // This gets subtracted from certain sound volume levels.
 
     debugln(F("Using WAV Trigger"));
 
@@ -771,7 +772,7 @@ bool setupAudioDevice() {
 
   if(audio.gpstarAudioHello()) {
     AUDIO_DEVICE = A_GPSTAR_AUDIO;
-    i_wand_sound_level = 0; // Special setting to adjust certain wand sounds, usually lower.
+    i_device_sound_level = 0; // Special setting to adjust certain device sounds, usually lower.
 
     debugln(F("Using GPStar Audio"));
 

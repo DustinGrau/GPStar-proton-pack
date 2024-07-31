@@ -22,21 +22,19 @@
 
 /*
  * -------------****** CUSTOM USER CONFIGURABLE SETTINGS ******-------------
- * Change the variables below to alter the behaviour of your Neutrona Wand.
+ * Change the variables below to alter the behaviour of your Single-Shot Blaster.
  */
 
 /*
- * You can set the default master startup volume for your wand here.
- * This gets overridden if you connect your wand to the pack.
- * Values are in % of the volume.
+ * You can set the default master startup volume for your device here.
+  * Values are in % of the volume.
  * 0 = quietest
  * 100 = loudest
  */
 const uint8_t STARTUP_VOLUME = 100;
 
 /*
- * You can set the default music volume for your wand here.
- * This gets overridden if you connect your wand to the pack.
+ * You can set the default music volume for your device here.
  * Values are in % of the volume.
  * 0 = quietest
  * 100 = loudest
@@ -44,8 +42,7 @@ const uint8_t STARTUP_VOLUME = 100;
 const uint8_t STARTUP_VOLUME_MUSIC = 100;
 
 /*
- * You can set the default sound effects volume for your wand here.
- * This gets overridden if you connect your wand to the pack.
+ * You can set the default sound effects volume for your device here.
  * Values are in % of the volume.
  * 0 = quietest
  * 100 = loudest
@@ -53,11 +50,9 @@ const uint8_t STARTUP_VOLUME_MUSIC = 100;
 const uint8_t STARTUP_VOLUME_EFFECTS = 100;
 
 /*
- * Minimum volume that the Neutrona Wand can achieve.
+ * Minimum volume that the Single-Shot Blaster can achieve.
  * Values must be from 0 to -70. 0 = the loudest and -70 = the quietest.
  * Volume changes are based on percentages.
- * If your pack is overpowering the wand at lower volumes, you can either increase the minimum value in the wand,
- * or decrease the minimum value for the pack.
  */
 const int8_t MINIMUM_VOLUME = -60;
 
@@ -87,31 +82,30 @@ bool b_bargraph_invert = false;
 bool b_vent_light_control = true;
 
 /*
- * When set to true, the LED at the front of the Neutrona Wand body next to the Clippard valve will start blinking after 1 minute of inactivity while the Neutrona Wand and Proton Pack are powered off to indicate battery power is still feeding the system.
-*/
+ * When set to true, the LED at the front of the Single-Shot Blaster body next to the Clippard valve will
+ * start blinking after 1 minute of inactivity to indicate battery power is still feeding the system.
+ */
 bool b_power_on_indicator = true;
 
 /*
- * When enabled, the Neutrona Wand will vibrate at all times.
- * Vibration is controlled by the vibration toggle switch in the Proton Pack and it can disable all vibration settings.
- * This can be enabled or disabled from the Neutrona Wand sub menu system.
+ * When enabled, the Single-Shot Blaster will vibrate at all times.
+ * This can be enabled or disabled from the device sub menu system.
  * Default = true.
  */
 bool b_vibration_enabled = true;
 
 /*
- * When set to true and b_vibration_enabled is also set to true, the Neutrona Wand will only vibrate during firing.
- * Note that vibration is controlled by the vibration toggle switch in the Proton Pack and it can disable all vibration settings.
- * This can be enabled or disabled from the Neutrona Wand sub menu system.
+ * When set to true and b_vibration_enabled is also set to true, the Single-Shot Blaster will only vibrate during firing.
+ * This can be enabled or disabled from the device sub menu system.
  * Default = true.
  */
 bool b_vibration_firing = true;
 
 /*
- * Set to true to have your Neutrona Wand boot up with errors when the top right switch (beep switch) is on while you are turning on your wand.
+ * Set to true to have your Single-Shot Blaster boot up with errors when the top right switch (beep switch) is on while you are turning on your device.
  * When set to false, this will be ignored.
  */
-bool b_wand_boot_errors = true;
+bool b_device_boot_errors = true;
 
 /*
  * Set to false to disable the onboard amplifier on the WAV Trigger.

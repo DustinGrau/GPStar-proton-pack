@@ -20,18 +20,18 @@
 
 #pragma once
 
-void checkWandAction() {
-  switch(WAND_ACTION_STATUS) {
+void checkDeviceAction() {
+  switch(DEVICE_ACTION_STATUS) {
     case ACTION_IDLE:
     default:
-      if(WAND_STATUS == MODE_ON) {
-        // Use of led_hat_1 not applicable for this device.
+      if(DEVICE_STATUS == MODE_ON) {
+        // No-op, add actions here as needed.
       }
     break;
 
     case ACTION_OFF:
-      b_wand_mash_error = false;
-      wandOff();
+      b_device_mash_error = false;
+      deviceOff();
     break;
 
     case ACTION_FIRING:
@@ -85,16 +85,16 @@ void checkWandAction() {
         }
       }
 
-      modeFiring(); // Tell the pack whether firing has started/stopped.
+      modeFiring();
 
       // Stop firing if any of the main switches are turned off or the barrel is retracted.
-      if(!switch_vent.on() || !switch_wand.on()) {
+      if(!switch_vent.on() || !switch_device.on()) {
         modeFireStop();
       }
     break;
 
     case ACTION_ERROR:
-      // Nothing.
+      // No-op, add actions here as needed.
     break;
 
     case ACTION_ACTIVATE:

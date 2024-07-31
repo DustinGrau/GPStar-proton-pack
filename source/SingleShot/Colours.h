@@ -67,7 +67,6 @@ uint8_t getBrightness(uint8_t i_percent = 100) {
 }
 
 // Special values for colour cycles: current hue (colour) and when to change colour.
-// Unlike the pack, there is no need for tracking across multiple devices (only wand barrel).
 uint8_t i_curr_colour = 0;
 uint8_t i_count = 0;
 
