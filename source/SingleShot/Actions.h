@@ -27,7 +27,8 @@ void checkDeviceAction() {
       if(DEVICE_STATUS == MODE_ON) {
         if(!ms_cyclotron.isRunning()) {
           // Start the cyclotron as quickly as possible.
-          ms_cyclotron.start(i_min_cyclotron_delay);
+          uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((i_power_level - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
+          ms_cyclotron.start(i_dynamic_delay);
         }
         updateCyclotron(C_RED);
       }

@@ -73,10 +73,11 @@ const uint8_t i_num_cyclotron_leds = CYCLOTRON_LED_COUNT; // This will be the nu
 millisDelay ms_cyclotron;
 const uint8_t i_cyclotron_leds[i_num_cyclotron_leds] = {0, 1, 2, 3, 4, 5, 6}; // Note: 0 is the dead center of the jewel
 const uint8_t i_cyclotron_pair[2] = {3, 6}; // Choice of opposites to match with installation: 1/4, 2/5, 3/6
-const uint16_t i_base_cyclotron_delay = 40; // Set delay between LED updates at normal speed, at the lowest power level
-const uint16_t i_min_cyclotron_delay = 20; // Set the minimum (fastest) transition time desired for a cyclotron update
-const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness
-const uint8_t i_cyc_fade_step = 5; // Step size for each fade-in increment
+const uint16_t i_base_cyclotron_delay = 30; // Set delay between LED updates at normal speed, at the lowest power level
+const uint16_t i_min_cyclotron_delay = 10;  // Set the minimum (fastest) transition time desired for a cyclotron update
+const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each LED
+const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED
+const uint8_t i_cyc_fade_step = 15; // Step size for each fade-in increment (must be a divisor of 255: 1, 3, 5, 15, 17, 51, 85)
 
 /*
  * Control for the primary blast sound effects.
@@ -253,8 +254,8 @@ uint16_t i_last_firing_effect_mix = 0; // Used by standalone Single-Shot Blaster
  */
 const uint8_t i_power_level_max = 5;
 const uint8_t i_power_level_min = 1;
-uint8_t i_power_level = 5;
-uint8_t i_power_level_prev = 5;
+uint8_t i_power_level = 1;
+uint8_t i_power_level_prev = 1;
 
 /*
  * Device Menu
