@@ -578,8 +578,6 @@ void decreaseVolume() {
 void buildMusicCount(uint16_t i_num_tracks) {
   // Build the music track count.
   i_music_count = i_num_tracks - i_last_effects_track;
-debug("i_music_count: ");
-debugln(i_music_count);
   if(i_music_count > 0 && i_music_count < 5000) {
     i_current_music_track = i_music_track_start; // Set the first track of music as file 500_
   }

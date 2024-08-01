@@ -396,6 +396,52 @@ void mainLoop() {
   }
 }
 
+void updateCyclotron(uint8_t i_colour) {
+  static bool sb_toggle = false; // Static toggle to remain scoped to this function between calls
+  static uint8_t si_brightness_in = 0; // Static brightness variable for fade-in effect
+  static uint8_t si_brightness_out = i_cyclotron_max_brightness; // Static brightness variable for fade-out effect
+
+  if(ms_cyclotron.justFinished()) {
+    // Change the timing (delay) based on the power level selected.
+    uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((i_power_level - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
+    ms_cyclotron.start(i_dynamic_delay);
+
+    // Increment brightness for fade-in effect
+    if(si_brightness_in < i_cyclotron_max_brightness) {
+      si_brightness_in += i_cyc_fade_step;
+      if(si_brightness_in > i_cyclotron_max_brightness) {
+        si_brightness_in = i_cyclotron_max_brightness;
+      }
+    }
+
+    // Decrement brightness for fade-out effect
+    if(si_brightness_out > 0) {
+      si_brightness_out -= i_cyc_fade_step;
+      if(si_brightness_out < 0) {
+        si_brightness_out = 0;
+      }
+    }
+
+    // Toggle between the LEDs in the i_cyclotron_pair using the given color.
+    CRGB c_temp = getHueAsRGB(i_colour);
+    if(sb_toggle) {
+      system_leds[i_cyclotron_pair[0]] = c_temp.nscale8(si_brightness_in);  // Turn on LED 1 in the pair
+      system_leds[i_cyclotron_pair[1]] = c_temp.nscale8(si_brightness_out); // Turn off LED 2 in the pair
+    }
+    else {
+      system_leds[i_cyclotron_pair[0]] = c_temp.nscale8(si_brightness_out); // Turn off LED 1 in the pair
+      system_leds[i_cyclotron_pair[1]] = c_temp.nscale8(si_brightness_in);  // Turn on LED 2 in the pair
+    }
+
+    // Toggle state and reset brightness variables after fade-in is complete.
+    if (si_brightness_in == i_cyclotron_max_brightness && si_brightness_out == 0) {
+      sb_toggle = !sb_toggle;
+      si_brightness_in = 0;
+      si_brightness_out = i_cyclotron_max_brightness;
+    }
+  }
+}
+
 void deviceTipOn() {
     // Illuminate the device barrel tip LED.
     digitalWriteFast(led_barrel_tip, HIGH);
@@ -783,6 +829,7 @@ void deviceOff() {
   i_bmash_count = 0;
 
   // Turn off some timers.
+  ms_cyclotron.stop();
   ms_settings_blinking.stop();
   ms_semi_automatic_check.stop();
   ms_semi_automatic_firing.stop();

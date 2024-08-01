@@ -25,7 +25,11 @@ void checkDeviceAction() {
     case ACTION_IDLE:
     default:
       if(DEVICE_STATUS == MODE_ON) {
-        // No-op, add actions here as needed.
+        if(!ms_cyclotron.isRunning()) {
+          // Start the cyclotron as quickly as possible.
+          ms_cyclotron.start(i_min_cyclotron_delay);
+        }
+        updateCyclotron(C_RED);
       }
     break;
 
