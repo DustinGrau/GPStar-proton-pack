@@ -53,6 +53,7 @@
 #include "Configuration.h"
 #include "MusicSounds.h"
 #include "Header.h"
+#include "Bargraph.h"
 #include "Colours.h"
 #include "Audio.h"
 #include "Preferences.h"
@@ -70,10 +71,9 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, SYSTEM_LED_PIN>(system_leds, CYCLOTRON_LED_COUNT + BARREL_LED_COUNT);
 
   // Setup default system settings.
-  BARGRAPH_MODE = BARGRAPH_SUPER_HERO;
-  BARGRAPH_FIRING_ANIMATION = BARGRAPH_ANIMATION_SUPER_HERO;
-  VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
+  VIBRATION_MODE_EEPROM = VIBRATION_NONE; // VIBRATION_ALWAYS
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+  POWER_LEVEL = LEVEL_1;
 
   // Set callback events for these toggles, which need to count the activations for EEPROM menu entry.
   switch_vent.setPushedCallback(&ventSwitched);
@@ -83,34 +83,9 @@ void setup() {
   pinModeFast(r_encoderA, INPUT_PULLUP);
   pinModeFast(r_encoderB, INPUT_PULLUP);
 
-  delay(10); // Allow everything time to get set up.
-
-  Wire.begin();
-  Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
-
-  byte by_error, by_address;
-  uint8_t i_i2c_devices = 0;
-
-  // Scan i2c for any devices (28 segment bargraph).
-  for(by_address = 1; by_address < 127; by_address++ ) {
-    Wire.beginTransmission(by_address);
-    by_error = Wire.endTransmission();
-
-    if(by_error == 0) {
-      i_i2c_devices++;
-    }
-  }
-
-  if(i_i2c_devices > 0) {
-    b_28segment_bargraph = true;
-  }
-  else {
-    b_28segment_bargraph = false;
-  }
-
-  if(b_28segment_bargraph) {
-    ht_bargraph.begin(0x00);
-  }
+  // Setup the bargraph after a brief delay.
+  delay(10);
+  setupBargraph();
 
   pinModeFast(led_slo_blo, OUTPUT); // Lower LED under the bargraph.
   pinModeFast(led_front_left, OUTPUT); // Front left LED underneath the Clippard valve.
@@ -165,40 +140,125 @@ void loop() {
 }
 
 void systemPOST() {
+  uint8_t i_delay = 100;
+
   // Play a sound to test the audio system.
   playEffect(S_DEVICE_READY);
 
+  // Turn on all bargraph elements and force an update
+  bargraphFull();
+  bargraphCommitChanges();
+
   // These go HIGH to turn on.
   digitalWriteFast(led_slo_blo, HIGH);
-  delay(100);
+  delay(i_delay);
   digitalWriteFast(led_front_left, HIGH);
-  delay(100);
+  delay(i_delay);
   digitalWriteFast(led_hat_2, HIGH);
-  delay(100);
+  delay(i_delay);
 
   // These go LOW to turn on.
   digitalWrite(led_vent, LOW);
-  delay(100);
+  delay(i_delay);
   digitalWriteFast(led_white, LOW);
-  delay(100);
+  delay(i_delay);
 
   deviceTipOn();
-  delay(100);
+  delay(i_delay);
 
   // Sequentially turn on all LEDs in the cyclotron.
   for(uint8_t i = 0; i < i_num_cyclotron_leds; i++) {
     system_leds[i] = getHueAsRGB(C_RED);
     FastLED.show();
-    delay(200);
+    delay(i_delay);
   }
 
   // Turn on the front barrel.
   system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
   FastLED.show();
 
-  delay(1000);
+  delay(i_delay * 8);
 
-  allLightsOff();
+  allLightsOff(); // Turn off all lights, including the bargraph.
+
+  // Turn the bargraph off and force a state change.
+  bargraphOff();
+  bargraphCommitChanges();
+}
+
+uint8_t getPowerLevel() {
+  switch(POWER_LEVEL){
+    case LEVEL_1:
+    default:
+      return 1;
+    break;
+    case LEVEL_2:
+      return 2;
+    break;
+    case LEVEL_3:
+      return 3;
+    break;
+    case LEVEL_4:
+      return 4;
+    break;
+    case LEVEL_5:
+      return 5;
+    break;
+  }
+}
+
+bool increasePowerLevel() {
+  switch(POWER_LEVEL){
+    case LEVEL_1:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_2;
+    break;
+    case LEVEL_2:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_3;
+    break;
+    case LEVEL_3:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_4;
+    break;
+    case LEVEL_4:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_5;
+    break;
+    case LEVEL_5:
+      // No-op, at highest level.
+    break;
+  }
+
+  // Returns true if value was changed.
+  return (POWER_LEVEL_PREV != POWER_LEVEL);
+}
+
+bool decreasePowerLevel() {
+  switch(POWER_LEVEL){
+    case LEVEL_1:
+      // No-op, at lowest level.
+    break;
+    case LEVEL_2:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_1;
+    break;
+    case LEVEL_3:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_2;
+    break;
+    case LEVEL_4:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_3;
+    break;
+    case LEVEL_5:
+      POWER_LEVEL_PREV = POWER_LEVEL;
+      POWER_LEVEL = LEVEL_4;
+    break;
+  }
+
+  // Returns true if value was changed.
+  return (POWER_LEVEL_PREV != POWER_LEVEL);
 }
 
 void mainLoop() {
@@ -225,7 +285,7 @@ void mainLoop() {
         // stopEffect(S_SMASH_ERROR_LOOP);
         // playEffect(S_SMASH_ERROR_RESTART);
 
-        bargraphClearAlt();
+        bargraphClear();
       }
     }
   }
@@ -244,7 +304,7 @@ void mainLoop() {
             ms_settings_blinking.start(i_settings_blinking_delay);
 
             ms_bargraph.stop();
-            bargraphClearAlt();
+            bargraphClear();
 
             // Make sure some of the device lights are off.
             allLightsOffMenuSystem();
@@ -333,8 +393,6 @@ void mainLoop() {
 
         ms_hat_1.start(i_hat_2_delay * 4);
       }
-
-      settingsBlinkingLights();
     break;
 
     case MODE_ON:
@@ -355,13 +413,6 @@ void mainLoop() {
       }
 
       // Ramp the bargraph up then ramp down back to the default power level setting on a fresh start.
-      if(ms_bargraph.justFinished()) {
-        bargraphRampUp();
-      }
-      else if(!ms_bargraph.isRunning() && DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
-        // Bargraph idling loop.
-        bargraphPowerCheck();
-      }
 
       vibrationSetting();
     break;
@@ -379,23 +430,16 @@ void mainLoop() {
     firePulseEffect();
   }
 
-  // Play the firing effect end animation.
-  if(ms_firing_effect_end.justFinished()) {
-    fireEffectEnd();
-  }
-
-  // Play the firing stream end animation.
-  if(ms_firing_lights_end.justFinished()) {
-    fireStreamEnd(getHueAsRGB(C_BLACK));
-  }
-
   // Update the barrel LEDs and restart the timer.
   if(ms_fast_led.justFinished()) {
     FastLED.show();
     ms_fast_led.start(i_fast_led_delay);
   }
+
+  bargraphUpdate(1); // Update bargraph with latest state changes.
 }
 
+// Manage lights in pairs to move in a predefined sequence, fading each light in and out.
 void updateCyclotron(uint8_t i_colour) {
   static bool sb_toggle = true; // Static toggle to remain scoped to this function between calls
   static uint8_t sb_pairing = 0; // Which pair of LEDs to use for each "cycle" of fade in/out actions
@@ -404,7 +448,7 @@ void updateCyclotron(uint8_t i_colour) {
 
   if(ms_cyclotron.justFinished()) {
     // Change the timing (delay) based on the power level selected.
-    uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((i_power_level - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
+    uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((getPowerLevel() - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
     ms_cyclotron.start(i_dynamic_delay);
 
     // Increment brightness for fade-in effect
@@ -462,245 +506,6 @@ void deviceTipSpark() {
   ms_device_heatup_fade.start(i_delay_heatup);
 }
 
-void settingsBlinkingLights() {
-  if(ms_settings_blinking.justFinished()) {
-     ms_settings_blinking.start(i_settings_blinking_delay);
-  }
-
-  if(ms_settings_blinking.remaining() < i_settings_blinking_delay / 2) {
-    bool b_solid_five = false;
-    bool b_solid_one = false;
-
-    // Indicator for looping track setting.
-    if(b_repeat_track && i_device_menu == 5 && DEVICE_ACTION_STATUS != ACTION_ERROR && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
-      b_solid_five = true;
-    }
-
-    if(i_volume_master == i_volume_abs_min && DEVICE_ACTION_STATUS == ACTION_SETTINGS && DEVICE_MENU_LEVEL == MENU_LEVEL_1) {
-      b_solid_one = true;
-    }
-
-    if(b_28segment_bargraph) {
-      if(b_solid_five) {
-        for(uint8_t i = 0; i < 24; i++) {
-          if(b_solid_one && i < 3) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        for(uint8_t i = 24; i < i_bargraph_segments - 1; i++) {
-          ht_bargraph.setLed(bargraphLookupTable(i));
-          b_bargraph_status[i] = true;
-        }
-
-        ht_bargraph.clearLed(bargraphLookupTable(27));
-        b_bargraph_status[27] = false;
-
-        ht_bargraph.sendLed(); // Commit the changes.
-      }
-      else if(b_solid_one) {
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          if(i < 3) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-      }
-      else {
-        bargraphClearAll();
-      }
-    }
-    else {
-      if(b_solid_one) {
-        digitalWriteFast(bargraphLookupTable(1-1), LOW);
-      }
-      else {
-        digitalWriteFast(bargraphLookupTable(1-1), HIGH);
-      }
-
-      digitalWriteFast(bargraphLookupTable(2-1), HIGH);
-      digitalWriteFast(bargraphLookupTable(3-1), HIGH);
-      digitalWriteFast(bargraphLookupTable(4-1), HIGH);
-
-      if(b_solid_five) {
-        digitalWriteFast(bargraphLookupTable(5-1), LOW);
-      }
-      else {
-        digitalWriteFast(bargraphLookupTable(5-1), HIGH);
-      }
-    }
-  }
-  else {
-    switch(i_device_menu) {
-      case 5:
-        if(b_28segment_bargraph) {
-          for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-            switch(i) {
-              case 3:
-              case 4:
-              case 5:
-              case 9:
-              case 10:
-              case 11:
-              case 15:
-              case 16:
-              case 17:
-              case 21:
-              case 22:
-              case 23:
-              case 27:
-                // Nothing
-              break;
-
-              default:
-                ht_bargraph.setLed(bargraphLookupTable(i));
-                b_bargraph_status[i] = true;
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 4:
-        if(b_28segment_bargraph) {
-          for(uint8_t i = 0; i < 21; i++) {
-            switch(i) {
-              case 3:
-              case 4:
-              case 5:
-              case 9:
-              case 10:
-              case 11:
-              case 15:
-              case 16:
-              case 17:
-              case 21:
-              case 22:
-              case 23:
-              case 27:
-                // Nothing
-              break;
-
-              default:
-                ht_bargraph.setLed(bargraphLookupTable(i));
-                b_bargraph_status[i] = true;
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 3:
-        if(b_28segment_bargraph) {
-          for(uint8_t i = 0; i < 16; i++) {
-            switch(i) {
-              case 3:
-              case 4:
-              case 5:
-              case 9:
-              case 10:
-              case 11:
-              case 15:
-              case 16:
-              case 17:
-              case 21:
-              case 22:
-              case 23:
-              case 27:
-                // Nothing
-              break;
-
-              default:
-                ht_bargraph.setLed(bargraphLookupTable(i));
-                b_bargraph_status[i] = true;
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 2:
-        if(b_28segment_bargraph) {
-          for(uint8_t i = 0; i < 12; i++) {
-            switch(i) {
-              case 3:
-              case 4:
-              case 5:
-              case 9:
-              case 10:
-              case 11:
-              case 15:
-              case 16:
-              case 17:
-              case 21:
-              case 22:
-              case 23:
-              case 27:
-                // Nothing
-              break;
-
-              default:
-                ht_bargraph.setLed(bargraphLookupTable(i));
-                b_bargraph_status[i] = true;
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 1:
-        if(b_28segment_bargraph) {
-          for(uint8_t i = 0; i < 6; i++) {
-            switch(i) {
-              case 3:
-              case 4:
-              case 5:
-              case 9:
-              case 10:
-              case 11:
-              case 15:
-              case 16:
-              case 17:
-              case 21:
-              case 22:
-              case 23:
-              case 27:
-                // Nothing
-              break;
-
-              default:
-                ht_bargraph.setLed(bargraphLookupTable(i));
-                b_bargraph_status[i] = true;
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-    }
-  }
-}
-
 // Change the DEVICE_STATE here based on switches changing or pressed.
 void checkSwitches() {
   if(ms_slo_blo_blink.justFinished()) {
@@ -745,22 +550,22 @@ void deviceLightControlCheck() {
       }
       else {
         // Adjust brightness based on the power level.
-        switch(i_power_level) {
-          case 5:
-            analogWrite(led_vent, 100);
-          break;
-          case 4:
-            analogWrite(led_vent, 130);
-          break;
-          case 3:
-            analogWrite(led_vent, 160);
-          break;
-          case 2:
-            analogWrite(led_vent, 190);
-          break;
-          case 1:
+        switch(POWER_LEVEL) {
+          case LEVEL_1:
           default:
             analogWrite(led_vent, 220);
+          break;
+          case LEVEL_2:
+            analogWrite(led_vent, 190);
+          break;
+          case LEVEL_3:
+            analogWrite(led_vent, 160);
+          break;
+          case LEVEL_4:
+            analogWrite(led_vent, 130);
+          break;
+          case LEVEL_5:
+            analogWrite(led_vent, 100);
           break;
         }
       }
@@ -843,7 +648,7 @@ void deviceOff() {
     case MODE_OFF:
       // Turn off additional timers.
       ms_bargraph.stop();
-      ms_bargraph_alt.stop();
+      ms_bargraph.stop();
 
       // Turn off all device lights.
       allLightsOff();
@@ -886,26 +691,22 @@ void fireControlCheck() {
       deviceTipSpark();
 
       // Adjust the cool down lockout period based on the power level.
-      switch(i_power_level) {
-        case 5:
-          ms_bmash.start(i_bmash_cool_down + 2000);
-        break;
-
-        case 4:
-          ms_bmash.start(i_bmash_cool_down + 1500);
-        break;
-
-        case 3:
-          ms_bmash.start(i_bmash_cool_down + 1000);
-        break;
-
-        case 2:
-          ms_bmash.start(i_bmash_cool_down + 500);
-        break;
-
-        case 1:
+      switch(POWER_LEVEL) {
+        case LEVEL_1:
         default:
           ms_bmash.start(i_bmash_cool_down);
+        break;
+        case LEVEL_2:
+          ms_bmash.start(i_bmash_cool_down + 500);
+        break;
+        case LEVEL_3:
+          ms_bmash.start(i_bmash_cool_down + 1000);
+        break;
+        case LEVEL_4:
+          ms_bmash.start(i_bmash_cool_down + 1500);
+        break;
+        case LEVEL_5:
+          ms_bmash.start(i_bmash_cool_down + 2000);
         break;
       }
     }
@@ -1019,12 +820,12 @@ void gripButtonCheck() {
           ms_settings_blinking.start(i_settings_blinking_delay);
 
           // Clear the 28 segment bargraph.
-          bargraphClearAlt();
+          bargraphClear();
         }
         else {
           DEVICE_ACTION_STATUS = ACTION_IDLE;
           ms_settings_blinking.stop();
-          bargraphClearAlt();
+          bargraphClear();
         }
 
         playEffect(S_CLICK);
@@ -1034,7 +835,7 @@ void gripButtonCheck() {
       // Exit the settings menu if the user turns the device switch back on.
       DEVICE_ACTION_STATUS = ACTION_IDLE;
       ms_settings_blinking.stop();
-      bargraphClearAlt();
+      bargraphClear();
     }
   }
 }
@@ -1069,6 +870,7 @@ void modeActivate() {
     modeError();
   }
   else {
+    // Device is officially activated and on.
     DEVICE_STATUS = MODE_ON;
 
     // Proper startup. Continue booting up the device.
@@ -1084,10 +886,7 @@ void modeActivate() {
 }
 
 void postActivation() {
-  i_bargraph_multiplier_current  = i_bargraph_multiplier_ramp_2021;
-
   if(DEVICE_STATUS != MODE_ERROR) {
-    bargraphRampUp();
     if(switch_vent.on()) {
       b_all_switch_activation = true; // If vent switch is already on when Activate is flipped, set to true for soundIdleLoop() to use
     }
@@ -1110,54 +909,51 @@ void postActivation() {
     playEffect(S_BOOTUP);
 
     soundIdleLoop(true);
+
+    if(BARGRAPH_STATE == BG_OFF) {
+      bargraphReset(); // Enable bargraph for use (resets variables and turns it on).
+      BARGRAPH_PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
+    }
   }
 }
 
 void soundIdleLoop(bool fadeIn) {
-  switch(i_power_level) {
-    case 1:
+  switch(POWER_LEVEL) {
+    case LEVEL_1:
     default:
       playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
     break;
-
-    case 2:
+    case LEVEL_2:
       playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
     break;
-
-    case 3:
+    case LEVEL_3:
       playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
     break;
-
-    case 4:
+    case LEVEL_4:
       playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
     break;
-
-    case 5:
+    case LEVEL_5:
       playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
     break;
   }
 }
 
 void soundIdleLoopStop() {
-  switch(i_power_level) {
-    case 1:
+  switch(POWER_LEVEL) {
+    case LEVEL_1:
     default:
       stopEffect(S_IDLE_LOOP);
     break;
-
-    case 2:
+    case LEVEL_2:
       stopEffect(S_IDLE_LOOP);
     break;
-
-    case 3:
+    case LEVEL_3:
       stopEffect(S_IDLE_LOOP);
     break;
-
-    case 4:
+    case LEVEL_4:
       stopEffect(S_IDLE_LOOP);
     break;
-
-    case 5:
+    case LEVEL_5:
       stopEffect(S_IDLE_LOOP);
     break;
   }
@@ -1168,18 +964,10 @@ void modePulseStart() {
   i_fast_led_delay = FAST_LED_UPDATE_MS;
   barrelLightsOff();
 
-  switch(STREAM_MODE) {
-    case PROTON:
-      // Primary Blast.
-      playEffect(S_FIRE_BLAST, false, i_volume_effects, false, 0, false);
-      ms_firing_pulse.start(0);
-      ms_semi_automatic_firing.start(350);
-    break;
+  playEffect(S_FIRE_BLAST, false, i_volume_effects, false, 0, false);
 
-    default:
-      // Do nothing.
-    break;
-  }
+  ms_firing_pulse.start(i_firing_pulse);
+  ms_semi_automatic_firing.start(350);
 }
 
 void modeFireStart() {
@@ -1190,43 +978,12 @@ void modeFireStart() {
   // Just in case a semi-auto was fired before we started firing a stream, stop its timer.
   ms_semi_automatic_firing.stop();
 
-  switch(BARGRAPH_FIRING_ANIMATION) {
-    case BARGRAPH_ANIMATION_ORIGINAL:
-      // Redraw the bargraph to the current power level before doing the MODE_ORIGINAL firing animation.
-      bargraphRedraw();
-
-      // Reset the Hasbro bargraph.
-      i_bargraph_status = 0;
-    break;
-
-    case BARGRAPH_ANIMATION_SUPER_HERO:
-    default:
-      // Clear the bargraph before we do the animation.
-      bargraphClearAlt();
-
-      // Reset the Hasbro bargraph.
-      i_bargraph_status = 1;
-    break;
-  }
-
   // Turn on hat light 1.
   digitalWriteFast(led_hat_1, HIGH);
 
   barrelLightsOff();
 
   ms_firing_lights.start(0);
-
-  // Stop any bargraph ramps.
-  ms_bargraph.stop();
-
-  ms_bargraph_alt.stop();
-
-  // Reset the 28 segment bargraph.
-  i_bargraph_status_alt = 0;
-
-  b_bargraph_up = false;
-
-  bargraphRampFiring();
 
   ms_firing_length_timer.start(i_firing_timer_length);
 }
@@ -1247,28 +1004,8 @@ void modeFireStop() {
   b_firing_intensify = false;
   b_firing_alt = false;
 
-  ms_bargraph_firing.stop();
-
-  ms_bargraph_alt.stop(); // Stop the 1984 28 segment optional bargraph timer.
-  b_bargraph_up = false;
-
-  switch(BARGRAPH_MODE) {
-    case BARGRAPH_SUPER_HERO:
-    default:
-      i_bargraph_status = i_power_level - 1;
-      i_bargraph_status_alt = 0;
-      bargraphClearAlt();
-
-      i_bargraph_multiplier_current  = i_bargraph_multiplier_ramp_2021;
-
-      // We ramp the bargraph back up after finishing firing.
-      bargraphRampUp();
-    break;
-  }
-
   ms_firing_lights.stop();
   ms_impact.stop();
-  ms_firing_sound_mix.stop();
   ms_firing_effect_end.start(0);
 
   digitalWriteFast(led_hat_2, HIGH); // Make sure we turn on hat light 2 in case it's off as well.
@@ -1297,138 +1034,46 @@ void modeFiring() {
   if(!b_firing_alt && b_sound_firing_alt_trigger) {
     b_sound_firing_alt_trigger = false;
   }
-
-  // Initialize temporary colour variables to reduce code complexity.
-  colours c_temp_start = C_WHITE;
-  colours c_temp_effect = C_WHITE;
-
-  switch(STREAM_MODE) {
-    case PROTON:
-    default:
-      // Shift the stream from red to orange on higher power levels.
-      switch(i_power_level) {
-        case 1:
-        default:
-          c_temp_start = C_RED;
-          c_temp_effect = C_BLUE;
-        break;
-
-        case 2:
-          c_temp_start = C_RED2;
-          c_temp_effect = C_BLUE;
-        break;
-
-        case 3:
-          c_temp_start = C_RED3;
-          c_temp_effect = C_LIGHT_BLUE;
-        break;
-
-        case 4:
-          c_temp_start = C_RED4;
-          c_temp_effect = C_LIGHT_BLUE;
-        break;
-
-        case 5:
-          c_temp_start = C_RED5;
-          c_temp_effect = C_WHITE;
-        break;
-      }
-    break;
-  }
-
-  fireStreamStart(getHueAsRGB(c_temp_start));
-  fireStreamEffect(getHueAsRGB(c_temp_effect));
-
-  // Bargraph loop / scroll.
-  if(ms_bargraph_firing.justFinished()) {
-    bargraphRampFiring();
-  }
 }
 
 void firePulseEffect() {
-  if(i_pulse_step < 1) {
-    // Play bargraph animation when pulse sequence begins.
-    switch(BARGRAPH_MODE) {
-      case BARGRAPH_SUPER_HERO:
-      default:
-        i_bargraph_status = i_power_level - 1;
-        i_bargraph_status_alt = 0;
-        bargraphClearAlt();
-
-        i_bargraph_multiplier_current  = i_bargraph_multiplier_ramp_2021;
-
-        // We ramp the bargraph back up after finishing firing.
-        bargraphRampUp();
-      break;
-    }
+  if(i_pulse_step == 0) {
+    // Force clear and reset of bargraph state.
+    bargraphClear();
+    bargraphReset();
+    bargraphCommitChanges();
+    // Change bargraph animation when pulse begins.
+    BARGRAPH_PATTERN = BG_OUTER_INNER;
   }
 
-  uint8_t i_firing_pulse = d_firing_pulse; // Stores a calculated value based on firing mode.
-
+  // Primary Blast.
   switch(i_pulse_step) {
     case 0:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_RED);
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED);
     break;
-
     case 1:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED3);
     break;
-
     case 2:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED5);
     break;
-
     case 3:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
     break;
-
     case 4:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_RED);
-
-          // Bolt has reached barrel tip, so turn on tip light.
-          deviceTipOn();
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED4);
     break;
-
     case 5:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Primary Blast.
-          system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
-        break;
-      }
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
     break;
-
+    case 6:
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED);
+      // Bolt has reached barrel tip, so turn on tip light.
+      deviceTipOn();
+    break;
+    case 7:
+      system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
+    break;
     default:
       // Do nothing if we somehow end up here.
     break;
@@ -1437,10 +1082,6 @@ void firePulseEffect() {
   i_pulse_step++;
 
   if(i_pulse_step < i_pulse_step_max) {
-    if(STREAM_MODE == PROTON) {
-      // Primary Blast is much slower than the others.
-      i_firing_pulse *= 2;
-    }
     ms_firing_pulse.start(i_firing_pulse);
   }
   else {
@@ -1448,108 +1089,10 @@ void firePulseEffect() {
     deviceTipOff();
     ms_firing_pulse.stop();
     i_pulse_step = 0;
-  }
-}
 
-void fireStreamEffect(CRGB c_colour) {
-  uint8_t i_firing_stream; // Stores a calculated value based on LED count.
-
-  i_firing_stream = d_firing_stream;
-
-  if(ms_firing_stream_effects.justFinished()) {
-    if(i_cyclotron_light - 1 >= 0 && i_cyclotron_light - 1 < i_num_cyclotron_leds) {
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          // Shift the stream from red to orange on higher power levels.
-          switch(i_power_level) {
-            case 1:
-            default:
-              system_leds[i_cyclotron_light - 1] = getHueAsRGB(C_RED);
-            break;
-
-            case 2:
-              system_leds[i_cyclotron_light - 1] = getHueAsRGB(C_RED2);
-            break;
-
-            case 3:
-              system_leds[i_cyclotron_light - 1] = getHueAsRGB(C_RED3);
-            break;
-
-            case 4:
-              system_leds[i_cyclotron_light - 1] = getHueAsRGB(C_RED4);
-            break;
-
-            case 5:
-              system_leds[i_cyclotron_light - 1] = getHueAsRGB(C_RED5);
-            break;
-          }
-        break;
-      }
-    }
-
-    if(i_cyclotron_light == i_num_cyclotron_leds) {
-      i_cyclotron_light = 0;
-
-      switch(STREAM_MODE) {
-        default:
-          switch(i_power_level) {
-            case 1:
-            default:
-              ms_firing_stream_effects.start(i_firing_stream); // 100ms
-            break;
-
-            case 2:
-              ms_firing_stream_effects.start(i_firing_stream - 15); // 85ms
-            break;
-
-            case 3:
-              ms_firing_stream_effects.start(i_firing_stream - 30); // 70ms
-            break;
-
-            case 4:
-              ms_firing_stream_effects.start(i_firing_stream - 45); // 55ms
-            break;
-
-            case 5:
-              ms_firing_stream_effects.start(i_firing_stream - 60); // 40ms
-            break;
-          }
-        break;
-      }
-    }
-    else if(i_cyclotron_light < i_num_cyclotron_leds) {
-      system_leds[i_cyclotron_light] = c_colour;
-
-      switch(STREAM_MODE) {
-        default:
-          switch(i_power_level) {
-            case 1:
-            default:
-              ms_firing_stream_effects.start((d_firing_stream / 5) + 10); // 30ms
-            break;
-
-            case 2:
-              ms_firing_stream_effects.start((d_firing_stream / 5) + 8); // 28ms
-            break;
-
-            case 3:
-              ms_firing_stream_effects.start((d_firing_stream / 5) + 6); // 26ms
-            break;
-
-            case 4:
-              ms_firing_stream_effects.start((d_firing_stream / 5) + 5); // 25ms
-            break;
-
-            case 5:
-              ms_firing_stream_effects.start((d_firing_stream / 5) + 4); // 24ms
-            break;
-          }
-        break;
-      }
-
-      i_cyclotron_light++;
-    }
+    // Clear the bargraph and return to ramping.
+    bargraphClear();
+    BARGRAPH_PATTERN = BG_POWER_RAMP;
   }
 }
 
@@ -1561,7 +1104,6 @@ void barrelLightsOff() {
   ms_firing_lights_end.stop();
   ms_device_heatup_fade.stop();
 
-  i_cyclotron_light = 0;
   i_pulse_step = 0;
   i_heatup_counter = 0;
   i_heatdown_counter = 100;
@@ -1573,1546 +1115,8 @@ void barrelLightsOff() {
   deviceTipOff();
 }
 
-void fireStreamStart(CRGB c_colour) {
-  if(ms_firing_lights.justFinished() && i_cyclotron_light < i_num_cyclotron_leds) {
-    // Just set the current LED to the expected colour.
-    system_leds[i_cyclotron_light] = c_colour;
-
-    // Firing at "normal" speed.
-    ms_firing_lights.start(d_firing_stream / 5);
-
-    i_cyclotron_light++;
-
-    if(i_cyclotron_light == i_num_cyclotron_leds) {
-      i_cyclotron_light = 0;
-
-      ms_firing_lights.stop();
-
-      // Firing at "normal" speed.
-      ms_firing_stream_effects.start(d_firing_stream);
-    }
-  }
-}
-
-void fireEffectEnd() {
-  // Initialize temporary colour variable to reduce code complexity.
-  colours c_temp = C_WHITE;
-
-  if(i_cyclotron_light < i_num_cyclotron_leds && ms_firing_stream_effects.isRunning()) {
-    switch(STREAM_MODE) {
-      case PROTON:
-      default:
-      // Shift the stream from red to orange on higher power levels.
-      switch(i_power_level) {
-        case 1:
-        default:
-          c_temp = C_BLUE;
-        break;
-
-        case 2:
-          c_temp = C_BLUE;
-        break;
-
-        case 3:
-          c_temp = C_LIGHT_BLUE;
-        break;
-
-        case 4:
-          c_temp = C_LIGHT_BLUE;
-        break;
-
-        case 5:
-          c_temp = C_WHITE;
-        break;
-      }
-    }
-
-    fireStreamEffect(getHueAsRGB(c_temp));
-
-    if(i_cyclotron_light < i_num_cyclotron_leds) {
-      ms_firing_effect_end.repeat();
-    }
-    else {
-      // Give a slight delay for the final pixel before clearing it.
-      uint8_t i_firing_stream; // Stores a calculated value based on LED count.
-
-      // Firing at "normal" speed.
-      i_firing_stream = d_firing_stream;
-
-      switch(i_power_level) {
-        case 1:
-        default:
-          // Do nothing.
-        break;
-
-        case 2:
-          i_firing_stream = i_firing_stream - 15;
-        break;
-
-        case 3:
-          i_firing_stream = i_firing_stream - 30;
-        break;
-
-        case 4:
-          i_firing_stream = i_firing_stream - 45;
-        break;
-
-        case 5:
-          i_firing_stream = i_firing_stream - 60;
-        break;
-      }
-
-      ms_firing_effect_end.start(i_firing_stream);
-      ms_firing_stream_effects.stop();
-    }
-  }
-  else {
-    switch(STREAM_MODE) {
-      case PROTON:
-      default:
-        // Shift the stream from red to orange on higher power levels.
-        switch(i_power_level) {
-          case 1:
-          default:
-            c_temp = C_RED;
-          break;
-
-          case 2:
-            c_temp = C_RED2;
-          break;
-
-          case 3:
-            c_temp = C_RED3;
-          break;
-
-          case 4:
-            c_temp = C_RED4;
-          break;
-
-          case 5:
-            c_temp = C_RED5;
-          break;
-        }
-      break;
-    }
-
-    // Set the final LED back to whatever colour it is without the effect.
-    system_leds[i_cyclotron_light - 1] = getHueAsRGB(c_temp);
-
-    i_cyclotron_light = 0;
-    ms_firing_effect_end.stop();
-    ms_firing_lights_end.start(0);
-  }
-}
-
-void fireStreamEnd(CRGB c_colour) {
-  if(i_cyclotron_light < i_num_cyclotron_leds) {
-    // Set the colour for the specific LED.
-    system_leds[i_cyclotron_light] = c_colour;
-
-    // Firing at a "normal" rate
-    ms_firing_lights_end.start(d_firing_stream / 5);
-
-    i_cyclotron_light++;
-
-    if(i_cyclotron_light == i_num_cyclotron_leds) {
-      i_cyclotron_light = 0;
-
-      // Turn off device tip in case it's still on.
-      deviceTipOff();
-
-      ms_firing_lights_end.stop();
-
-      i_fast_led_delay = FAST_LED_UPDATE_MS;
-    }
-  }
-}
-
-// This is the Super Hero bargraph firing animation. Ramping up and down from the middle to the top/bottom and back to the middle again.
-void bargraphSuperHeroRampFiringAnimation() {
-  if(b_28segment_bargraph) {
-    switch(i_bargraph_status_alt) {
-      case 0:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(13));
-        ht_bargraph.setLed(bargraphLookupTable(14));
-
-        b_bargraph_status[13] = true;
-        b_bargraph_status[14] = true;
-
-        i_bargraph_status_alt++;
-
-        if(!b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(12));
-          ht_bargraph.clearLed(bargraphLookupTable(15));
-
-          b_bargraph_status[12] = false;
-          b_bargraph_status[15] = false;
-        }
-
-        b_bargraph_up = true;
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 1:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(12));
-        ht_bargraph.setLed(bargraphLookupTable(15));
-
-        b_bargraph_status[12] = true;
-        b_bargraph_status[15] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(13));
-          ht_bargraph.clearLed(bargraphLookupTable(14));
-
-          b_bargraph_status[13] = false;
-          b_bargraph_status[14] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(11));
-          ht_bargraph.clearLed(bargraphLookupTable(16));
-
-          b_bargraph_status[11] = false;
-          b_bargraph_status[16] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 2:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(11));
-        ht_bargraph.setLed(bargraphLookupTable(16));
-
-        b_bargraph_status[11] = true;
-        b_bargraph_status[16] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(12));
-          ht_bargraph.clearLed(bargraphLookupTable(15));
-
-          b_bargraph_status[12] = false;
-          b_bargraph_status[15] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(10));
-          ht_bargraph.clearLed(bargraphLookupTable(17));
-
-          b_bargraph_status[10] = false;
-          b_bargraph_status[17] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 3:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(10));
-        ht_bargraph.setLed(bargraphLookupTable(17));
-
-        b_bargraph_status[10] = true;
-        b_bargraph_status[17] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(11));
-          ht_bargraph.clearLed(bargraphLookupTable(16));
-
-          b_bargraph_status[11] = false;
-          b_bargraph_status[16] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(9));
-          ht_bargraph.clearLed(bargraphLookupTable(18));
-
-          b_bargraph_status[9] = false;
-          b_bargraph_status[18] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 4:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(9));
-        ht_bargraph.setLed(bargraphLookupTable(18));
-
-        b_bargraph_status[9] = true;
-        b_bargraph_status[18] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(10));
-          ht_bargraph.clearLed(bargraphLookupTable(17));
-
-          b_bargraph_status[10] = false;
-          b_bargraph_status[17] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(8));
-          ht_bargraph.clearLed(bargraphLookupTable(19));
-
-          b_bargraph_status[8] = false;
-          b_bargraph_status[19] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 5:
-        vibrationDevice(i_vibration_level + 110);
-
-        ht_bargraph.setLed(bargraphLookupTable(8));
-        ht_bargraph.setLed(bargraphLookupTable(19));
-
-        b_bargraph_status[8] = true;
-        b_bargraph_status[19] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(9));
-          ht_bargraph.clearLed(bargraphLookupTable(18));
-
-          b_bargraph_status[9] = false;
-          b_bargraph_status[18] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(7));
-          ht_bargraph.clearLed(bargraphLookupTable(20));
-
-          b_bargraph_status[7] = false;
-          b_bargraph_status[20] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 6:
-        vibrationDevice(i_vibration_level + 112);
-
-        ht_bargraph.setLed(bargraphLookupTable(7));
-        ht_bargraph.setLed(bargraphLookupTable(20));
-
-        b_bargraph_status[7] = true;
-        b_bargraph_status[20] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(8));
-          ht_bargraph.clearLed(bargraphLookupTable(19));
-
-          b_bargraph_status[8] = false;
-          b_bargraph_status[19] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(6));
-          ht_bargraph.clearLed(bargraphLookupTable(21));
-
-          b_bargraph_status[6] = false;
-          b_bargraph_status[21] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 7:
-        vibrationDevice(i_vibration_level + 112);
-
-        ht_bargraph.setLed(bargraphLookupTable(6));
-        ht_bargraph.setLed(bargraphLookupTable(21));
-
-        b_bargraph_status[6] = true;
-        b_bargraph_status[21] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(7));
-          ht_bargraph.clearLed(bargraphLookupTable(20));
-
-          b_bargraph_status[7] = false;
-          b_bargraph_status[20] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(5));
-          ht_bargraph.clearLed(bargraphLookupTable(22));
-
-          b_bargraph_status[5] = false;
-          b_bargraph_status[22] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 8:
-        vibrationDevice(i_vibration_level + 112);
-
-        ht_bargraph.setLed(bargraphLookupTable(5));
-        ht_bargraph.setLed(bargraphLookupTable(22));
-
-        b_bargraph_status[5] = true;
-        b_bargraph_status[22] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(6));
-          ht_bargraph.clearLed(bargraphLookupTable(21));
-
-          b_bargraph_status[6] = false;
-          b_bargraph_status[21] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(4));
-          ht_bargraph.clearLed(bargraphLookupTable(23));
-
-          b_bargraph_status[4] = false;
-          b_bargraph_status[23] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 9:
-        vibrationDevice(i_vibration_level + 112);
-
-        ht_bargraph.setLed(bargraphLookupTable(4));
-        ht_bargraph.setLed(bargraphLookupTable(23));
-
-        b_bargraph_status[4] = true;
-        b_bargraph_status[23] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(5));
-          ht_bargraph.clearLed(bargraphLookupTable(22));
-
-          b_bargraph_status[5] = false;
-          b_bargraph_status[22] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(3));
-          ht_bargraph.clearLed(bargraphLookupTable(24));
-
-          b_bargraph_status[3] = false;
-          b_bargraph_status[24] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 10:
-        vibrationDevice(i_vibration_level + 112);
-
-        ht_bargraph.setLed(bargraphLookupTable(3));
-        ht_bargraph.setLed(bargraphLookupTable(24));
-
-        b_bargraph_status[3] = true;
-        b_bargraph_status[24] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(4));
-          ht_bargraph.clearLed(bargraphLookupTable(23));
-
-          b_bargraph_status[4] = false;
-          b_bargraph_status[23] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(2));
-          ht_bargraph.clearLed(bargraphLookupTable(25));
-
-          b_bargraph_status[2] = false;
-          b_bargraph_status[25] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 11:
-        vibrationDevice(i_vibration_level + 115);
-
-        ht_bargraph.setLed(bargraphLookupTable(2));
-        ht_bargraph.setLed(bargraphLookupTable(25));
-
-        b_bargraph_status[2] = false;
-        b_bargraph_status[25] = false;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(3));
-          ht_bargraph.clearLed(bargraphLookupTable(24));
-
-          b_bargraph_status[3] = false;
-          b_bargraph_status[24] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(1));
-          ht_bargraph.clearLed(bargraphLookupTable(26));
-
-          b_bargraph_status[1] = false;
-          b_bargraph_status[26] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOff();
-      break;
-
-      case 12:
-        vibrationDevice(i_vibration_level + 115);
-
-        ht_bargraph.setLed(bargraphLookupTable(1));
-        ht_bargraph.setLed(bargraphLookupTable(26));
-
-        b_bargraph_status[1] = true;
-        b_bargraph_status[26] = true;
-
-        if(b_bargraph_up) {
-          ht_bargraph.clearLed(bargraphLookupTable(2));
-          ht_bargraph.clearLed(bargraphLookupTable(25));
-
-          b_bargraph_status[2] = false;
-          b_bargraph_status[25] = false;
-
-          i_bargraph_status_alt++;
-        }
-        else {
-          ht_bargraph.clearLed(bargraphLookupTable(0));
-          ht_bargraph.clearLed(bargraphLookupTable(27));
-
-          b_bargraph_status[0] = false;
-          b_bargraph_status[27] = false;
-
-          i_bargraph_status_alt--;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-
-      case 13:
-        vibrationDevice(i_vibration_level + 115);
-
-        ht_bargraph.setLed(bargraphLookupTable(0));
-        ht_bargraph.setLed(bargraphLookupTable(27));
-
-        b_bargraph_status[0] = true;
-        b_bargraph_status[27] = true;
-
-        ht_bargraph.clearLed(bargraphLookupTable(1));
-        ht_bargraph.clearLed(bargraphLookupTable(26));
-
-        b_bargraph_status[1] = false;
-        b_bargraph_status[26] = false;
-
-        i_bargraph_status_alt--;
-
-        b_bargraph_up = false;
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        deviceTipOn();
-      break;
-    }
-  }
-}
-
-// This is the Mode Original bargraph firing animation. The top portion fluctuates during firing and becomes more erratic the longer firing continues.
-void bargraphModeOriginalRampFiringAnimation() {
-  if(b_28segment_bargraph) {
-    /*
-      5: full: 23 - 27  (5 segments)
-      4: 3/4: 17 - 22   (6 segments)
-      3: 1/2: 12 - 16   (5 segments)
-      2: 1/4: 5 - 11    (7 segments)
-      1: none: 0 - 4    (5 segments)
-    */
-
-    // When firing starts, i_bargraph_status_alt resets to 0 in modeFireStart();
-    if(i_bargraph_status_alt == 0) {
-      // Set our target.
-      switch(i_power_level) {
-        case 5:
-          i_bargraph_status_alt = random(18, i_bargraph_segments - 1);
-        break;
-
-        case 4:
-          i_bargraph_status_alt = random(13, 25);
-        break;
-
-        case 3:
-          i_bargraph_status_alt = random(9, 19);
-        break;
-
-        case 2:
-          i_bargraph_status_alt = random(3, 13);
-        break;
-
-        case 1:
-        default:
-          // Not used in MODE_ORIGINAL.
-          //i_bargraph_status_alt = random(0, 6);
-        break;
-      }
-    }
-
-    bool b_tmp_down = true;
-
-    for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-      if(!b_bargraph_status[i] && i < i_bargraph_status_alt) {
-        b_tmp_down = false;
-        break;
-      }
-    }
-
-    switch(i_power_level) {
-      case 5:
-        if(b_tmp_down) {
-          // Moving down.
-          for(uint8_t i = i_bargraph_segments - 1; i >= i_bargraph_status_alt; i--) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(6, i_bargraph_segments - 1);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(9, i_bargraph_segments - 1);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(12, i_bargraph_segments - 1);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(15, i_bargraph_segments - 1);
-                break;
-
-                case 1:
-                default:
-                  i_bargraph_status_alt = random(18, i_bargraph_segments - 1);
-                break;
-              }
-            }
-
-            if(b_bargraph_status[i]) {
-              ht_bargraph.clearLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = false;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-        else {
-          // Need to move up.
-          for(uint8_t i = 0; i <= i_bargraph_status_alt; i++) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(8, i_bargraph_segments - 1);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(12, i_bargraph_segments - 1);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(14, i_bargraph_segments - 1);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(16, i_bargraph_segments - 1);
-                break;
-
-                case 1:
-                  i_bargraph_status_alt = random(18, i_bargraph_segments - 1);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, i_bargraph_segments - 1);
-                break;
-              }
-            }
-
-            if(!b_bargraph_status[i]) {
-              ht_bargraph.setLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = true;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 4:
-        if(b_tmp_down) {
-          // Moving down.
-          for(uint8_t i = 25; i >= i_bargraph_status_alt; i--) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 25);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(4, 25);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(7, 25);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(10, 25);
-                break;
-
-                case 1:
-                  i_bargraph_status_alt = random(13, 25);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 25);
-                break;
-              }
-            }
-
-            if(b_bargraph_status[i]) {
-              ht_bargraph.clearLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = false;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-        else {
-          // Need to move up.
-          for(uint8_t i = 0; i <= i_bargraph_status_alt; i++) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 25);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(4, 25);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(7, 25);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(10, 25);
-                break;
-
-                case 1:
-                  i_bargraph_status_alt = random(13, 25);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 25);
-                break;
-              }
-            }
-
-            if(!b_bargraph_status[i]) {
-              ht_bargraph.setLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = true;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 3:
-        if(b_tmp_down) {
-          // Moving down.
-          for(uint8_t i = 19; i >= i_bargraph_status_alt; i--) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 19);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(3, 19);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(5, 19);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(7, 19);
-                break;
-
-                case 1:
-                  i_bargraph_status_alt = random(9, 19);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 19);
-                break;
-              }
-            }
-
-            if(b_bargraph_status[i]) {
-              ht_bargraph.clearLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = false;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-        else {
-          // Need to move up.
-          for(uint8_t i = 0; i <= i_bargraph_status_alt; i++) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 19);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(3, 19);
-                break;
-
-                case 3:
-                  i_bargraph_status_alt = random(5, 19);
-                break;
-
-                case 2:
-                  i_bargraph_status_alt = random(7, 19);
-                break;
-
-                case 1:
-                  i_bargraph_status_alt = random(9, 19);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 19);
-                break;
-              }
-            }
-
-            if(!b_bargraph_status[i]) {
-              ht_bargraph.setLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = true;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 2:
-        if(b_tmp_down) {
-          // Moving down.
-          for(uint8_t i = 13; i >= i_bargraph_status_alt; i--) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 13);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(2, 13);
-                break;
-
-                case 3:
-                case 2:
-                case 1:
-                  i_bargraph_status_alt = random(3, 13);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 13);
-                break;
-              }
-            }
-
-            if(b_bargraph_status[i]) {
-              ht_bargraph.clearLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = false;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-        else {
-          // Need to move up.
-          for(uint8_t i = 0; i <= i_bargraph_status_alt; i++) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(1, 13);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(2, 13);
-                break;
-
-                case 3:
-                case 2:
-                case 1:
-                  i_bargraph_status_alt = random(3, 13);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 13);
-                break;
-              }
-            }
-
-            if(!b_bargraph_status[i]) {
-              ht_bargraph.setLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = true;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-
-      case 1:
-      default:
-        if(b_tmp_down) {
-          // Moving down.
-          for(uint8_t i = 7; i >= i_bargraph_status_alt; i--) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(0, 10);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(0, 9);
-                break;
-
-                case 3:
-                case 2:
-                case 1:
-                  i_bargraph_status_alt = random(0, 8);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 7);
-                break;
-              }
-            }
-
-            if(b_bargraph_status[i]) {
-              ht_bargraph.clearLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = false;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-        else {
-          // Need to move up.
-          for(uint8_t i = 0; i <= i_bargraph_status_alt; i++) {
-            if(i_bargraph_status_alt == i) {
-              switch(i_cyclotron_speed_up) {
-                case 5:
-                  i_bargraph_status_alt = random(0, 10);
-                break;
-
-                case 4:
-                  i_bargraph_status_alt = random(0, 9);
-                break;
-
-                case 3:
-                case 2:
-                case 1:
-                  i_bargraph_status_alt = random(0, 8);
-                break;
-
-                default:
-                  i_bargraph_status_alt = random(0, 7);
-                break;
-              }
-            }
-
-            if(!b_bargraph_status[i]) {
-              ht_bargraph.setLed(bargraphLookupTable(i));
-              b_bargraph_status[i] = true;
-
-              break;
-            }
-          }
-
-          ht_bargraph.sendLed(); // Commit the changes.
-        }
-      break;
-    }
-
-    if(i_bargraph_status_alt > 22) {
-      vibrationDevice(i_vibration_level + 115);
-    }
-    else if(i_bargraph_status_alt > 11) {
-      vibrationDevice(i_vibration_level + 112);
-    }
-    else {
-      vibrationDevice(i_vibration_level + 110);
-    }
-  }
-
-  if(i_bargraph_status > 3) {
-    vibrationDevice(i_vibration_level + 115);
-  }
-  else if(i_bargraph_status > 1) {
-    vibrationDevice(i_vibration_level + 112);
-  }
-  else {
-    vibrationDevice(i_vibration_level + 110);
-  }
-}
-
-// Bargraph ramping during firing.
-// Optional barrel LED tip strobing is controlled from here to give it a ramp effect if the device is going to overheat.
-void bargraphRampFiring() {
-  switch(BARGRAPH_FIRING_ANIMATION) {
-    case BARGRAPH_ANIMATION_SUPER_HERO:
-      bargraphSuperHeroRampFiringAnimation();
-    break;
-    case BARGRAPH_ANIMATION_ORIGINAL:
-    default:
-      bargraphModeOriginalRampFiringAnimation();
-
-      // Strobe the optional tip light on even barrel LED numbers.
-      if((i_cyclotron_light & 0x01) == 0) {
-        deviceTipOn();
-      }
-      else {
-        deviceTipOff();
-      }
-    break;
-  }
-
-  uint8_t i_ramp_interval = d_bargraph_ramp_interval;
-
-  if(b_28segment_bargraph) {
-    // Switch to a different ramp speed if using the (Optional) 28 segment barmeter bargraph.
-    i_ramp_interval = d_bargraph_ramp_interval_alt;
-  }
-
-  // If in a power level on the device that can overheat, change the speed of the bargraph ramp during firing based on time remaining before we overheat.
-  if(b_28segment_bargraph) {
-    switch(i_power_level) {
-      case 5:
-        ms_bargraph_firing.start((i_ramp_interval / 2) - 7); // 13ms per segment
-      break;
-
-      case 4:
-        ms_bargraph_firing.start((i_ramp_interval / 2) - 3); // 15ms per segment
-      break;
-
-      case 3:
-        ms_bargraph_firing.start(i_ramp_interval / 2); // 20ms per segment
-      break;
-
-      case 2:
-        ms_bargraph_firing.start((i_ramp_interval / 2) + 7); // 25ms per segment
-      break;
-
-      case 1:
-      default:
-        ms_bargraph_firing.start((i_ramp_interval / 2) + 12); // 30ms per segment
-      break;
-    }
-  }
-}
-
-void cyclotronSpeedUp(uint8_t i_switch) {
-  if(i_switch != i_cyclotron_speed_up) {
-    if(i_switch == 4) {
-      ms_hat_1.start(i_hat_1_delay);
-    }
-
-    i_cyclotron_speed_up++;
-  }
-}
-
-void cyclotronSpeedRevert() {
-  i_cyclotron_speed_up = 1;
-}
-
-// 2021 mode for optional 28 segment bargraph.
-// Checks if we ramp up or down when changing power levels.
-// Forces the bargraph to redraw itself to the current power level.
-void bargraphPowerCheck2021Alt(bool b_override) {
-  if((DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_SETTINGS) || b_override) {
-    if(i_power_level != i_power_level_prev || b_override) {
-      if(i_power_level > i_power_level_prev) {
-        b_bargraph_up = true;
-      }
-      else {
-        b_bargraph_up = false;
-      }
-
-      switch(i_power_level) {
-        case 5:
-          ms_bargraph_alt.start(i_bargraph_wait / 3);
-        break;
-
-        case 4:
-          ms_bargraph_alt.start(i_bargraph_wait / 4);
-        break;
-
-        case 3:
-          ms_bargraph_alt.start(i_bargraph_wait / 5);
-        break;
-
-        case 2:
-          ms_bargraph_alt.start(i_bargraph_wait / 6);
-        break;
-
-        case 1:
-        default:
-          ms_bargraph_alt.start(i_bargraph_wait / 7);
-        break;
-      }
-    }
-  }
-}
-
-void bargraphClearAll() {
-  ht_bargraph.clearAll();
-
-  for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-    b_bargraph_status[i] = false;
-  }
-}
-
-void bargraphClearAlt() {
-  if(b_28segment_bargraph) {
-    bargraphClearAll();
-
-    i_bargraph_status_alt = 0;
-  }
-}
-
-// This function handles returning all bargraph lookup table values.
-uint8_t bargraphLookupTable(uint8_t index) {
-  if(b_28segment_bargraph) {
-    if(b_bargraph_invert) {
-      return PROGMEM_READU8(i_bargraph_invert[index]);
-    }
-    else {
-      return PROGMEM_READU8(i_bargraph_normal[index]);
-    }
-  }
-  return 0;
-}
-
-// Draw the bargraph to the current power level instantly.
-void bargraphRedraw() {
-  if(b_28segment_bargraph) {
-    /*
-      5: full: 23 - 27  (5 segments)
-      4: 3/4: 17 - 22   (6 segments)
-      3: 1/2: 12 - 16   (5 segments)
-      2: 1/4: 5 - 11    (7 segments)
-      1: none: 0 - 4    (5 segments)
-    */
-
-    switch(i_power_level) {
-      case 1:
-      default:
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          if(i <= 4) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        i_bargraph_status_alt = 4;
-      break;
-
-      case 2:
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          if(i <= 11) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        i_bargraph_status_alt = 11;
-      break;
-
-      case 3:
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          if(i <= 16) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        i_bargraph_status_alt = 16;
-      break;
-
-      case 4:
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          if(i <= 22) {
-            ht_bargraph.setLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = true;
-          }
-          else {
-            ht_bargraph.clearLed(bargraphLookupTable(i));
-            b_bargraph_status[i] = false;
-          }
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        i_bargraph_status_alt = 22;
-      break;
-
-      case 5:
-        for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-          ht_bargraph.setLed(bargraphLookupTable(i));
-          b_bargraph_status[i] = true;
-        }
-
-        ht_bargraph.sendLed(); // Commit the changes.
-        i_bargraph_status_alt = 27;
-      break;
-    }
-  }
-}
-
-void bargraphPowerCheck() {
-  // Control for the 28 segment barmeter bargraph.
-  /*
-    5: full: 23 - 27  (5 segments)
-    4: 3/4: 17 - 22   (6 segments)
-    3: 1/2: 12 - 16   (5 segments)
-    2: 1/4: 5 - 11    (7 segments)
-    1: none: 0 - 4    (5 segments)
-  */
-  if(b_28segment_bargraph) {
-    if(ms_bargraph_alt.justFinished()) {
-      uint8_t i_bargraph_multiplier[5] = { 7, 6, 5, 4, 3 };
-
-      if(b_bargraph_up) {
-        if(i_bargraph_status_alt < i_bargraph_segments) {
-          ht_bargraph.setLedNow(bargraphLookupTable(i_bargraph_status_alt));
-          b_bargraph_status[i_bargraph_status_alt] = true;
-        }
-
-        switch(i_power_level) {
-          case 5:
-            if(i_bargraph_status_alt > 27) {
-              b_bargraph_up = false;
-
-              i_bargraph_status_alt = 27;
-
-              // A little pause when we reach the top.
-              ms_bargraph_alt.start(i_bargraph_wait / 2);
-            }
-            else {
-              ms_bargraph_alt.start(i_bargraph_interval * i_bargraph_multiplier[i_power_level - 1]);
-            }
-          break;
-
-          case 4:
-            if(i_bargraph_status_alt > 21) {
-              b_bargraph_up = false;
-
-              // A little pause when we reach the top.
-              ms_bargraph_alt.start(i_bargraph_wait / 2);
-            }
-            else {
-              ms_bargraph_alt.start(i_bargraph_interval * i_bargraph_multiplier[i_power_level - 1]);
-            }
-          break;
-
-          case 3:
-            if(i_bargraph_status_alt > 15) {
-              b_bargraph_up = false;
-              // A little pause when we reach the top.
-              ms_bargraph_alt.start(i_bargraph_wait / 2);
-            }
-            else {
-              ms_bargraph_alt.start(i_bargraph_interval * i_bargraph_multiplier[i_power_level - 1]);
-            }
-          break;
-
-          case 2:
-            if(i_bargraph_status_alt > 10) {
-              b_bargraph_up = false;
-              // A little pause when we reach the top.
-              ms_bargraph_alt.start(i_bargraph_wait / 2);
-            }
-            else {
-              ms_bargraph_alt.start(i_bargraph_interval * i_bargraph_multiplier[i_power_level - 1]);
-            }
-          break;
-
-          case 1:
-          default:
-            if(i_bargraph_status_alt > 3) {
-              b_bargraph_up = false;
-              // A little pause when we reach the top.
-              ms_bargraph_alt.start(i_bargraph_wait / 2);
-            }
-            else {
-              ms_bargraph_alt.start(i_bargraph_interval * i_bargraph_multiplier[i_power_level - 1]);
-            }
-          break;
-        }
-
-        if(b_bargraph_up) {
-          i_bargraph_status_alt++;
-        }
-      }
-      else {
-        if(i_bargraph_status_alt < i_bargraph_segments) {
-          ht_bargraph.clearLedNow(bargraphLookupTable(i_bargraph_status_alt));
-          b_bargraph_status[i_bargraph_status_alt] = false;
-        }
-
-        if(i_bargraph_status_alt == 0) {
-          b_bargraph_up = true;
-
-          // A little pause when we reach the bottom.
-          ms_bargraph_alt.start(i_bargraph_wait / 2);
-        }
-        else {
-          i_bargraph_status_alt--;
-
-          switch(i_power_level) {
-            case 5:
-              ms_bargraph_alt.start(i_bargraph_interval * 3);
-            break;
-
-            case 4:
-              ms_bargraph_alt.start(i_bargraph_interval * 4);
-            break;
-
-            case 3:
-              ms_bargraph_alt.start(i_bargraph_interval * 5);
-            break;
-
-            case 2:
-              ms_bargraph_alt.start(i_bargraph_interval * 6);
-            break;
-
-            case 1:
-            default:
-              ms_bargraph_alt.start(i_bargraph_interval * 7);
-            break;
-          }
-        }
-      }
-    }
-  }
-}
-
-// Fully lights up the bargraph.
-void bargraphFull() {
-  if(b_28segment_bargraph) {
-    for(uint8_t i = 0; i < i_bargraph_segments; i++) {
-      ht_bargraph.setLed(bargraphLookupTable(i));
-      b_bargraph_status[i] = true;
-    }
-
-    ht_bargraph.sendLed(); // Commit the changes.
-  }
-}
-
-void bargraphRampUp() {
-  if(i_vibration_level < i_vibration_level_min) {
-    i_vibration_level = i_vibration_level_min;
-  }
-
-  if(b_28segment_bargraph) {
-    /*
-      5: full: 23 - 27 (5 segments)
-      4: 3/4: 17 - 22  (6 segments)
-      3: 1/2: 12 - 16  (5 segments)
-      2: 1/4: 5 - 11   (7 segments)
-      1: none: 0 - 4   (5 segments)
-    */
-
-    switch(i_bargraph_status_alt) {
-      case 0 ... 27:
-        ht_bargraph.setLedNow(bargraphLookupTable(i_bargraph_status_alt));
-        b_bargraph_status[i_bargraph_status_alt] = true;
-
-        if(i_bargraph_status_alt > 22) {
-          vibrationDevice(i_vibration_level + 80);
-        }
-        else if(i_bargraph_status_alt > 16) {
-          vibrationDevice(i_vibration_level + 40);
-        }
-        else if(i_bargraph_status_alt > 11) {
-          vibrationDevice(i_vibration_level + 30);
-        }
-        else if(i_bargraph_status_alt > 4) {
-          vibrationDevice(i_vibration_level + 20);
-        }
-        else if(i_bargraph_status_alt > 0) {
-          vibrationDevice(i_vibration_level + 10);
-        }
-
-        i_bargraph_status_alt++;
-
-        if(i_bargraph_status_alt == 28) {
-          // A little pause when we reach the top.
-          ms_bargraph.start(i_bargraph_wait / 2);
-        }
-        else {
-          ms_bargraph.start(i_bargraph_interval * i_bargraph_multiplier_current);
-        }
-      break;
-
-      case 28 ... 55:
-        uint8_t i_tmp = i_bargraph_status_alt - (i_bargraph_segments - 1);
-        i_tmp = i_bargraph_segments - i_tmp;
-
-        ht_bargraph.clearLedNow(bargraphLookupTable(i_tmp));
-        b_bargraph_status[i_tmp] = false;
-
-        switch(BARGRAPH_MODE) {
-          case BARGRAPH_SUPER_HERO:
-          default:
-            // Bargraph has ramped up and down. In 1984/1989 mode we want to start the ramping.
-            if(i_bargraph_status_alt == 55) {
-              ms_bargraph_alt.start(i_bargraph_interval); // Start the alternate bargraph to ramp up and down continuously.
-              ms_bargraph.stop();
-              b_bargraph_up = true;
-              i_bargraph_status_alt = 0;
-
-              vibrationDevice(i_vibration_level);
-            }
-            else {
-              ms_bargraph.start(i_bargraph_interval * i_bargraph_multiplier_current);
-              i_bargraph_status_alt++;
-            }
-          break;
-        }
-      break;
-    }
-  }
-}
-
-void prepBargraphRampDown() {
-  if(DEVICE_STATUS == MODE_ON && DEVICE_ACTION_STATUS == ACTION_IDLE) {
-    // If bargraph is set to ramp down during ribbon cable error, we need to set a few things.
-    soundIdleLoopStop();
-
-    // Reset some bargraph levels before we ramp the bargraph down.
-    i_bargraph_status_alt = i_bargraph_segments; // For 28 segment bargraph
-
-    bargraphFull();
-
-    ms_bargraph.start(d_bargraph_ramp_interval);
-
-    // Prepare to make the bargraph ramp down now.
-    bargraphRampUp();
-  }
-}
-
-void prepBargraphRampUp() {
-  if(DEVICE_STATUS == MODE_ON && DEVICE_ACTION_STATUS == ACTION_IDLE) {
-    bargraphClearAlt();
-
-    ms_settings_blinking.stop();
-
-    // Prepare a few things before ramping the bargraph back up from a full ramp down.
-    bargraphRampUp();
-  }
-}
-
 void allLightsOff() {
-  if(b_28segment_bargraph) {
-    bargraphClearAlt();
-  }
+  bargraphClear();
 
   // These go LOW to turn off.
   digitalWriteFast(led_slo_blo, LOW);
@@ -3128,9 +1132,6 @@ void allLightsOff() {
 
   // Clear all addressable LEDs by filling the array with black.
   fill_solid(system_leds, CYCLOTRON_LED_COUNT + BARREL_LED_COUNT, CRGB::Black);
-
-  i_bargraph_status = 0;
-  i_bargraph_status_alt = 0;
 
   if(b_power_on_indicator && !ms_power_indicator.isRunning()) {
     ms_power_indicator.start(i_ms_power_indicator);
@@ -3589,24 +1590,14 @@ void checkRotaryEncoder() {
             }
         }
         else {
-          if(DEVICE_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
+          if(DEVICE_ACTION_STATUS == ACTION_FIRING && POWER_LEVEL == LEVEL_5) {
             // Do nothing, we are locked in full power level while firing.
           }
           // Counter clockwise.
           else if(prev_next_code == 0x0b) {
             if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
               // Check to see the minimal power level depending on which system mode.
-              uint8_t i_tmp_power_level_min = i_power_level_min;
-
-              if(i_power_level - 1 >= i_tmp_power_level_min && DEVICE_STATUS == MODE_ON) {
-                i_power_level_prev = i_power_level;
-                i_power_level--;
-
-                // Forces a redraw of the bargraph if firing while changing the power level in the BARGRAPH_ANIMATION_ORIGINAL.
-                if(b_firing && b_28segment_bargraph && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
-                  bargraphRedraw();
-                }
-
+              if(decreasePowerLevel() && DEVICE_STATUS == MODE_ON) {
                 soundIdleLoopStop();
                 soundIdleLoop(false);
               }
@@ -3627,28 +1618,15 @@ void checkRotaryEncoder() {
             }
           }
 
-          if(DEVICE_ACTION_STATUS == ACTION_FIRING && i_power_level == i_power_level_max) {
+          if(DEVICE_ACTION_STATUS == ACTION_FIRING && POWER_LEVEL == LEVEL_5) {
             // Do nothing, we are locked in full power level while firing.
           }
           // Clockwise.
           else if(prev_next_code == 0x07) {
             if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
-              if(i_power_level + 1 <= i_power_level_max && DEVICE_STATUS == MODE_ON) {
-                if(i_power_level + 1 == i_power_level_max && DEVICE_ACTION_STATUS == ACTION_FIRING) {
-                  // Do nothing, we do not want to go into max power level if firing in a lower power level already.
-                }
-                else {
-                  i_power_level_prev = i_power_level;
-                  i_power_level++;
-
-                  // Forces a redraw of the bargraph if firing while changing the power level if using BARGRAPH_ANIMATION_ORIGINAL.
-                  if(b_firing && b_28segment_bargraph && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
-                    bargraphRedraw();
-                  }
-
-                  soundIdleLoopStop();
-                  soundIdleLoop(false);
-                }
+              if(increasePowerLevel() && DEVICE_STATUS == MODE_ON) {
+                soundIdleLoopStop();
+                soundIdleLoop(false);
               }
             }
             else if(!switch_device.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && DEVICE_STATUS == MODE_ON) {
@@ -3702,25 +1680,25 @@ void vibrationDevice(uint8_t i_level) {
 
 void vibrationSetting() {
   if(!ms_bargraph.isRunning() && DEVICE_ACTION_STATUS != ACTION_FIRING) {
-    switch(i_power_level) {
-      case 1:
+    switch(POWER_LEVEL) {
+      case LEVEL_1:
       default:
         vibrationDevice(i_vibration_level);
       break;
 
-      case 2:
+      case LEVEL_2:
         vibrationDevice(i_vibration_level + 5);
       break;
 
-      case 3:
+      case LEVEL_3:
         vibrationDevice(i_vibration_level + 10);
       break;
 
-      case 4:
+      case LEVEL_4:
         vibrationDevice(i_vibration_level + 12);
       break;
 
-      case 5:
+      case LEVEL_5:
         vibrationDevice(i_vibration_level + 25);
       break;
     }

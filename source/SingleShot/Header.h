@@ -33,23 +33,17 @@ enum DEVICE_ACTION_STATE { ACTION_IDLE, ACTION_OFF, ACTION_ACTIVATE, ACTION_FIRI
 enum DEVICE_ACTION_STATE DEVICE_ACTION_STATUS;
 
 /*
- * Bargraph modes.
- * Super Hero: Mimics the super hero bargraph animations from the Single-Shot Blaster closeup in the 1984 rooftop. This is the default for 1984/1989 and Super Hero Mode.
- * Original: Mimics the original diagrams and instructions based on production notes and in Afterlife. This is the default for Afterlife and Mode Original.
+ * Device Stream Modes + Settings
+ * Stream = Type of particle stream to be thrown by the device
  */
-enum BARGRAPH_MODES { BARGRAPH_SUPER_HERO };
-enum BARGRAPH_MODES BARGRAPH_MODE;
+enum STREAM_MODES { PROTON };
+enum STREAM_MODES STREAM_MODE;
+enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
+enum POWER_LEVELS POWER_LEVEL;
+enum POWER_LEVELS POWER_LEVEL_PREV;
 
 /*
- * Bargraph Firing Animations.
- * Animation Super Hero: Mimics the fandom animations of the bargraph scrolling up and down with 2 lines with it merging in the middle. This is the default for 1984/1989 and Super Hero Mode.
- * Animation Original: Mimics the original diagrams and instructions based on production notes. This is the default for Afterlife and Mode Original.
- */
-enum BARGRAPH_FIRING_ANIMATIONS { BARGRAPH_ANIMATION_SUPER_HERO, BARGRAPH_ANIMATION_ORIGINAL };
-enum BARGRAPH_FIRING_ANIMATIONS BARGRAPH_FIRING_ANIMATION;
-
-/*
- * For MODE_ORIGINAL. For blinking the slo-blo light when the cyclotron is not on.
+ * For blinking the slo-blo light when the cyclotron is not on.
  */
 millisDelay ms_slo_blo_blink;
 const uint16_t i_slo_blo_blink_delay = 500;
@@ -74,53 +68,35 @@ millisDelay ms_cyclotron;
 const uint8_t i_cyclotron_leds[i_num_cyclotron_leds] = {0, 1, 2, 3, 4, 5, 6}; // Note: 0 is the dead center of the jewel
 const uint8_t i_cyclotron_max_steps = 12; // Set a reusable constant for the maximum number of steps to cycle through
 // Sequence: 1, 4, 2, 5, 3, 6, 4, 1, 5, 2, 6, 3
-// 1:in, 3:out,
-// 1:out, 4:in,
-// change
-// 2:in, 4:out,
-// 2:out, 5:in,
-// change
-// 3:in, 5:out,
-// 3:out, 6:in,
-// change
-// 4:in, 6:out,
-// 4:out, 1:in,
-// change
-// 5:in, 1:out,
-// 5:out, 2:in,
-// change
-// 6:in, 2:out,
-// 6:out, 3:in,
-// repeat
 const uint8_t i_cyclotron_pair[i_cyclotron_max_steps][2] = {
-  {1, 3},
-  {1, 4},
-  {2, 4},
-  {2, 5},
-  {3, 5},
-  {3, 6},
-  {4, 6},
-  {4, 1},
-  {5, 1},
-  {5, 2},
-  {6, 2},
-  {6, 3}
-}; // Choice of opposites to alternate: 1/4, 2/5, 3/6
+  {1, 3}, // 1:in, 3:out,
+  {1, 4}, // 1:out, 4:in,
+  {2, 4}, // 2:in, 4:out,
+  {2, 5}, // 2:out, 5:in,
+  {3, 5}, // 3:in, 5:out,
+  {3, 6}, // 3:out, 6:in,
+  {4, 6}, // 4:in, 6:out,
+  {4, 1}, // 4:out, 1:in,
+  {5, 1}, // 5:in, 1:out,
+  {5, 2}, // 5:out, 2:in,
+  {6, 2}, // 6:in, 2:out,
+  {6, 3}  // 6:out, 3:in,
+};
 const uint16_t i_base_cyclotron_delay = 30; // Set delay between LED updates at normal speed, at the lowest power level
 const uint16_t i_min_cyclotron_delay = 10;  // Set the minimum (fastest) transition time desired for a cyclotron update
 const uint8_t i_cyc_fade_step = 15; // Step size for each fade-in increment (must be a divisor of 255: 3, 5, 15, 17, 51, 85)
-const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each LED
-const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED
+const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each LED (use fade step for changes)
+const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED (use fade step for changes)
 
 /*
  * Control for the primary blast sound effects.
  */
 millisDelay ms_single_blast;
-const uint16_t i_single_blast_delay_level_5 = 340;
-const uint16_t i_single_blast_delay_level_4 = 360;
-const uint16_t i_single_blast_delay_level_3 = 380;
-const uint16_t i_single_blast_delay_level_2 = 400;
-const uint16_t i_single_blast_delay_level_1 = 420;
+const uint16_t i_single_blast_delay_level_5 = 240;
+const uint16_t i_single_blast_delay_level_4 = 260;
+const uint16_t i_single_blast_delay_level_3 = 280;
+const uint16_t i_single_blast_delay_level_2 = 300;
+const uint16_t i_single_blast_delay_level_1 = 320;
 
 /*
  * Delay for fastled to update the addressable LEDs.
@@ -187,53 +163,41 @@ uint8_t deviceSwitchedCount = 0;
  */
 millisDelay ms_white_light;
 
-/*
- * Barmeter 28-segment bargraph configuration and timers.
- * Part #: BL28Z-3005SA04Y
- */
-HT16K33 ht_bargraph;
-
 // Used to scan the i2c bus and to locate the 28-segment bargraph.
 #define WIRE Wire
 
 /*
- * Bargraph Timers
+ * Barmeter 28 segment bargraph configuration and timers.
+ * Part #: BL28Z-3005SA04Y
+ * This will use the following pins for i2c serial communication:
+ * Arduino Nano
+ *   SDA -> A4
+ *   SCL -> A5
+ * ESP32
+ *   SDA -> GPIO 21
+ *   SCL -> GPIO 22
  */
-millisDelay ms_bargraph;
-millisDelay ms_bargraph_firing;
-const uint8_t d_bargraph_ramp_interval = 120;
-uint8_t i_bargraph_status = 0;
+HT16K33 ht_bargraph;
+const uint8_t i_bargraph_delay = 8; // Base delay (ms) for bargraph refresh (this should be a value evenly divisible by 2, 3, or 4).
+const uint8_t i_bargraph_elements = 28; // Maximum elements for bargraph device; not likely to change but adjustable just in case.
+const uint8_t i_bargraph_levels = 5; // Reflects the count of POWER_LEVELS elements (the only dependency on other device behavior).
+uint8_t i_bargraph_sim_max = i_bargraph_elements; // Simulated maximum for patterns which may be dependent on other factors.
+uint8_t i_bargraph_steps = i_bargraph_elements / 2; // Steps for patterns (1/2 max) which are bilateral/mirrored.
+uint8_t i_bargraph_step = 0; // Indicates current step for bilateral/mirrored patterns.
+int i_bargraph_element = 0; // Indicates current LED element for adjustment.
+bool b_bargraph_present = false; // Denotes that i2c bus found the bargraph device.
+millisDelay ms_bargraph; // Timer to control bargraph updates consistently.
 
 /*
- * Used to change to 28-segment bargraph features.
- * The Frutto 28-segment bargraph is automatically detected on boot and sets this to true.
- * Part #: BL28Z-3005SA04Y
+ * Barmeter 28 segment bargraph mapping: allows accessing elements sequentially (0-27)
+ * If the pattern appears inverted from what is expected, flip by using the following:
  */
-bool b_28segment_bargraph = true;
-const uint8_t i_bargraph_interval = 4;
-const uint8_t i_bargraph_wait = 180;
-bool b_bargraph_up = false;
-millisDelay ms_bargraph_alt;
-uint8_t i_bargraph_status_alt = 0;
-const uint8_t d_bargraph_ramp_interval_alt = 40;
-const uint8_t i_bargraph_multiplier_ramp_2021 = 16;
-uint16_t i_bargraph_multiplier_current = i_bargraph_multiplier_ramp_2021;
-
-/*
- * (Optional) Barmeter 28-segment bargraph mapping.
- * Part #: BL28Z-3005SA04Y
-
- * Segment Layout:
- * 5: full: 23 - 27  (5 segments)
- * 4: 3/4: 17 - 22   (6 segments)
- * 3: 1/2: 12 - 16   (5 segments)
- * 2: 1/4: 5 - 11    (7 segments)
- * 1: none: 0 - 4    (5 segments)
- */
-const uint8_t i_bargraph_segments = 28;
-const uint8_t i_bargraph_invert[i_bargraph_segments] PROGMEM = {54, 38, 22, 6, 53, 37, 21, 5, 52, 36, 20, 4, 51, 35, 19, 3, 50, 34, 18, 2, 49, 33, 17, 1, 48, 32, 16, 0};
-const uint8_t i_bargraph_normal[i_bargraph_segments] PROGMEM = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
-bool b_bargraph_status[i_bargraph_segments] = {};
+//#define GPSTAR_INVERT_BARGRAPH
+#ifdef GPSTAR_INVERT_BARGRAPH
+  const uint8_t i_bargraph[28] = {54, 38, 22, 6, 53, 37, 21, 5, 52, 36, 20, 4, 51, 35, 19, 3, 50, 34, 18, 2, 49, 33, 17, 1, 48, 32, 16, 0};
+#else
+  const uint8_t i_bargraph[28] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
+#endif
 
 /*
  * Timers for the optional hat lights.
@@ -253,13 +217,6 @@ uint8_t i_heatup_counter = 0;
 uint8_t i_heatdown_counter = 100;
 
 /*
- * Device Stream Modes + Settings
- * Stream = Type of particle stream to be thrown by the device
- */
-enum STREAM_MODES { PROTON };
-enum STREAM_MODES STREAM_MODE;
-
-/*
  * Firing timers.
  */
 millisDelay ms_firing_lights;
@@ -269,26 +226,15 @@ millisDelay ms_firing_stream_effects;
 millisDelay ms_firing_pulse;
 millisDelay ms_impact; // Mix some impact sounds while firing.
 millisDelay ms_firing_length_timer;
-millisDelay ms_firing_sound_mix; // Mix additional impact sounds for standalone Single-Shot Blaster.
 millisDelay ms_semi_automatic_check; // Timer used to set the rate of fire for the semi-automatic firing modes.
 millisDelay ms_semi_automatic_firing; // Timer used to handle firing effect duration for the semi-automatic firing modes.
-const uint16_t i_single_shot_rate = 2000; // Single shot firing rate.
+const uint16_t i_single_shot_rate = 2000; // Single shot firing rate, locking out actions after each blast.
 const uint16_t i_firing_timer_length = 15000; // 15 seconds. Used by ms_firing_length_timer to determine which tail_end sound effects to play.
-const uint8_t d_firing_pulse = 18; // Used to drive semi-automatic firing stream effect timers. Default: 18ms.
-const uint8_t d_firing_stream = 100; // Used to drive all stream effects timers. Default: 100ms.
-uint8_t i_cyclotron_light = 0; // Used to keep track which LED in the cyclotron is currently lighting up.
-const uint8_t i_pulse_step_max = 6; // Total number of steps per pulse animation.
+const uint8_t i_firing_pulse = 60; // Used to drive semi-automatic firing stream effect timers.
+const uint8_t i_firing_stream = 100; // Used to drive all stream effects timers. Default: 100ms.
+const uint8_t i_pulse_step_max = 8; // Total number of steps per pulse animation.
 uint8_t i_pulse_step = 0; // Used to keep track of which pulse animation step we are on.
 uint16_t i_last_firing_effect_mix = 0; // Used by standalone Single-Shot Blaster.
-
-/*
- * Device power level. Controlled by the rotary encoder on the top of the device.
- * You can enable or disable overheating for each power level individually in the user adjustable values at the top of this file.
- */
-const uint8_t i_power_level_max = 5;
-const uint8_t i_power_level_min = 1;
-uint8_t i_power_level = 1;
-uint8_t i_power_level_prev = 1;
 
 /*
  * Device Menu
@@ -304,7 +250,7 @@ millisDelay ms_settings_blinking;
  */
 bool b_firing = false; // Check for general firing state.
 bool b_firing_intensify = false; // Check for Intensify button activity.
-bool b_firing_alt = false; // Check for Barrel Wing Button firing activity for CTS.
+bool b_firing_alt = false; // Check for grip button firing activity.
 bool b_firing_semi_automatic = false; // Check for semi-automatic firing modes.
 bool b_sound_firing_intensify_trigger = false;
 bool b_sound_firing_alt_trigger = false;
@@ -313,11 +259,6 @@ bool b_sound_idle = false;
 bool b_beeping = false;
 bool b_sound_afterlife_idle_2_fade = true;
 bool b_device_boot_error_on = false;
-
-/*
- * Mini cyclotron flags and values.
- */
-uint8_t i_cyclotron_speed_up = 1; // For telling the device to speed up or slow down the Cyclotron lights.
 
 /*
  * Button Mashing Lock-out - Prevents excessive user input via the primary/secondary firing buttons.

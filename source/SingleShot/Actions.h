@@ -1,3 +1,4 @@
+#include "Header.h"
 /**
  *   GPStar Single-Shot Blaster
  *   Copyright (C) 2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
@@ -26,48 +27,63 @@ void checkDeviceAction() {
     default:
       if(DEVICE_STATUS == MODE_ON) {
         if(!ms_cyclotron.isRunning()) {
-          // Start the cyclotron as quickly as possible.
-          uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((i_power_level - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
+          // Start the cyclotron animation with consideration for timing from the power level.
+          uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((getPowerLevel() - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
           ms_cyclotron.start(i_dynamic_delay);
         }
-        updateCyclotron(C_RED);
+
+        switch(POWER_LEVEL) {
+          case LEVEL_1:
+          default:
+            updateCyclotron(C_RED);
+          break;
+          case LEVEL_2:
+            updateCyclotron(C_RED2);
+          break;
+          case LEVEL_3:
+            updateCyclotron(C_RED3);
+          break;
+          case LEVEL_4:
+            updateCyclotron(C_RED4);
+          break;
+          case LEVEL_5:
+            updateCyclotron(C_RED5);
+          break;
+        }
       }
     break;
 
     case ACTION_OFF:
       b_device_mash_error = false;
       deviceOff();
+      bargraphOff();
     break;
 
     case ACTION_FIRING:
       if(ms_single_blast.justFinished()) {
-        playEffect(S_FIRE_BLAST, false, i_volume_effects, false, 0, false);
+        //playEffect(S_FIRE_BLAST, false, i_volume_effects, false, 0, false);
 
         // Reset the barrel before starting a new pulse.
         barrelLightsOff();
 
         ms_firing_stream_effects.start(0); // Start new barrel animation.
 
-        switch(i_power_level) {
-          case 5:
-            ms_single_blast.start(i_single_blast_delay_level_5);
-          break;
-
-          case 4:
-            ms_single_blast.start(i_single_blast_delay_level_4);
-          break;
-
-          case 3:
-            ms_single_blast.start(i_single_blast_delay_level_3);
-          break;
-
-          case 2:
-            ms_single_blast.start(i_single_blast_delay_level_2);
-          break;
-
-          case 1:
+        switch(POWER_LEVEL) {
+          case LEVEL_1:
           default:
             ms_single_blast.start(i_single_blast_delay_level_1);
+          break;
+          case LEVEL_2:
+            ms_single_blast.start(i_single_blast_delay_level_2);
+          break;
+          case LEVEL_3:
+            ms_single_blast.start(i_single_blast_delay_level_3);
+          break;
+          case LEVEL_4:
+            ms_single_blast.start(i_single_blast_delay_level_4);
+          break;
+          case LEVEL_5:
+            ms_single_blast.start(i_single_blast_delay_level_5);
           break;
         }
       }
@@ -107,14 +123,10 @@ void checkDeviceAction() {
     break;
 
     case ACTION_CONFIG_EEPROM_MENU:
-      settingsBlinkingLights();
-
       // TODO: Re-introduce custom EEPROM menu options for this device
     break;
 
     case ACTION_SETTINGS:
-      settingsBlinkingLights();
-
       // TODO: Re-introduce standard runtime menu options for this device
     break;
   }
