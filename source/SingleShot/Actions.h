@@ -95,10 +95,10 @@ void checkDeviceAction() {
 
       if(ms_hat_1.isRunning()) {
         if(ms_hat_1.remaining() < i_hat_1_delay / 2) {
-          digitalWriteFast(led_hat_2, HIGH);
+          led_Hat2.turnOn();
         }
         else {
-          digitalWriteFast(led_hat_2, LOW);
+          led_Hat2.turnOff();
         }
 
         if(ms_hat_1.justFinished()) {

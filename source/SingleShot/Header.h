@@ -108,14 +108,47 @@ millisDelay ms_fast_led;
 
 /*
  * Non-addressable LEDs
+ * Uses a common object to define and set expected properties for all LEDs
  */
-const uint8_t led_slo_blo = 8; // SLO-BLO LED. (Red LED)
-const uint8_t led_front_left = 9; // LED underneath the Clippard valve. (Orange or White LED)
-const uint8_t led_white = 12; // Blinking white light beside the vent on top of the device.
-const uint8_t led_vent = 13; // Vent light
-const uint8_t led_hat_1 = 22; // Hat light at front of the device near the barrel tip. (Orange LED)
-const uint8_t led_hat_2 = 23; // Hat light at top of the device body near vent. (Orange or White LED)
-const uint8_t led_barrel_tip = 24; // White LED at tip of the device barrel. (White LED)
+struct SimpleLED {
+  uint8_t Pin; // Pin Assignment
+  uint8_t On;  // State for "on"
+  uint8_t Off; // State for "off"
+
+  // Function to initialize the LED
+  void initialize() {
+      pinModeFast(Pin, OUTPUT);
+      digitalWriteFast(Pin, Off);
+  }
+
+  // Function to dim the LED
+  void dim(uint8_t brightness) {
+      analogWrite(Pin, brightness);
+  }
+
+  // Function to get LED state
+  uint8_t state() {
+      return digitalReadFast(Pin);
+  }
+
+  // Function to turn on the LED
+  void turnOn() {
+      digitalWriteFast(Pin, On);
+  }
+
+  // Function to turn off the LED
+  void turnOff() {
+      digitalWriteFast(Pin, Off);
+  }
+};
+// Create instances and initialize LEDs
+SimpleLED led_SloBlo = {8, HIGH, LOW};
+SimpleLED led_Clippard = {9, HIGH, LOW};
+SimpleLED led_TopWhite = {12, LOW, HIGH};
+SimpleLED led_Vent = {13, LOW, HIGH};
+SimpleLED led_Hat1 = {22, HIGH, LOW};
+SimpleLED led_Hat2 = {23, HIGH, LOW};
+SimpleLED led_Tip = {24, HIGH, LOW};
 
 /*
  * Time in milliseconds for blinking the top white LED while the device is on.

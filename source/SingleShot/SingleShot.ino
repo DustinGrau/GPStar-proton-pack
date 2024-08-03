@@ -87,13 +87,14 @@ void setup() {
   delay(10);
   setupBargraph();
 
-  pinModeFast(led_slo_blo, OUTPUT); // Lower LED under the bargraph.
-  pinModeFast(led_front_left, OUTPUT); // Front left LED underneath the Clippard valve.
-  pinModeFast(led_hat_1, OUTPUT); // Hat light at front of barrel not used.
-  pinModeFast(led_hat_2, OUTPUT); // Hat light at top of the device body (gun box).
-  pinModeFast(led_barrel_tip, OUTPUT); // LED at the tip of the device barrel.
-  pinMode(led_vent, OUTPUT); // Vent light could be either Digital or PWM based on user setting, so use default functions.
-  pinModeFast(led_white, OUTPUT); // Alternative barrel tip light.
+  // Initialize all non-addressable LEDs
+  led_SloBlo.initialize();
+  led_Clippard.initialize();
+  led_TopWhite.initialize();
+  led_Vent.initialize();
+  led_Hat1.initialize();
+  led_Hat2.initialize();
+  led_Tip.initialize();
 
   pinMode(vibration, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.
 
@@ -150,20 +151,20 @@ void systemPOST() {
   bargraphCommitChanges();
 
   // These go HIGH to turn on.
-  digitalWriteFast(led_slo_blo, HIGH);
+  led_SloBlo.turnOn();
   delay(i_delay);
-  digitalWriteFast(led_front_left, HIGH);
+  led_Clippard.turnOn();
   delay(i_delay);
-  digitalWriteFast(led_hat_2, HIGH);
+  led_Hat2.turnOn();
   delay(i_delay);
 
   // These go LOW to turn on.
-  digitalWrite(led_vent, LOW);
+  led_Vent.turnOn();
   delay(i_delay);
-  digitalWriteFast(led_white, LOW);
+  led_TopWhite.turnOn();
   delay(i_delay);
 
-  deviceTipOn();
+  led_Tip.turnOn();
   delay(i_delay);
 
   // Sequentially turn on all LEDs in the cyclotron.
@@ -351,10 +352,10 @@ void mainLoop() {
           }
 
           if(ms_power_indicator_blink.remaining() < i_ms_power_indicator_blink / 2) {
-            digitalWriteFast(led_front_left, LOW);
+            led_Clippard.turnOff();
           }
           else {
-            digitalWriteFast(led_front_left, HIGH);
+            led_Clippard.turnOn();
           }
         }
       }
@@ -362,19 +363,16 @@ void mainLoop() {
 
     case MODE_ERROR:
       if(ms_hat_2.remaining() < i_hat_2_delay / 2) {
-        digitalWriteFast(led_white, HIGH);
-
-        digitalWriteFast(led_slo_blo, LOW);
-
-        digitalWriteFast(led_hat_2, LOW);
-        digitalWriteFast(led_front_left, LOW);
+        led_Clippard.turnOff();
+        led_SloBlo.turnOff();
+        led_TopWhite.turnOff();
+        led_Hat2.turnOff();
       }
       else {
-        digitalWriteFast(led_hat_2, HIGH);
-        digitalWriteFast(led_front_left, HIGH);
-
-        digitalWriteFast(led_white, LOW);
-        digitalWriteFast(led_slo_blo, HIGH);
+        led_Clippard.turnOn();
+        led_SloBlo.turnOn();
+        led_TopWhite.turnOn();
+        led_Hat2.turnOn();
       }
 
       if(ms_hat_2.justFinished()) {
@@ -398,17 +396,17 @@ void mainLoop() {
     case MODE_ON:
       if(!ms_hat_1.isRunning() && !ms_hat_2.isRunning()) {
         // Hat 2 stays solid while the Single-Shot Blaster is on.
-        digitalWriteFast(led_hat_2, HIGH);
+        led_Hat2.turnOn();
       }
 
       // Top white light.
       if(ms_white_light.justFinished()) {
         ms_white_light.repeat();
-        if(digitalReadFast(led_white) == LOW) {
-          digitalWriteFast(led_white, HIGH);
+        if(led_TopWhite.state() == LOW) {
+          led_TopWhite.turnOff();
         }
         else {
-          digitalWriteFast(led_white, LOW);
+          led_TopWhite.turnOn();
         }
       }
 
@@ -489,16 +487,6 @@ void updateCyclotron(uint8_t i_colour) {
   }
 }
 
-void deviceTipOn() {
-    // Illuminate the device barrel tip LED.
-    digitalWriteFast(led_barrel_tip, HIGH);
-}
-
-void deviceTipOff() {
-    // Turn off the device barrel tip LED.
-    digitalWriteFast(led_barrel_tip, LOW);
-}
-
 void deviceTipSpark() {
   i_heatup_counter = 0;
   i_heatdown_counter = 100;
@@ -546,37 +534,37 @@ void deviceLightControlCheck() {
     if(b_vent_light_control) {
       // Vent light on, brightness dependent on mode.
       if(DEVICE_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
-        analogWrite(led_vent, 0); // 0 = Full Power
+        led_Vent.dim(0); // 0 = Full Power
       }
       else {
         // Adjust brightness based on the power level.
         switch(POWER_LEVEL) {
           case LEVEL_1:
           default:
-            analogWrite(led_vent, 220);
+            led_Vent.dim(220);
           break;
           case LEVEL_2:
-            analogWrite(led_vent, 190);
+            led_Vent.dim(190);
           break;
           case LEVEL_3:
-            analogWrite(led_vent, 160);
+            led_Vent.dim(160);
           break;
           case LEVEL_4:
-            analogWrite(led_vent, 130);
+            led_Vent.dim(130);
           break;
           case LEVEL_5:
-            analogWrite(led_vent, 100);
+            led_Vent.dim(100);
           break;
         }
       }
     }
     else {
-      digitalWrite(led_vent, LOW);
+      led_Vent.turnOn();
     }
   }
   else if(!switch_vent.on()) {
     // Vent light and top white light off.
-    digitalWrite(led_vent, HIGH);
+    led_Vent.turnOff();
   }
 }
 
@@ -892,14 +880,14 @@ void postActivation() {
     }
 
     // Turn on slo-blo light.
-    digitalWriteFast(led_slo_blo, HIGH);
+    led_SloBlo.turnOn();
 
     // Turn on the Clippard LED.
-    digitalWriteFast(led_front_left, HIGH);
+    led_Clippard.turnOn();
 
     // Top white light.
     ms_white_light.start(i_top_blink_interval);
-    digitalWriteFast(led_white, LOW);
+    led_TopWhite.turnOn();
 
     // Reset the hat light timers.
     ms_hat_1.stop();
@@ -979,7 +967,7 @@ void modeFireStart() {
   ms_semi_automatic_firing.stop();
 
   // Turn on hat light 1.
-  digitalWriteFast(led_hat_1, HIGH);
+  led_Hat1.turnOn();
 
   barrelLightsOff();
 
@@ -1008,9 +996,9 @@ void modeFireStop() {
   ms_impact.stop();
   ms_firing_effect_end.start(0);
 
-  digitalWriteFast(led_hat_2, HIGH); // Make sure we turn on hat light 2 in case it's off as well.
+  led_Hat2.turnOn(); // Make sure we turn on hat light 2 in case it's off as well.
 
-  deviceTipOff();
+  led_Tip.turnOff();
 
   ms_hat_1.stop();
 
@@ -1069,7 +1057,7 @@ void firePulseEffect() {
     case 6:
       system_leds[i_barrel_led] = getHueAsRGB(C_RED);
       // Bolt has reached barrel tip, so turn on tip light.
-      deviceTipOn();
+      led_Tip.turnOn();
     break;
     case 7:
       system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
@@ -1086,7 +1074,7 @@ void firePulseEffect() {
   }
   else {
     // Animation has concluded, so reset our timer and variable.
-    deviceTipOff();
+    led_Tip.turnOff();
     ms_firing_pulse.stop();
     i_pulse_step = 0;
 
@@ -1112,23 +1100,23 @@ void barrelLightsOff() {
   system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
 
   // Turn off the device barrel tip LED.
-  deviceTipOff();
+  led_Tip.turnOff();
 }
 
 void allLightsOff() {
   bargraphClear();
 
   // These go LOW to turn off.
-  digitalWriteFast(led_slo_blo, LOW);
-  digitalWriteFast(led_front_left, LOW); // Turn off the front left LED under the Clippard valve.
-  digitalWriteFast(led_hat_1, LOW); // Turn off hat light 1 (not used, but just make sure).
-  digitalWriteFast(led_hat_2, LOW); // Turn off hat light 2.
+  led_SloBlo.turnOff();
+  led_Clippard.turnOff(); // Turn off the front left LED under the Clippard valve.
+  led_Hat1.turnOff(); // Turn off hat light 1 (not used, but just make sure).
+  led_Hat2.turnOff(); // Turn off hat light 2.
 
   // These go HIGH to turn off.
-  digitalWrite(led_vent, HIGH);
-  digitalWriteFast(led_white, HIGH);
+  led_Vent.turnOff();
+  led_TopWhite.turnOff();
 
-  deviceTipOff(); // Not used normally, but make sure it's off.
+  led_Tip.turnOff(); // Not used normally, but make sure it's off.
 
   // Clear all addressable LEDs by filling the array with black.
   fill_solid(system_leds, CYCLOTRON_LED_COUNT + BARREL_LED_COUNT, CRGB::Black);
@@ -1140,10 +1128,10 @@ void allLightsOff() {
 
 void allLightsOffMenuSystem() {
   // Make sure some of the device lights are off, specifically for the Menu systems.
-  digitalWriteFast(led_slo_blo, LOW);
-  digitalWrite(led_vent, HIGH);
-  digitalWriteFast(led_white, HIGH);
-  digitalWriteFast(led_front_left, LOW);
+  led_SloBlo.turnOff();
+  led_Vent.turnOff();
+  led_TopWhite.turnOff();
+  led_Clippard.turnOff();
 
   if(b_power_on_indicator) {
     ms_power_indicator.stop();
@@ -1224,12 +1212,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
+                led_SloBlo.turnOn(); // Level 2
 
                 // Turn off the other lights.
-                digitalWrite(led_vent, HIGH); // Level 3
-                digitalWriteFast(led_white, HIGH); // Level 4
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_Vent.turnOff(); // Level 3
+                led_TopWhite.turnOff(); // Level 4
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1249,12 +1237,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
-                digitalWrite(led_vent, LOW); // Level 3
+                led_SloBlo.turnOn(); // Level 2
+                led_Vent.turnOn(); // Level 3
 
                 // Turn off the other lights.
-                digitalWriteFast(led_white, HIGH); // Level 4
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_TopWhite.turnOff(); // Level 4
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1274,12 +1262,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
-                digitalWrite(led_vent, LOW); // Level 3
-                digitalWriteFast(led_white, LOW); // Level 4
+                led_SloBlo.turnOn(); // Level 2
+                led_Vent.turnOn(); // Level 3
+                led_TopWhite.turnOn(); // Level 4
 
                 // Turn off the other lights.
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1299,10 +1287,10 @@ void checkRotaryEncoder() {
                 i_device_menu = 5;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
-                digitalWrite(led_vent, LOW); // Level 3
-                digitalWriteFast(led_white, LOW); // Level 4
-                digitalWriteFast(led_front_left, HIGH); // Level 5
+                led_SloBlo.turnOn(); // Level 2
+                led_Vent.turnOn(); // Level 3
+                led_TopWhite.turnOn(); // Level 4
+                led_Clippard.turnOn(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1362,12 +1350,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
-                digitalWrite(led_vent, LOW); // Level 3
-                digitalWriteFast(led_white, LOW); // Level 4
+                led_SloBlo.turnOn(); // Level 2
+                led_Vent.turnOn(); // Level 3
+                led_TopWhite.turnOn(); // Level 4
 
                 // Turn off the other lights.
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1387,12 +1375,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
-                digitalWrite(led_vent, LOW); // Level 3
+                led_SloBlo.turnOn(); // Level 2
+                led_Vent.turnOn(); // Level 3
 
                 // Turn off the other lights.
-                digitalWriteFast(led_white, HIGH); // Level 4
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_TopWhite.turnOff(); // Level 4
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1412,12 +1400,12 @@ void checkRotaryEncoder() {
                 i_device_menu = 1;
 
                 // Turn on some lights to visually indicate which menu we are in.
-                digitalWriteFast(led_slo_blo, HIGH); // Level 2
+                led_SloBlo.turnOn(); // Level 2
 
                 // Turn off the other lights.
-                digitalWrite(led_vent, HIGH); // Level 3
-                digitalWriteFast(led_white, HIGH); // Level 4
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_Vent.turnOff(); // Level 3
+                led_TopWhite.turnOff(); // Level 4
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1437,10 +1425,10 @@ void checkRotaryEncoder() {
                 i_device_menu = 1;
 
                 // Turn off the other lights.
-                digitalWriteFast(led_slo_blo, LOW); // Level 2
-                digitalWrite(led_vent, HIGH); // Level 3
-                digitalWriteFast(led_white, HIGH); // Level 4
-                digitalWriteFast(led_front_left, LOW); // Level 5
+                led_SloBlo.turnOff(); // Level 2
+                led_Vent.turnOff(); // Level 3
+                led_TopWhite.turnOff(); // Level 4
+                led_Clippard.turnOff(); // Level 5
 
                 // Play an indication beep to notify we have changed menu levels.
                 stopEffect(S_BEEPS);
@@ -1491,7 +1479,7 @@ void checkRotaryEncoder() {
                   i_device_menu = 5;
 
                   // Turn on the slo blow led to indicate we are in the Single-Shot Blaster sub menu.
-                  digitalWriteFast(led_slo_blo, HIGH);
+                  led_SloBlo.turnOn();
 
                   // Play an indication beep to notify we have changed menu levels.
                   stopEffect(S_BEEPS);
@@ -1545,7 +1533,7 @@ void checkRotaryEncoder() {
                   i_device_menu = 1;
 
                   // Turn off the slo blow led to indicate we are no longer in the Single-Shot Blaster sub menu.
-                  digitalWriteFast(led_slo_blo, LOW);
+                  led_SloBlo.turnOff();
 
                   // Play an indication beep to notify we have changed menu levels.
                   stopEffect(S_BEEPS);
