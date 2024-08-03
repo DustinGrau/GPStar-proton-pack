@@ -43,12 +43,6 @@ enum POWER_LEVELS POWER_LEVEL;
 enum POWER_LEVELS POWER_LEVEL_PREV;
 
 /*
- * For blinking the slo-blo light when the cyclotron is not on.
- */
-millisDelay ms_slo_blo_blink;
-const uint16_t i_slo_blo_blink_delay = 500;
-
-/*
  * Addressable LEDs
  * The device contains a mini cyclotron plus a barrel light. A simple NeoPixel Jewel can be used
  * for the cyclotron (typically 7 LEDs) while the barrel is designed to use the GPStar single LED.
@@ -89,22 +83,12 @@ const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each L
 const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED (use fade step for changes)
 
 /*
- * Control for the primary blast sound effects.
- */
-millisDelay ms_single_blast;
-const uint16_t i_single_blast_delay_level_5 = 240;
-const uint16_t i_single_blast_delay_level_4 = 260;
-const uint16_t i_single_blast_delay_level_3 = 280;
-const uint16_t i_single_blast_delay_level_2 = 300;
-const uint16_t i_single_blast_delay_level_1 = 320;
-
-/*
  * Delay for fastled to update the addressable LEDs.
  * 0.03 ms to update 1 LED. So 1.47 ms should be okay? Let's bump it up to 3 just in case.
  */
 #define FAST_LED_UPDATE_MS 3
-uint8_t i_fast_led_delay = FAST_LED_UPDATE_MS;
-millisDelay ms_fast_led;
+uint8_t i_fast_led_delay = FAST_LED_UPDATE_MS; // Default delay via standard definition
+millisDelay ms_fast_led; // Timer for all updates to addressable LEDs across the device
 
 /*
  * Non-addressable LEDs
@@ -151,20 +135,86 @@ SimpleLED led_Hat2 = {23, HIGH, LOW};
 SimpleLED led_Tip = {24, HIGH, LOW};
 
 /*
- * Time in milliseconds for blinking the top white LED while the device is on.
- */
-const uint16_t i_top_blink_interval = 146;
-
-/*
- * Rotary encoder on the top of the device. Changes the device power level and controls the device settings menu.
+ * Rotary encoder on the top of the device.
+ * Changes the device power level and controls the device settings menu.
  * Also controls independent music volume while the device is off and if music is playing.
  */
 #define r_encoderA 6
 #define r_encoderB 7
-millisDelay ms_firing_mode_switch; // Timer for rotary firing mode select speed limit.
-const uint8_t i_firing_mode_switch_delay = 50; // Time to delay switching firing modes.
-static uint8_t prev_next_code = 0;
-static uint16_t store = 0;
+enum ENCODER_STATES { ENCODER_IDLE, ENCODER_CW, ENCODER_CCW };
+struct Encoder {
+  const static uint8_t PinA = r_encoderA;
+  const static uint8_t PinB = r_encoderB;
+
+  private:
+    uint8_t PrevNextCode = 0;
+    uint16_t CodeStore = 0;
+
+    int8_t read() {
+      static int8_t RotEncTable[] = {0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0};
+
+      PrevNextCode <<= 2;
+
+      if(digitalReadFast(r_encoderB)) {
+        PrevNextCode |= 0x02;
+      }
+
+      if(digitalReadFast(r_encoderA)) {
+        PrevNextCode |= 0x01;
+      }
+
+      PrevNextCode &= 0x0f;
+
+      // If valid then CodeStore as 16 bit data.
+      if(RotEncTable[PrevNextCode]) {
+          CodeStore <<= 4;
+          CodeStore |= PrevNextCode;
+
+          if((CodeStore & 0xff) == 0x2b) {
+            return -1;
+          }
+
+          if((CodeStore & 0xff) == 0x17) {
+            return 1;
+          }
+      }
+
+      return 0;
+    }
+
+  public:
+    enum ENCODER_STATES STATE;
+
+    void initialize() {
+      // Rotary encoder on the top of the device.
+      pinModeFast(PinA, INPUT_PULLUP);
+      pinModeFast(PinB, INPUT_PULLUP);
+      STATE = ENCODER_IDLE;
+    }
+
+    void check() {
+      static int8_t i_last_val; // Always checked to know if change occurred.
+
+      // Read the current encoder value, noting state if adjusted.
+      if(i_last_val != read()) {
+        // Clockwise.
+        if(PrevNextCode == 0x07) {
+          STATE = ENCODER_CW;
+          debugln("CW");
+        }
+
+        // Counter-clockwise.
+        if(PrevNextCode == 0x0b) {
+          STATE = ENCODER_CCW;
+          debugln("CCW");
+        }
+      }
+      else {
+        STATE = ENCODER_IDLE;
+      }
+    }
+
+} encoder;
 
 /*
  * Vibration
@@ -190,11 +240,6 @@ Switch switch_grip(A6); // Hand-grip button to be the primary fire and used in s
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
 uint8_t ventSwitchedCount = 0;
 uint8_t deviceSwitchedCount = 0;
-
-/*
- * Idling timers
- */
-millisDelay ms_white_light;
 
 // Used to scan the i2c bus and to locate the 28-segment bargraph.
 #define WIRE Wire
@@ -231,6 +276,34 @@ millisDelay ms_bargraph; // Timer to control bargraph updates consistently.
 #else
   const uint8_t i_bargraph[28] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
 #endif
+
+/*
+ * Control for the primary blast sound effects.
+ */
+millisDelay ms_single_blast;
+const uint16_t i_single_blast_delay_level_5 = 240;
+const uint16_t i_single_blast_delay_level_4 = 260;
+const uint16_t i_single_blast_delay_level_3 = 280;
+const uint16_t i_single_blast_delay_level_2 = 300;
+const uint16_t i_single_blast_delay_level_1 = 320;
+
+/*
+ * Idling timers
+ */
+millisDelay ms_white_light;
+const uint16_t i_top_blink_interval = 146; // Blinking interval (ms)
+
+/*
+ * For blinking the slo-blo light when the cyclotron is not on.
+ */
+millisDelay ms_slo_blo_blink;
+const uint16_t i_slo_blo_blink_delay = 500;
+
+/*
+ * Timer for rotary firing mode select speed limit (delay when switching firing modes).
+ */
+millisDelay ms_firing_mode_switch;
+const uint8_t i_firing_mode_switch_delay = 50;
 
 /*
  * Timers for the optional hat lights.
