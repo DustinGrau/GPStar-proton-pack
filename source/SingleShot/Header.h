@@ -20,6 +20,17 @@
 
 #pragma once
 
+// Used to scan the i2c bus and to locate the 28-segment bargraph.
+#define WIRE Wire
+
+/*
+ * Delay for fastled to update the addressable LEDs.
+ * 0.03 ms to update 1 LED. So 1.47 ms should be okay? Let's bump it up to 3 just in case.
+ */
+#define FAST_LED_UPDATE_MS 3
+uint8_t i_fast_led_delay = FAST_LED_UPDATE_MS; // Default delay via standard definition
+millisDelay ms_fast_led; // Timer for all updates to addressable LEDs across the device
+
 /*
  * Device state.
  */
@@ -83,18 +94,10 @@ const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each L
 const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED (use fade step for changes)
 
 /*
- * Delay for fastled to update the addressable LEDs.
- * 0.03 ms to update 1 LED. So 1.47 ms should be okay? Let's bump it up to 3 just in case.
- */
-#define FAST_LED_UPDATE_MS 3
-uint8_t i_fast_led_delay = FAST_LED_UPDATE_MS; // Default delay via standard definition
-millisDelay ms_fast_led; // Timer for all updates to addressable LEDs across the device
-
-/*
  * Non-addressable LEDs
  * Uses a common object to define and set expected properties for all LEDs
  */
-struct SimpleLED {
+struct StandaloneLED {
   uint8_t Pin; // Pin Assignment
   uint8_t On;  // State for "on"
   uint8_t Off; // State for "off"
@@ -110,8 +113,8 @@ struct SimpleLED {
       analogWrite(Pin, brightness);
   }
 
-  // Function to get LED state
-  uint8_t state() {
+  // Function to get LED state/value
+  uint8_t getState() {
       return digitalReadFast(Pin);
   }
 
@@ -125,14 +128,14 @@ struct SimpleLED {
       digitalWriteFast(Pin, Off);
   }
 };
-// Create instances and initialize LEDs
-SimpleLED led_SloBlo = {8, HIGH, LOW};
-SimpleLED led_Clippard = {9, HIGH, LOW};
-SimpleLED led_TopWhite = {12, LOW, HIGH};
-SimpleLED led_Vent = {13, LOW, HIGH};
-SimpleLED led_Hat1 = {22, HIGH, LOW};
-SimpleLED led_Hat2 = {23, HIGH, LOW};
-SimpleLED led_Tip = {24, HIGH, LOW};
+// Create instances and initialize LEDs with their pin and respective values for on/off.
+StandaloneLED led_SloBlo = {8, HIGH, LOW};
+StandaloneLED led_Clippard = {9, HIGH, LOW};
+StandaloneLED led_TopWhite = {12, LOW, HIGH};
+StandaloneLED led_Vent = {13, LOW, HIGH};
+StandaloneLED led_Hat1 = {22, HIGH, LOW};
+StandaloneLED led_Hat2 = {23, HIGH, LOW};
+StandaloneLED led_Tip = {24, HIGH, LOW};
 
 /*
  * Rotary encoder on the top of the device.
@@ -193,20 +196,18 @@ struct Encoder {
     }
 
     void check() {
-      static int8_t i_last_val; // Always checked to know if change occurred.
+      static int8_t i_last_val; // Always stored to know if change occurred.
 
-      // Read the current encoder value, noting state if adjusted.
+      // Read the current encoder value, noting state when adjusted.
       if(i_last_val != read()) {
         // Clockwise.
         if(PrevNextCode == 0x07) {
           STATE = ENCODER_CW;
-          debugln("CW");
         }
 
         // Counter-clockwise.
         if(PrevNextCode == 0x0b) {
           STATE = ENCODER_CCW;
-          debugln("CCW");
         }
       }
       else {
@@ -230,7 +231,8 @@ uint8_t i_vibration_level_prev = 0;
 millisDelay ms_menu_vibration; // Timer to do non-blocking confirmation buzzing in the vibration menu.
 
 /*
- * Various Switches on the device.
+ * Various toggles and buttons on the device.
+ * Uses the Switch class which provides debounce control and detects state.
  */
 Switch switch_intensify(2); // Considered a primary firing button, though for this device will be an alt-fire.
 Switch switch_activate(3); // Considered the primary power toggle on the right of the gun box.
@@ -238,44 +240,8 @@ Switch switch_device(A0); // Controls the beeping. Top right switch on the devic
 Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the device.
 Switch switch_grip(A6); // Hand-grip button to be the primary fire and used in settings menus.
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
-uint8_t ventSwitchedCount = 0;
-uint8_t deviceSwitchedCount = 0;
-
-// Used to scan the i2c bus and to locate the 28-segment bargraph.
-#define WIRE Wire
-
-/*
- * Barmeter 28 segment bargraph configuration and timers.
- * Part #: BL28Z-3005SA04Y
- * This will use the following pins for i2c serial communication:
- * Arduino Nano
- *   SDA -> A4
- *   SCL -> A5
- * ESP32
- *   SDA -> GPIO 21
- *   SCL -> GPIO 22
- */
-HT16K33 ht_bargraph;
-const uint8_t i_bargraph_delay = 8; // Base delay (ms) for bargraph refresh (this should be a value evenly divisible by 2, 3, or 4).
-const uint8_t i_bargraph_elements = 28; // Maximum elements for bargraph device; not likely to change but adjustable just in case.
-const uint8_t i_bargraph_levels = 5; // Reflects the count of POWER_LEVELS elements (the only dependency on other device behavior).
-uint8_t i_bargraph_sim_max = i_bargraph_elements; // Simulated maximum for patterns which may be dependent on other factors.
-uint8_t i_bargraph_steps = i_bargraph_elements / 2; // Steps for patterns (1/2 max) which are bilateral/mirrored.
-uint8_t i_bargraph_step = 0; // Indicates current step for bilateral/mirrored patterns.
-int i_bargraph_element = 0; // Indicates current LED element for adjustment.
-bool b_bargraph_present = false; // Denotes that i2c bus found the bargraph device.
-millisDelay ms_bargraph; // Timer to control bargraph updates consistently.
-
-/*
- * Barmeter 28 segment bargraph mapping: allows accessing elements sequentially (0-27)
- * If the pattern appears inverted from what is expected, flip by using the following:
- */
-//#define GPSTAR_INVERT_BARGRAPH
-#ifdef GPSTAR_INVERT_BARGRAPH
-  const uint8_t i_bargraph[28] = {54, 38, 22, 6, 53, 37, 21, 5, 52, 36, 20, 4, 51, 35, 19, 3, 50, 34, 18, 2, 49, 33, 17, 1, 48, 32, 16, 0};
-#else
-  const uint8_t i_bargraph[28] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
-#endif
+uint8_t ventSwitchedCount = 0; // Used for detection of EEPROM menu access
+uint8_t deviceSwitchedCount = 0; // Used for detection of EEPROM menu access
 
 /*
  * Control for the primary blast sound effects.

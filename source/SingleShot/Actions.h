@@ -56,7 +56,7 @@ void checkDeviceAction() {
     case ACTION_OFF:
       b_device_mash_error = false;
       deviceOff();
-      bargraphOff();
+      bargraph.off();
     break;
 
     case ACTION_FIRING:
