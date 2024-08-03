@@ -255,7 +255,12 @@ bool lowerMenuLevel() {
       led_Vent.turnOff(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
       playEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_2:
       DEVICE_MENU_LEVEL = MENU_LEVEL_3;
@@ -263,7 +268,12 @@ bool lowerMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
       playEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
@@ -271,7 +281,12 @@ bool lowerMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
       playEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_4:
       DEVICE_MENU_LEVEL = MENU_LEVEL_5;
@@ -279,6 +294,11 @@ bool lowerMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOn(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
       playEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_5:
@@ -304,7 +324,12 @@ bool raiseMenuLevel() {
       led_Vent.turnOff(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
       playEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_2;
@@ -312,7 +337,12 @@ bool raiseMenuLevel() {
       led_Vent.turnOff(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
       playEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_4:
       DEVICE_MENU_LEVEL = MENU_LEVEL_3;
@@ -320,7 +350,12 @@ bool raiseMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
       playEffect(S_VOICE_LEVEL_3);
+      stopEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_5:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
@@ -328,7 +363,12 @@ bool raiseMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_VOICE_LEVEL_1);
+      stopEffect(S_VOICE_LEVEL_2);
+      stopEffect(S_VOICE_LEVEL_3);
       playEffect(S_VOICE_LEVEL_4);
+      stopEffect(S_VOICE_LEVEL_5);
     break;
   }
 
@@ -691,44 +731,6 @@ void fireControlCheck() {
         // playEffect(S_DEVICE_MASH_ERROR);
         deviceTipSpark();
       }
-    }
-  }
-}
-
-// Check the state of the grip button to determine whether we have entered the settings menu.
-void gripButtonCheck() {
-  // First check if the device is firing or in a state other than off.
-  if(DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_OFF) {
-    if(switch_grip.pushed() && !(switch_device.on() && switch_vent.on())) {
-      // Only exit the settings menu when on menu #5.
-      if(MENU_OPTION_LEVEL == OPTION_5) {
-        // Switch between firing mode and settings mode.
-        if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
-          DEVICE_ACTION_STATUS = ACTION_SETTINGS;
-
-          ms_settings_blinking.start(i_settings_blinking_delay);
-
-          // Clear the bargraph when the timer starts.
-          bargraph.clear();
-        }
-        else {
-          DEVICE_ACTION_STATUS = ACTION_IDLE;
-          ms_settings_blinking.stop();
-
-        }
-
-        // Provide audio feedback to user.
-        playEffect(S_CLICK);
-
-        // Clear the bargraph before doing menu animations.
-        bargraph.clear();
-      }
-    }
-    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
-      // Exit the settings menu if the user turns the device switches back on.
-      DEVICE_ACTION_STATUS = ACTION_IDLE;
-      ms_settings_blinking.stop();
-      bargraph.clear();
     }
   }
 }
@@ -1164,6 +1166,11 @@ void deviceExitMenu() {
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   allLightsOff();
+
+  if(DEVICE_STATUS == MODE_ON && bargraph.STATE == BG_OFF) {
+    bargraph.reset(); // Enable bargraph for use (resets variables and turns it on).
+    bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
+  }
 }
 
 // Exit the device menu EEPROM system while the device is off.

@@ -21,6 +21,9 @@
 
 #pragma once
 
+// Forward function declarations
+void gripButtonCheck();
+
 void checkDeviceAction() {
   switch(DEVICE_STATUS) {
     case MODE_OFF:
@@ -142,7 +145,7 @@ void checkDeviceAction() {
 
       vibrationSetting();
 
-      // Determine if the grip button has been pressed (eg. menu operation);
+      // Determine if the special grip button has been pressed (eg. menu operation);
       gripButtonCheck();
 
       // Determine the light status on the device and any beeps.
@@ -211,6 +214,10 @@ void checkDeviceAction() {
       bargraph.off();
     break;
 
+    case ACTION_ACTIVATE:
+      modeActivate();
+    break;
+
     case ACTION_FIRING:
       if(ms_single_blast.justFinished()) {
         // Reset the barrel before starting a new pulse.
@@ -268,12 +275,8 @@ void checkDeviceAction() {
       // No-op, add actions here as needed.
     break;
 
-    case ACTION_ACTIVATE:
-      modeActivate();
-    break;
-
     case ACTION_CONFIG_EEPROM_MENU:
-      // TODO: Re-introduce custom EEPROM menu options for this device
+      // TODO: Re-introduce Config EEPROM menu options for this device
     break;
 
     case ACTION_SETTINGS:
@@ -284,6 +287,49 @@ void checkDeviceAction() {
   if(b_firing && DEVICE_ACTION_STATUS != ACTION_FIRING) {
     // User is firing but we've switched into an action that is not firing.
     modeFireStop();
+  }
+}
+
+// Check the state of the grip button to determine whether we have entered the settings menu.
+void gripButtonCheck() {
+  // Proceed if device is in an idle state or already in the settings menu.
+  if(DEVICE_ACTION_STATUS == ACTION_IDLE || DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+    if(switch_grip.pushed() && !(switch_device.on() && switch_vent.on())) {
+      // Switch between firing mode and settings mode.
+      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+        // Not currently in settings system.
+        DEVICE_ACTION_STATUS = ACTION_SETTINGS;
+        ms_settings_blinking.start(i_settings_blinking_delay);
+        deviceEnterMenu();
+      }
+      else if(DEVICE_MENU_LEVEL == MENU_LEVEL_1 && MENU_OPTION_LEVEL == OPTION_5) {
+        // Only exit the settings when at option #5 on menu level 1.
+        DEVICE_ACTION_STATUS = ACTION_IDLE;
+        ms_settings_blinking.stop();
+        deviceExitMenu();
+      }
+    }
+    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
+      // Exit the settings menu if the user turns the device switches back on.
+      DEVICE_ACTION_STATUS = ACTION_IDLE;
+      ms_settings_blinking.stop();
+      bargraph.clear();
+      deviceExitMenu();
+    }
+  }
+}
+
+void encoderChangedMenuOption() {
+  // Handle menu navigation based on rotation of the encoder
+  if(encoder.STATE == ENCODER_CW) {
+    if(decreaseOptionLevel()) {
+      bargraph.showBars(MENU_OPTION_LEVEL);
+    }
+  }
+  else if(encoder.STATE == ENCODER_CCW) {
+    if(increaseOptionLevel()) {
+      bargraph.showBars(MENU_OPTION_LEVEL);
+    }
   }
 }
 
@@ -316,17 +362,8 @@ void checkEncoderAction() {
         break;
 
         case ACTION_SETTINGS:
-          // Handle menu navigation based on rotation of the encoder
-          if(encoder.STATE == ENCODER_CW) {
-            if(decreaseOptionLevel()) {
-              bargraph.showBars(MENU_OPTION_LEVEL);
-            }
-          }
-          else if(encoder.STATE == ENCODER_CCW) {
-            if(increaseOptionLevel()) {
-              bargraph.showBars(MENU_OPTION_LEVEL);
-            }
-          }
+          // Perform menu and option navigation.
+          encoderChangedMenuOption();
         break;
 
         case ACTION_CONFIG_EEPROM_MENU:
@@ -340,15 +377,20 @@ void checkEncoderAction() {
     break; // MODE_ERROR
 
     case MODE_ON:
-      if(DEVICE_ACTION_STATUS == ACTION_IDLE && switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
-          if(encoder.STATE == ENCODER_CW) {
-            // Increase the master system volume.
-            increaseVolume();
-          }
-          else if(encoder.STATE == ENCODER_CCW) {
-            // Decrease the master system volume.
-            decreaseVolume();
-          }
+      if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && !switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
+        // Perform menu and option navigation.
+        encoderChangedMenuOption();
+      }
+
+      if(DEVICE_ACTION_STATUS == ACTION_IDLE && !switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
+        if(encoder.STATE == ENCODER_CW) {
+          // Increase the master system volume.
+          increaseVolume();
+        }
+        else if(encoder.STATE == ENCODER_CCW) {
+          // Decrease the master system volume.
+          decreaseVolume();
+        }
       }
 
       if(DEVICE_ACTION_STATUS == ACTION_IDLE && switch_device.on() && switch_vent.on() && switch_activate.on()) {
