@@ -49,30 +49,8 @@ const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each L
 const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED (use fade step for changes)
 uint16_t i_dynamic_cyclotron_delay; // Calculated cyclotron spin delay based on power level.
 
-// Return current power level as a number (eg: 1-5)
-uint8_t getPowerLevel() {
-  switch(POWER_LEVEL){
-    case LEVEL_1:
-    default:
-      return 1;
-    break;
-    case LEVEL_2:
-      return 2;
-    break;
-    case LEVEL_3:
-      return 3;
-    break;
-    case LEVEL_4:
-      return 4;
-    break;
-    case LEVEL_5:
-      return 5;
-    break;
-  }
-}
-
 uint16_t getCyclotronDelay() {
-  return (uint16_t) (i_base_cyclotron_delay - ((getPowerLevel() - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4));
+  return (uint16_t) (i_base_cyclotron_delay - (POWER_LEVEL * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4));
 }
 
 // Manage lights in pairs to move in a predefined sequence, fading each light in and out.

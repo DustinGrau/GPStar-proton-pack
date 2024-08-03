@@ -51,7 +51,7 @@
  * - Full: Denotes bargraph was last seen as completely full (lit)
  */
 enum BARGRAPH_PATTERNS { BG_RAMP_UP, BG_RAMP_DOWN, BG_OUTER_INNER, BG_INNER_PULSE, BG_POWER_RAMP, BG_POWER_DOWN, BG_POWER_UP };
-enum BARGRAPH_STATES { BG_OFF, BG_ON, BG_EMPTY, BG_MID, BG_FULL };
+enum BARGRAPH_STATES { BG_OFF, BG_ON, BG_EMPTY, BG_MID, BG_FULL, BG_BARS };
 
 /*
  * Barmeter 28 segment bargraph configuration and timers.
@@ -72,11 +72,11 @@ struct Bargraph {
   private:
     const uint8_t OrientationNormal[Bargraph::Elements] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
     const uint8_t OrientationInvert[Bargraph::Elements] = {54, 38, 22, 6, 53, 37, 21, 5, 52, 36, 20, 4, 51, 35, 19, 3, 50, 34, 18, 2, 49, 33, 17, 1, 48, 32, 16, 0};
-    const uint8_t Menu1[Bargraph::Elements] = {0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1};
-    const uint8_t Menu2[Bargraph::Elements] = {0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0};
-    const uint8_t Menu3[Bargraph::Elements] = {0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    const uint8_t Menu4[Bargraph::Elements] = {0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    const uint8_t Menu5[Bargraph::Elements] = {0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t Bar_1[Bargraph::Elements] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t Bar_2[Bargraph::Elements] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t Bar_3[Bargraph::Elements] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t Bar_4[Bargraph::Elements] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t Bar_5[Bargraph::Elements] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0};
 
   public:
     HT16K33 device; // Singular bargraph object instance using the HT16K33 matrix driver.
@@ -130,25 +130,28 @@ struct Bargraph {
       }
     }
 
-    void setMenu(uint8_t i_level) {
-      // Enable the correct element based on the menu level chosen.
-      // Remember, menu values are 5-1, ordered top to bottom.
+    void showBars(uint8_t i_count) {
+      off(); // Clear previous state and display.
+
+      STATE = BG_BARS;
+
+      // Display evenly spaced indicators for values 1-5.
       for(uint8_t i = 0; i < Bargraph::Elements; i++) {
-        switch(i_level){
-          case 5:
-            setElement(i, Menu1[i]);
-          break;
-          case 4:
-            setElement(i, Menu2[i]);
-          break;
-          case 3:
-            setElement(i, Menu3[i]);
+        switch(i_count){
+          case 1:
+            setElement(i, Bar_1[i]);
           break;
           case 2:
-            setElement(i, Menu4[i]);
+            setElement(i, Bar_2[i]);
           break;
-          case 1:
-            setElement(i, Menu5[i]);
+          case 3:
+            setElement(i, Bar_3[i]);
+          break;
+          case 4:
+            setElement(i, Bar_4[i]);
+          break;
+          case 5:
+            setElement(i, Bar_5[i]);
           break;
         }
       }
@@ -160,7 +163,7 @@ struct Bargraph {
          // Keep byte value in usable range.
          element = 0;
       }
-      else if(i_element >= Bargraph::Elements) {
+      else if(i_element > Bargraph::Elements - 1) {
         // Do not exceed the total addressable elements.
         element = Bargraph::Elements - 1;
       }
@@ -168,7 +171,12 @@ struct Bargraph {
         // Otherwise use the element as given.
         element = i_element;
       }
-
+debug("bg_el_");
+debug(i_element);
+debug(":");
+debug(element);
+debug(":");
+debugln(b_power);
       if(present) {
         // This simplifies the process of turning individual elements on or off.
         // Uses mapping information which accounts for installation orientation.
@@ -188,6 +196,15 @@ struct Bargraph {
       }
     }
 
+    void clear() {
+      // Clears all elements from the bargraph, marks state as empty.
+      if(present) {
+        device.clearAll();
+      }
+      element = 0;
+      STATE = BG_EMPTY; // Mark last known state.
+    }
+
     void reset() {
       // Sets the bargraph into a state where it can begin running.
       element = 0;
@@ -202,15 +219,6 @@ struct Bargraph {
         setElement(i, 1);
       }
       STATE = BG_FULL; // Mark last known state.
-    }
-
-    void clear() {
-      // Clears all elements from the bargraph, marks state as empty.
-      if(present) {
-        device.clearAll();
-      }
-      element = 0;
-      STATE = BG_EMPTY; // Mark last known state.
     }
 
     void off() {
@@ -234,7 +242,7 @@ void setupBargraph() {
 
 /***** Animation Controls *****/
 
-void bargraphPowerCheck(uint8_t i_level) {
+void bargraphPowerCheck() {
   // Alternates between ramping up and down.
   if(bargraph.STATE == BG_EMPTY) {
     // When known empty, ramp up.
@@ -249,11 +257,11 @@ void bargraphPowerCheck(uint8_t i_level) {
   // Account for uneven division by using the remainder as the base for level 1.
   uint8_t i_bargraph_base = (Bargraph::Elements % Bargraph::MaxLevels);
   // Remember, the passed level will be 0-based so we must add 1 for calculations.
-  bargraph.simulate = i_bargraph_base + (Bargraph::MaxLevels * (i_level + 1));
+  bargraph.simulate = i_bargraph_base + (Bargraph::MaxLevels * (uint8_t)(POWER_LEVEL));
 }
 
 // Performs update on bargraph elements based given a pattern.
-void bargraphUpdate(uint8_t i_delay_divisor) {
+void bargraphUpdate(uint8_t i_delay_divisor = 1) {
   if(i_delay_divisor == 0) {
     i_delay_divisor = 1; // Avoid divide by zero.
   }
@@ -263,7 +271,7 @@ void bargraphUpdate(uint8_t i_delay_divisor) {
      bargraph.PATTERN == BG_POWER_UP) {
     // Use the current power level to set some global variables, such as the simulated maximum elements.
     // This will determine whether to ramp up or down, and must be called prior to the switch statement below.
-    bargraphPowerCheck(POWER_LEVEL); // Use enum to get 0-4 as the level's integer value.
+    bargraphPowerCheck();
   }
 
   // Set the current delay by dividing the base delay by some value (Min: 2).

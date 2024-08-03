@@ -98,7 +98,7 @@ void setup() {
 
   pinMode(vibration, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.
 
-  // Make sure lights are off.
+  // Make sure lights are off, including the bargraph.
   allLightsOff();
 
   // Device status.
@@ -185,8 +185,7 @@ void systemPOST() {
 
   allLightsOff(); // Turn off all lights, including the bargraph.
 
-  // Turn the bargraph off and force a state change.
-  bargraph.off();
+  // Make sure change to bargraph is immediate.
   bargraph.commit();
 }
 
@@ -244,6 +243,106 @@ bool decreasePowerLevel() {
   return (POWER_LEVEL_PREV != POWER_LEVEL);
 }
 
+bool increaseMenuLevel() {
+  bool b_changed = true;
+
+  switch(DEVICE_MENU_LEVEL){
+    case MENU_LEVEL_1:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+    break;
+    case MENU_LEVEL_2:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+    break;
+    case MENU_LEVEL_3:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+    break;
+    case MENU_LEVEL_4:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_5;
+    break;
+    case MENU_LEVEL_5:
+      b_changed = false;
+    break;
+  }
+
+  // Returns true if value was changed.
+  return b_changed;
+}
+
+bool decreaseMenuLevel() {
+  bool b_changed = true;
+
+  switch(DEVICE_MENU_LEVEL){
+    case MENU_LEVEL_1:
+      b_changed = false;
+    break;
+    case MENU_LEVEL_2:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+    break;
+    case MENU_LEVEL_3:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+    break;
+    case MENU_LEVEL_4:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+    break;
+    case MENU_LEVEL_5:
+      DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+    break;
+  }
+
+  // Returns true if value was changed.
+  return b_changed;
+}
+
+bool increaseOptionLevel() {
+  bool b_changed = true;
+
+  switch(MENU_OPTION_LEVEL){
+    case OPTION_1:
+      MENU_OPTION_LEVEL = OPTION_2;
+    break;
+    case OPTION_2:
+      MENU_OPTION_LEVEL = OPTION_3;
+    break;
+    case OPTION_3:
+      MENU_OPTION_LEVEL = OPTION_4;
+    break;
+    case OPTION_4:
+      MENU_OPTION_LEVEL = OPTION_5;
+    break;
+    case OPTION_5:
+      b_changed = false;
+    break;
+  }
+
+  // Returns true if value was changed.
+  return b_changed;
+}
+
+bool decreaseOptionLevel() {
+  bool b_changed = true;
+
+  switch(MENU_OPTION_LEVEL){
+    case OPTION_1:
+      b_changed = false;
+    break;
+    case OPTION_2:
+      MENU_OPTION_LEVEL = OPTION_1;
+    break;
+    case OPTION_3:
+      MENU_OPTION_LEVEL = OPTION_2;
+    break;
+    case OPTION_4:
+      MENU_OPTION_LEVEL = OPTION_3;
+    break;
+    case OPTION_5:
+      MENU_OPTION_LEVEL = OPTION_4;
+    break;
+  }
+
+  // Returns true if value was changed.
+  return b_changed;
+}
+
 void mainLoop() {
   // Get the current state of any input devices (toggles, buttons, and switches).
   checkSwitches();
@@ -252,6 +351,11 @@ void mainLoop() {
 
   // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
   checkDeviceAction();
+
+  // Play the firing pulse effect animation if timer completed.
+  if(ms_firing_pulse.justFinished()) {
+    firePulseEffect();
+  }
 
   // Update the timer for the slo-blo blink.
   if(ms_slo_blo_blink.justFinished()) {
@@ -265,7 +369,7 @@ void mainLoop() {
   }
 
   // Update bargraph with latest state and pattern changes.
-  bargraphUpdate(1);
+  bargraphUpdate();
 }
 
 // Change the DEVICE_STATE here based on switches changing or pressed.
@@ -569,37 +673,43 @@ void fireControlCheck() {
   }
 }
 
-// Called from checkSwitches(); Used to enter the settings menu in MODE_SUPER_HERO.
+// Check the state of the grip button to determine whether we have entered the settings menu.
 void gripButtonCheck() {
+  // First check if the device is firing or in a state other than off.
   if(DEVICE_ACTION_STATUS != ACTION_FIRING && DEVICE_ACTION_STATUS != ACTION_OFF) {
-    if((!switch_device.on() || !switch_vent.on()) && switch_grip.pushed()) {
+    if(switch_grip.pushed() && !(switch_device.on() && switch_vent.on())) {
       // Only exit the settings menu when on menu #5.
-      if(i_device_menu == 5) {
+      if(MENU_OPTION_LEVEL == OPTION_5) {
         // Switch between firing mode and settings mode.
         if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
           DEVICE_ACTION_STATUS = ACTION_SETTINGS;
 
           ms_settings_blinking.start(i_settings_blinking_delay);
 
-          // Clear the 28 segment bargraph.
+          // Clear the bargraph when the timer starts.
           bargraph.clear();
         }
         else {
           DEVICE_ACTION_STATUS = ACTION_IDLE;
           ms_settings_blinking.stop();
-          bargraph.clear();
+
         }
 
+        // Provide audio feedback to user.
         playEffect(S_CLICK);
+
+        // Clear the bargraph before doing menu animations.
+        bargraph.clear();
       }
     }
-    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && switch_vent.on() && switch_device.on()) {
-      // Exit the settings menu if the user turns the device switch back on.
+    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
+      // Exit the settings menu if the user turns the device switches back on.
       DEVICE_ACTION_STATUS = ACTION_IDLE;
       ms_settings_blinking.stop();
       bargraph.clear();
     }
   }
+  debugln(DEVICE_ACTION_STATUS);
 }
 
 void modeError() {
@@ -879,19 +989,16 @@ void barrelLightsOff() {
 }
 
 void allLightsOff() {
-  bargraph.clear();
+  bargraph.off();
 
-  // These go LOW to turn off.
-  led_SloBlo.turnOff();
+  // Turn off all non-addressable LEDs.
   led_Clippard.turnOff(); // Turn off the front left LED under the Clippard valve.
   led_Hat1.turnOff(); // Turn off hat light 1 (not used, but just make sure).
   led_Hat2.turnOff(); // Turn off hat light 2.
-
-  // These go HIGH to turn off.
-  led_Vent.turnOff();
-  led_TopWhite.turnOff();
-
+  led_SloBlo.turnOff();
   led_Tip.turnOff(); // Not used normally, but make sure it's off.
+  led_TopWhite.turnOff();
+  led_Vent.turnOff();
 
   // Clear all addressable LEDs by filling the array with black.
   fill_solid(system_leds, CYCLOTRON_LED_COUNT + BARREL_LED_COUNT, CRGB::Black);
@@ -901,482 +1008,17 @@ void allLightsOff() {
   }
 }
 
-void allLightsOffMenuSystem() {
+void allMenuLightsOff() {
   // Make sure some of the device lights are off, specifically for the Menu systems.
-  led_SloBlo.turnOff();
-  led_Vent.turnOff();
-  led_TopWhite.turnOff();
-  led_Clippard.turnOff();
+  // LEDs are in the order by which they indicate the menu levels above level 1.
+  led_SloBlo.turnOff(); // Level 2
+  led_Vent.turnOff(); // Level 3
+  led_TopWhite.turnOff(); // Level 4
+  led_Clippard.turnOff(); // Level 5
 
   if(b_power_on_indicator) {
     ms_power_indicator.stop();
     ms_power_indicator_blink.stop();
-  }
-}
-
-// Top rotary dial on the device.
-void checkRotaryEncoder() {
-  encoder.check(); // Update the latest state of the device resulting from any user input.
-
-  if(encoder.STATE == ENCODER_IDLE) {
-    return; // Leave when no change has occurred.
-  }
-
-  switch(DEVICE_ACTION_STATUS) {
-    case ACTION_CONFIG_EEPROM_MENU:
-      // Counter clockwise.
-      if(encoder.STATE == ENCODER_CCW) {
-        if(DEVICE_MENU_LEVEL == MENU_LEVEL_3 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-          // Adjust the volume manually
-          decreaseVolumeEEPROM();
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(i_device_menu - 1 < 1) {
-          switch(DEVICE_MENU_LEVEL) {
-            case MENU_LEVEL_1:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_2;
-              i_device_menu = 5;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-
-              // Turn off the other lights.
-              led_Vent.turnOff(); // Level 3
-              led_TopWhite.turnOff(); // Level 4
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_2);
-            break;
-
-            case MENU_LEVEL_2:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_3;
-              i_device_menu = 5;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-              led_Vent.turnOn(); // Level 3
-
-              // Turn off the other lights.
-              led_TopWhite.turnOff(); // Level 4
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_3);
-            break;
-
-            case MENU_LEVEL_3:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_4;
-              i_device_menu = 5;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-              led_Vent.turnOn(); // Level 3
-              led_TopWhite.turnOn(); // Level 4
-
-              // Turn off the other lights.
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_4);
-            break;
-
-            case MENU_LEVEL_4:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_5;
-              i_device_menu = 5;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-              led_Vent.turnOn(); // Level 3
-              led_TopWhite.turnOn(); // Level 4
-              led_Clippard.turnOn(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_5);
-            break;
-
-            // Menu 5 the deepest level.
-            case MENU_LEVEL_5:
-            default:
-              i_device_menu = 1;
-            break;
-          }
-        }
-        else {
-          i_device_menu--;
-        }
-      }
-
-      // Clockwise.
-      if(encoder.STATE == ENCODER_CW) {
-        if(DEVICE_MENU_LEVEL == MENU_LEVEL_3 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-          // Adjust the volume manually
-          increaseVolumeEEPROM();
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && switch_intensify.on() && !switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 5 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 4 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 3 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 2 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(DEVICE_MENU_LEVEL == MENU_LEVEL_4 && i_device_menu == 1 && !switch_intensify.on() && switch_grip.on()) {
-        }
-        else if(i_device_menu + 1 > 5) {
-          switch(DEVICE_MENU_LEVEL) {
-            case MENU_LEVEL_5:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_4;
-              i_device_menu = 1;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-              led_Vent.turnOn(); // Level 3
-              led_TopWhite.turnOn(); // Level 4
-
-              // Turn off the other lights.
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_4);
-            break;
-
-            case MENU_LEVEL_4:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_3;
-              i_device_menu = 1;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-              led_Vent.turnOn(); // Level 3
-
-              // Turn off the other lights.
-              led_TopWhite.turnOff(); // Level 4
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_3);
-            break;
-
-            case MENU_LEVEL_3:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_2;
-              i_device_menu = 1;
-
-              // Turn on some lights to visually indicate which menu we are in.
-              led_SloBlo.turnOn(); // Level 2
-
-              // Turn off the other lights.
-              led_Vent.turnOff(); // Level 3
-              led_TopWhite.turnOff(); // Level 4
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_2);
-            break;
-
-            case MENU_LEVEL_2:
-              DEVICE_MENU_LEVEL = MENU_LEVEL_1;
-              i_device_menu = 1;
-
-              // Turn off the other lights.
-              led_SloBlo.turnOff(); // Level 2
-              led_Vent.turnOff(); // Level 3
-              led_TopWhite.turnOff(); // Level 4
-              led_Clippard.turnOff(); // Level 5
-
-              // Play an indication beep to notify we have changed menu levels.
-              stopEffect(S_BEEPS);
-              playEffect(S_BEEPS);
-
-              stopEffect(S_VOICE_LEVEL_1);
-              stopEffect(S_VOICE_LEVEL_2);
-              stopEffect(S_VOICE_LEVEL_3);
-              stopEffect(S_VOICE_LEVEL_4);
-              stopEffect(S_VOICE_LEVEL_5);
-
-              playEffect(S_VOICE_LEVEL_1);
-            break;
-
-            case MENU_LEVEL_1:
-            default:
-              // Cannot go any further than menu level 1.
-              i_device_menu = 5;
-            break;
-          }
-        }
-        else {
-          i_device_menu++;
-        }
-      }
-    break;
-
-    case ACTION_SETTINGS:
-      // Counter clockwise.
-      if(encoder.STATE == ENCODER_CCW) {
-        if(i_device_menu == 4 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-          // No-op
-        }
-        else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-          // Lower the sound effects volume.
-          decreaseVolumeEffects();
-        }
-        else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
-          // Decrease the music volume.
-          decreaseVolumeMusic();
-        }
-        else if(i_device_menu - 1 < 1) {
-          // We are entering the sub menu. Only accessible when the Single-Shot Blaster is powered down.
-          if(DEVICE_STATUS == MODE_OFF) {
-            switch(DEVICE_MENU_LEVEL) {
-              case MENU_LEVEL_1:
-                DEVICE_MENU_LEVEL = MENU_LEVEL_2;
-                i_device_menu = 5;
-
-                // Turn on the slo blow led to indicate we are in the Single-Shot Blaster sub menu.
-                led_SloBlo.turnOn();
-
-                // Play an indication beep to notify we have changed menu levels.
-                stopEffect(S_BEEPS);
-                playEffect(S_BEEPS);
-
-                stopEffect(S_VOICE_LEVEL_1);
-                stopEffect(S_VOICE_LEVEL_2);
-                stopEffect(S_VOICE_LEVEL_3);
-                stopEffect(S_VOICE_LEVEL_4);
-                stopEffect(S_VOICE_LEVEL_5);
-
-                playEffect(S_VOICE_LEVEL_2);
-              break;
-
-              case MENU_LEVEL_2:
-              default:
-                // Cannot go further than level 2 for this menu.
-                i_device_menu = 1;
-              break;
-            }
-          }
-          else {
-            i_device_menu = 1;
-          }
-        }
-        else {
-          i_device_menu--;
-        }
-      }
-
-      // Clockwise.
-      if(encoder.STATE == ENCODER_CW) {
-        if(i_device_menu == 4 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-          // No-op
-        }
-        else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && switch_intensify.on() && !switch_grip.on()) {
-          // Increase sound effects volume.
-          increaseVolumeEffects();
-        }
-        else if(i_device_menu == 3 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && !switch_intensify.on() && switch_grip.on() && b_playing_music) {
-          // Increase music volume.
-          increaseVolumeMusic();
-        }
-        else if(i_device_menu + 1 > 5) {
-          // We are leaving changing menu levels. Only accessible when the Single-Shot Blaster is powered down.
-          if(DEVICE_STATUS == MODE_OFF) {
-            switch(DEVICE_MENU_LEVEL) {
-              case MENU_LEVEL_2:
-                DEVICE_MENU_LEVEL = MENU_LEVEL_1;
-
-                i_device_menu = 1;
-
-                // Turn off the slo blow led to indicate we are no longer in the Single-Shot Blaster sub menu.
-                led_SloBlo.turnOff();
-
-                // Play an indication beep to notify we have changed menu levels.
-                stopEffect(S_BEEPS);
-                playEffect(S_BEEPS);
-
-                stopEffect(S_VOICE_LEVEL_1);
-                stopEffect(S_VOICE_LEVEL_2);
-                stopEffect(S_VOICE_LEVEL_3);
-                stopEffect(S_VOICE_LEVEL_4);
-                stopEffect(S_VOICE_LEVEL_5);
-
-                playEffect(S_VOICE_LEVEL_1);
-              break;
-
-              case MENU_LEVEL_1:
-              default:
-                // Level 1 is the first menu and nothing above it.
-                i_device_menu = 5;
-              break;
-            }
-          }
-          else {
-            i_device_menu = 5;
-          }
-        }
-        else {
-          i_device_menu++;
-        }
-      }
-    break;
-
-    default:
-      if(DEVICE_STATUS == MODE_ON && switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
-          // Counter clockwise.
-          if(encoder.STATE == ENCODER_CCW) {
-            // Decrease the master system volume.
-            decreaseVolume();
-          }
-          else if(encoder.STATE == ENCODER_CW) {
-            // Increase the master system volume.
-            increaseVolume();
-          }
-      }
-      else {
-        if(DEVICE_ACTION_STATUS == ACTION_FIRING && POWER_LEVEL == LEVEL_5) {
-          // Do nothing, we are locked in full power level while firing.
-        }
-        // Counter clockwise.
-        else if(encoder.STATE == ENCODER_CCW) {
-          if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
-            // Check to see the minimal power level depending on which system mode.
-            if(decreasePowerLevel() && DEVICE_STATUS == MODE_ON) {
-              soundIdleLoopStop();
-              soundIdleLoop(false);
-            }
-          }
-          else if(!switch_device.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && DEVICE_STATUS == MODE_ON) {
-            // Counter clockwise firing mode selection.
-            STREAM_MODE = PROTON;
-            ms_firing_mode_switch.start(i_firing_mode_switch_delay);
-          }
-
-          // Decrease the music volume if the device is off. A quick easy way to adjust the music volume on the go.
-          if(DEVICE_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
-            decreaseVolumeMusic();
-          }
-          else if(DEVICE_STATUS == MODE_OFF && switch_intensify.on()) {
-            // Decrease the master volume of the device.
-            decreaseVolume();
-          }
-        }
-
-        if(DEVICE_ACTION_STATUS == ACTION_FIRING && POWER_LEVEL == LEVEL_5) {
-          // Do nothing, we are locked in full power level while firing.
-        }
-        // Clockwise.
-        else if(encoder.STATE == ENCODER_CW) {
-          if(switch_device.on() && switch_vent.on() && switch_activate.on()) {
-            if(increasePowerLevel() && DEVICE_STATUS == MODE_ON) {
-              soundIdleLoopStop();
-              soundIdleLoop(false);
-            }
-          }
-          else if(!switch_device.on() && switch_vent.on() && ms_firing_mode_switch.remaining() < 1 && DEVICE_STATUS == MODE_ON) {
-            ms_firing_mode_switch.start(i_firing_mode_switch_delay);
-          }
-
-          // Increase the music volume if the device is off. A quick easy way to adjust the music volume on the go.
-          if(DEVICE_STATUS == MODE_OFF && b_playing_music && !switch_intensify.on()) {
-            increaseVolumeMusic();
-          }
-          else if(DEVICE_STATUS == MODE_OFF && switch_intensify.on()) {
-            // Increase the master volume of the Single-Shot Blaster only.
-            increaseVolume();
-          }
-        }
-      }
-    break;
   }
 }
 
@@ -1470,34 +1112,64 @@ void deviceSwitched(void* n) {
   deviceSwitchedCount++;
 }
 
+// Enter the device menu system.
+void deviceEnterMenu() {
+  debugln("deviceEnterMenu");
+
+  // Enter a menu at level 1, at option #5
+  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+  MENU_OPTION_LEVEL = OPTION_5;
+
+  playEffect(S_CLICK);
+
+  DEVICE_ACTION_STATUS = ACTION_SETTINGS;
+
+  allLightsOff();
+  allMenuLightsOff();
+
+  bargraph.showBars(MENU_OPTION_LEVEL);
+}
+
 // Exit the device menu system while the device is off.
 void deviceExitMenu() {
-  i_device_menu = 5;
+  debugln("deviceExitMenu");
+
+  // Reset the menu level/option to default
+  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+  MENU_OPTION_LEVEL = OPTION_5;
 
   playEffect(S_CLICK);
 
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   allLightsOff();
-  bargraph.off();
 }
 
 // Exit the device menu EEPROM system while the device is off.
 void deviceExitEEPROMMenu() {
+  debugln("deviceExitEEPROMMenu");
+
+  // Reset the menu level/option to default
+  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+  MENU_OPTION_LEVEL = OPTION_5;
+
   playEffect(S_BEEPS);
+
+  DEVICE_ACTION_STATUS = ACTION_IDLE;
+
+  allLightsOff();
 
   deviceSwitchedCount = 0;
   ventSwitchedCount = 0;
 
   vibrationOff(); // Make sure we stop any menu-related vibration, if any.
-
-  i_device_menu = 5;
-
-  DEVICE_ACTION_STATUS = ACTION_IDLE;
-
-  allLightsOff();
-  bargraph.off();
 }
 
 // Included last as the contained logic will control all aspects of the device using the defined functions above.
 #include "Actions.h"
+
+// Checks the top rotary dial on the device.
+void checkRotaryEncoder() {
+  encoder.check(); // Update the latest state of the device resulting from any user input.
+  checkEncoderAction(); // Take action specifically from interation by the user.
+}

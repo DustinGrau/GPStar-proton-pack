@@ -51,7 +51,13 @@ enum DEVICE_ACTION_STATE DEVICE_ACTION_STATUS;
  */
 enum STREAM_MODES { PROTON };
 enum STREAM_MODES STREAM_MODE;
-enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
+enum POWER_LEVELS {
+  LEVEL_1 = 1,
+  LEVEL_2 = 2,
+  LEVEL_3 = 3,
+  LEVEL_4 = 4,
+  LEVEL_5 = 5
+};
 enum POWER_LEVELS POWER_LEVEL;
 enum POWER_LEVELS POWER_LEVEL_PREV;
 
@@ -287,6 +293,14 @@ uint16_t i_last_firing_effect_mix = 0; // Used by standalone Single-Shot Blaster
  */
 enum DEVICE_MENU_LEVELS { MENU_LEVEL_1, MENU_LEVEL_2, MENU_LEVEL_3, MENU_LEVEL_4, MENU_LEVEL_5 };
 enum DEVICE_MENU_LEVELS DEVICE_MENU_LEVEL;
+enum MENU_OPTION_LEVELS {
+  OPTION_1 = 1,
+  OPTION_2 = 2,
+  OPTION_3 = 3,
+  OPTION_4 = 4,
+  OPTION_5 = 5
+};
+enum MENU_OPTION_LEVELS MENU_OPTION_LEVEL;
 uint8_t i_device_menu = 5;
 const uint16_t i_settings_blinking_delay = 350;
 millisDelay ms_settings_blinking;
