@@ -88,8 +88,8 @@ struct Bargraph {
     bool present = false; // Denotes that i2c bus found the bargraph device.
     millisDelay ms_timer; // Timer to control bargraph updates consistently.
 
-    enum BARGRAPH_PATTERNS PATTERN;
-    enum BARGRAPH_STATES STATE;
+    enum BARGRAPH_PATTERNS PATTERN = BG_NONE;
+    enum BARGRAPH_STATES STATE = BG_OFF;
 
     void initialize(bool b_invert = false) {
       byte by_error, by_address;
@@ -288,6 +288,11 @@ void bargraphUpdate(uint8_t i_delay_divisor = 1) {
 
     // Animations should be based on a set pattern and logic here must only affect the bargraph device.
     switch(bargraph.PATTERN) {
+      case BG_NONE:
+      default:
+        // No-Op.
+      break;
+
       case BG_POWER_RAMP:
         bargraph.PATTERN = BG_POWER_UP; // Set the initial direction for the power ramp (up).
       break;
@@ -474,11 +479,6 @@ void bargraphUpdate(uint8_t i_delay_divisor = 1) {
 
         // Reset timer for next iteration, with slight delay as the steps increase.
         bargraph.ms_timer.start(i_current_delay + bargraph.step);
-      break;
-
-      BG_NONE:
-      default:
-        // No-Op
       break;
     }
   }

@@ -74,11 +74,12 @@ void setup() {
   // Setup default system settings.
   VIBRATION_MODE_EEPROM = VIBRATION_NONE; // VIBRATION_ALWAYS
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+  MENU_OPTION_LEVEL = OPTION_5;
   POWER_LEVEL = LEVEL_1;
 
   // Set callback events for these toggles, which need to count the activations for EEPROM menu entry.
-  switch_vent.setPushedCallback(&ventSwitched);
-  switch_device.setPushedCallback(&deviceSwitched);
+  switch_vent.setPushedCallback(&ventSwitched); // For the LED EEPROM Menu
+  switch_device.setPushedCallback(&deviceSwitched); // For the Config EEPROM Menu
 
   // Rotary encoder on the top of the device.
   encoder.initialize();
@@ -243,21 +244,42 @@ bool decreasePowerLevel() {
   return (POWER_LEVEL_PREV != POWER_LEVEL);
 }
 
-bool increaseMenuLevel() {
+// Increasing the menu level means the user is going deeper
+bool lowerMenuLevel() {
   bool b_changed = true;
 
   switch(DEVICE_MENU_LEVEL){
     case MENU_LEVEL_1:
       DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOff(); // Level 3
+      led_TopWhite.turnOff(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_2);
     break;
     case MENU_LEVEL_2:
       DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOn(); // Level 3
+      led_TopWhite.turnOff(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_3);
     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOn(); // Level 3
+      led_TopWhite.turnOn(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_4);
     break;
     case MENU_LEVEL_4:
       DEVICE_MENU_LEVEL = MENU_LEVEL_5;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOn(); // Level 3
+      led_TopWhite.turnOn(); // Level 4
+      led_Clippard.turnOn(); // Level 5
+      playEffect(S_VOICE_LEVEL_5);
     break;
     case MENU_LEVEL_5:
       b_changed = false;
@@ -268,24 +290,45 @@ bool increaseMenuLevel() {
   return b_changed;
 }
 
-bool decreaseMenuLevel() {
+bool raiseMenuLevel() {
   bool b_changed = true;
 
   switch(DEVICE_MENU_LEVEL){
     case MENU_LEVEL_1:
+      // Menu level 1 is actually the top, so make sure all lights are off;
       b_changed = false;
     break;
     case MENU_LEVEL_2:
       DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+      led_SloBlo.turnOff(); // Level 2
+      led_Vent.turnOff(); // Level 3
+      led_TopWhite.turnOff(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_1);
     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOff(); // Level 3
+      led_TopWhite.turnOff(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_2);
     break;
     case MENU_LEVEL_4:
       DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOn(); // Level 3
+      led_TopWhite.turnOff(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_3);
     break;
     case MENU_LEVEL_5:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
+      led_SloBlo.turnOn(); // Level 2
+      led_Vent.turnOn(); // Level 3
+      led_TopWhite.turnOn(); // Level 4
+      led_Clippard.turnOff(); // Level 5
+      playEffect(S_VOICE_LEVEL_4);
     break;
   }
 
@@ -293,7 +336,7 @@ bool decreaseMenuLevel() {
   return b_changed;
 }
 
-bool increaseOptionLevel() {
+bool decreaseOptionLevel() {
   bool b_changed = true;
 
   switch(MENU_OPTION_LEVEL){
@@ -310,7 +353,12 @@ bool increaseOptionLevel() {
       MENU_OPTION_LEVEL = OPTION_5;
     break;
     case OPTION_5:
-      b_changed = false;
+      if(raiseMenuLevel()) {
+        MENU_OPTION_LEVEL = OPTION_1;
+      }
+      else {
+        b_changed = false;
+      }
     break;
   }
 
@@ -318,12 +366,17 @@ bool increaseOptionLevel() {
   return b_changed;
 }
 
-bool decreaseOptionLevel() {
+bool increaseOptionLevel() {
   bool b_changed = true;
 
   switch(MENU_OPTION_LEVEL){
     case OPTION_1:
-      b_changed = false;
+      if(lowerMenuLevel()) {
+        MENU_OPTION_LEVEL = OPTION_5;
+      }
+      else {
+        b_changed = false;
+      }
     break;
     case OPTION_2:
       MENU_OPTION_LEVEL = OPTION_1;
@@ -345,7 +398,6 @@ bool decreaseOptionLevel() {
 
 void mainLoop() {
   // Get the current state of any input devices (toggles, buttons, and switches).
-  checkSwitches();
   checkRotaryEncoder();
   checkMenuVibration();
 
@@ -370,36 +422,6 @@ void mainLoop() {
 
   // Update bargraph with latest state and pattern changes.
   bargraphUpdate();
-}
-
-// Change the DEVICE_STATE here based on switches changing or pressed.
-void checkSwitches() {
-  switch(DEVICE_STATUS) {
-    case MODE_OFF:
-      if(switch_activate.on() && DEVICE_ACTION_STATUS == ACTION_IDLE) {
-        // Activate the device if previously idle.
-        DEVICE_ACTION_STATUS = ACTION_ACTIVATE;
-      }
-    break;
-
-    case MODE_ERROR:
-      if(!switch_activate.on()) {
-        b_device_boot_error_on = false;
-        deviceOff();
-      }
-    break;
-
-    case MODE_ON:
-      // Determine if the grip button has been pressed (eg. menu operation);
-      gripButtonCheck();
-
-      // Determine the light status on the device and any beeps.
-      deviceLightControlCheck();
-
-      // Check if we should fire, or if the device was turned off.
-      fireControlCheck();
-    break;
-  }
 }
 
 void deviceTipSpark() {
@@ -533,7 +555,7 @@ void deviceOff() {
   }
 }
 
-// Called from checkSwitches(); Check if we should fire, or if the device was turned off.
+// Check if we should fire, or if the device was turned off.
 void fireControlCheck() {
   // Firing action stuff and shutting cyclotron and the Single-Shot Blaster off.
   if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
@@ -709,7 +731,6 @@ void gripButtonCheck() {
       bargraph.clear();
     }
   }
-  debugln(DEVICE_ACTION_STATUS);
 }
 
 void modeError() {
@@ -1171,5 +1192,5 @@ void deviceExitEEPROMMenu() {
 // Checks the top rotary dial on the device.
 void checkRotaryEncoder() {
   encoder.check(); // Update the latest state of the device resulting from any user input.
-  checkEncoderAction(); // Take action specifically from interation by the user.
+  checkEncoderAction(); // Take action specifically from interaction by the user.
 }

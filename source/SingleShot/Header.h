@@ -124,7 +124,7 @@ StandaloneLED led_Tip = {24, HIGH, LOW};
  */
 #define r_encoderA 6
 #define r_encoderB 7
-enum ENCODER_STATES { ENCODER_IDLE, ENCODER_CW, ENCODER_CCW };
+enum ENCODER_STATES { ENCODER_IDLE = 0, ENCODER_CW = 1, ENCODER_CCW = -1 };
 struct Encoder {
   const static uint8_t PinA = r_encoderA;
   const static uint8_t PinB = r_encoderB;
@@ -220,8 +220,8 @@ Switch switch_device(A0); // Controls the beeping. Top right switch on the devic
 Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the device.
 Switch switch_grip(A6); // Hand-grip button to be the primary fire and used in settings menus.
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
-uint8_t ventSwitchedCount = 0; // Used for detection of EEPROM menu access
-uint8_t deviceSwitchedCount = 0; // Used for detection of EEPROM menu access
+uint8_t ventSwitchedCount = 0; // Used for detection of LED EEPROM menu access
+uint8_t deviceSwitchedCount = 0; // Used for detection of Config EEPROM menu access
 
 /*
  * Control for the primary blast sound effects.
@@ -291,7 +291,12 @@ uint16_t i_last_firing_effect_mix = 0; // Used by standalone Single-Shot Blaster
 /*
  * Device Menu
  */
-enum DEVICE_MENU_LEVELS { MENU_LEVEL_1, MENU_LEVEL_2, MENU_LEVEL_3, MENU_LEVEL_4, MENU_LEVEL_5 };
+enum DEVICE_MENU_LEVELS {
+  MENU_LEVEL_1 = 1,
+  MENU_LEVEL_2 = 2,
+  MENU_LEVEL_3 = 3,
+  MENU_LEVEL_4 = 4,
+  MENU_LEVEL_5 = 5 };
 enum DEVICE_MENU_LEVELS DEVICE_MENU_LEVEL;
 enum MENU_OPTION_LEVELS {
   OPTION_1 = 1,
