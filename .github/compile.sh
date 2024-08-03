@@ -165,6 +165,35 @@ fi
 echo "Done."
 echo ""
 
+# Attenuator (ESP32 - Standalone)
+echo "Building Attenuator Binary (ESP32 - WiFi Reset)..."
+
+# Change flag(s) for compilation
+sed -i -e 's/b_wait_for_pack = true/b_wait_for_pack = false/' ${SRCDIR}/Attenuator/Configuration.h
+
+# --warnings none
+arduino-cli compile --output-dir ${BINDIR} --fqbn esp32:esp32:esp32 --export-binaries ${SRCDIR}/Attenuator/Attenuator.ino
+
+# Keep any .bin files
+rm -f ${BINDIR}/*.eep
+rm -f ${BINDIR}/*.elf
+rm -f ${BINDIR}/*.map
+rm -f ${BINDIR}/*.merged.bin
+rm -f ${BINDIR}/*bootloader.*
+rm -f ${BINDIR}/*partitions.*
+
+if [ -f ${BINDIR}/Attenuator.ino.bin ]; then
+  mv ${BINDIR}/Attenuator.ino.bin ${BINDIR}/attenuator/Attenuator-ESP32-Standalone.bin
+fi
+
+# Restore flag(s) from compilation
+sed -i -e 's/b_wait_for_pack = false/b_wait_for_pack = true/' ${SRCDIR}/Attenuator/Configuration.h
+
+rm -f ${SRCDIR}/Attenuator/*.h-e
+
+echo "Done."
+echo ""
+
 # Attenuator (ESP32 - WiFi Reset)
 echo "Building Attenuator Binary (ESP32 - WiFi Reset)..."
 
