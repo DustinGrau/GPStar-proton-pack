@@ -216,8 +216,8 @@ millisDelay ms_menu_vibration; // Timer to do non-blocking confirmation buzzing 
  */
 Switch switch_intensify(2); // Considered a primary firing button, though for this device will be an alt-fire.
 Switch switch_activate(3); // Considered the primary power toggle on the right of the gun box.
-Switch switch_device(A0); // Controls the beeping. Top right switch on the device.
-Switch switch_vent(4); // Turns on the vent light. Bottom right switch on the device.
+Switch switch_device(A0); // Top right switch on the device. Enables device for firing.
+Switch switch_vent(4); // Bottom right switch on the device. Turns on the vent light.
 Switch switch_grip(A6); // Hand-grip button to be the primary fire and used in settings menus.
 bool b_all_switch_activation = false; // Used to check if Activate was flipped to on while the vent switch was already in the on position for sound purposes.
 uint8_t ventSwitchedCount = 0; // Used for detection of LED EEPROM menu access

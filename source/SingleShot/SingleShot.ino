@@ -256,6 +256,9 @@ bool lowerMenuLevel() {
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
 
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
+
       stopEffect(S_VOICE_LEVEL_1);
       playEffect(S_VOICE_LEVEL_2);
       stopEffect(S_VOICE_LEVEL_3);
@@ -268,6 +271,9 @@ bool lowerMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
 
       stopEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
@@ -282,6 +288,9 @@ bool lowerMenuLevel() {
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOff(); // Level 5
 
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
+
       stopEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
       stopEffect(S_VOICE_LEVEL_3);
@@ -294,6 +303,9 @@ bool lowerMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOn(); // Level 5
+
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
 
       stopEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
@@ -325,6 +337,9 @@ bool raiseMenuLevel() {
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
 
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
+
       playEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
       stopEffect(S_VOICE_LEVEL_3);
@@ -337,6 +352,9 @@ bool raiseMenuLevel() {
       led_Vent.turnOff(); // Level 3
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
 
       stopEffect(S_VOICE_LEVEL_1);
       playEffect(S_VOICE_LEVEL_2);
@@ -351,6 +369,9 @@ bool raiseMenuLevel() {
       led_TopWhite.turnOff(); // Level 4
       led_Clippard.turnOff(); // Level 5
 
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
+
       stopEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
       playEffect(S_VOICE_LEVEL_3);
@@ -363,6 +384,9 @@ bool raiseMenuLevel() {
       led_Vent.turnOn(); // Level 3
       led_TopWhite.turnOn(); // Level 4
       led_Clippard.turnOff(); // Level 5
+
+      stopEffect(S_BEEPS);
+      playEffect(S_BEEPS);
 
       stopEffect(S_VOICE_LEVEL_1);
       stopEffect(S_VOICE_LEVEL_2);
@@ -462,6 +486,37 @@ void mainLoop() {
 
   // Update bargraph with latest state and pattern changes.
   bargraphUpdate();
+
+  // Keep the cyclotron spinning as necessary.
+  checkCyclotron();
+}
+
+void checkCyclotron() {
+  if(DEVICE_STATUS == MODE_ON) {
+    if(!ms_cyclotron.isRunning()) {
+      // Start the cyclotron animation with consideration for timing from the power level.
+      ms_cyclotron.start(getCyclotronDelay());
+    }
+
+    switch(POWER_LEVEL) {
+      case LEVEL_1:
+      default:
+        updateCyclotron(C_RED);
+      break;
+      case LEVEL_2:
+        updateCyclotron(C_RED2);
+      break;
+      case LEVEL_3:
+        updateCyclotron(C_RED3);
+      break;
+      case LEVEL_4:
+        updateCyclotron(C_RED4);
+      break;
+      case LEVEL_5:
+        updateCyclotron(C_RED5);
+      break;
+    }
+  }
 }
 
 void deviceTipSpark() {
