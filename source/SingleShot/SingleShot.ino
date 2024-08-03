@@ -53,8 +53,9 @@
 #include "Configuration.h"
 #include "MusicSounds.h"
 #include "Header.h"
-#include "Bargraph.h"
 #include "Colours.h"
+#include "Bargraph.h"
+#include "Cyclotron.h"
 #include "Audio.h"
 #include "Preferences.h"
 
@@ -136,7 +137,9 @@ void loop() {
 
   checkMusic(); // Music control is here since in standalone mode.
 
-  mainLoop(); // Continue on to the main loop.
+  switchLoops(); // Poll for switch/button changes via user inputs.
+
+  mainLoop(); // Continue on to the main loop for taking actions.
 }
 
 void systemPOST() {
@@ -185,28 +188,6 @@ void systemPOST() {
   // Turn the bargraph off and force a state change.
   bargraph.off();
   bargraph.commit();
-}
-
-// Return current power level as a number (eg: 1-5)
-uint8_t getPowerLevel() {
-  switch(POWER_LEVEL){
-    case LEVEL_1:
-    default:
-      return 1;
-    break;
-    case LEVEL_2:
-      return 2;
-    break;
-    case LEVEL_3:
-      return 3;
-    break;
-    case LEVEL_4:
-      return 4;
-    break;
-    case LEVEL_5:
-      return 5;
-    break;
-  }
 }
 
 bool increasePowerLevel() {
@@ -265,243 +246,34 @@ bool decreasePowerLevel() {
 
 void mainLoop() {
   // Get the current state of any input devices (toggles, buttons, and switches).
-  switchLoops();
   checkSwitches();
   checkRotaryEncoder();
   checkMenuVibration();
 
-  if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
-    if(ms_bmash.remaining() < 1) {
-      // Clear counter until user begins firing (post any lock-out period).
-      i_bmash_count = 0;
-
-      if(b_device_mash_error) {
-        // Return the device to a normal firing state after lock-out from button mashing.
-        b_device_mash_error = false;
-
-        DEVICE_STATUS = MODE_ON;
-        DEVICE_ACTION_STATUS = ACTION_IDLE;
-
-        postActivation();
-
-        // stopEffect(S_SMASH_ERROR_LOOP);
-        // playEffect(S_SMASH_ERROR_RESTART);
-
-        bargraph.clear();
-      }
-    }
-  }
-
-  switch(DEVICE_STATUS) {
-    case MODE_OFF:
-      if(DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
-        if(switch_grip.pushed()) {
-          if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
-            playEffect(S_CLICK);
-
-            DEVICE_ACTION_STATUS = ACTION_SETTINGS;
-            DEVICE_MENU_LEVEL = MENU_LEVEL_1;
-
-            i_device_menu = 5;
-            ms_settings_blinking.start(i_settings_blinking_delay);
-
-            bargraph.clear();
-
-            // Make sure some of the device lights are off.
-            allLightsOffMenuSystem();
-          }
-          else {
-            // Only exit the settings menu when on menu #5 in the top menu
-            if(i_device_menu == 5 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
-              deviceExitMenu();
-            }
-          }
-        }
-      }
-
-      // Reset the count of the device switch
-      if(!switch_intensify.on()) {
-        deviceSwitchedCount = 0;
-        ventSwitchedCount = 0;
-      }
-
-      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU
-         && switch_intensify.on() && ventSwitchedCount >= 5) {
-        stopEffect(S_BEEPS);
-        playEffect(S_BEEPS);
-
-        stopEffect(S_VOICE_EEPROM_CONFIG_MENU);
-        playEffect(S_VOICE_EEPROM_CONFIG_MENU);
-
-        i_device_menu = 5;
-
-        DEVICE_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
-        DEVICE_MENU_LEVEL = MENU_LEVEL_1;
-
-        ms_settings_blinking.start(i_settings_blinking_delay);
-
-        // Make sure some of the device lights are off.
-        allLightsOffMenuSystem();
-      }
-
-      // If the power indicator is enabled. Blink the LED on the Single-Shot Blaster body next to the clippard valve to indicator the system has battery power.
-      if(b_power_on_indicator && DEVICE_ACTION_STATUS == ACTION_IDLE) {
-        if(ms_power_indicator.isRunning() && ms_power_indicator.remaining() < 1) {
-          if(!ms_power_indicator_blink.isRunning() || ms_power_indicator_blink.justFinished()) {
-            ms_power_indicator_blink.start(i_ms_power_indicator_blink);
-          }
-
-          if(ms_power_indicator_blink.remaining() < i_ms_power_indicator_blink / 2) {
-            led_Clippard.turnOff();
-          }
-          else {
-            led_Clippard.turnOn();
-          }
-        }
-      }
-    break;
-
-    case MODE_ERROR:
-      if(ms_hat_2.remaining() < i_hat_2_delay / 2) {
-        led_Clippard.turnOff();
-        led_SloBlo.turnOff();
-        led_TopWhite.turnOff();
-        led_Hat2.turnOff();
-      }
-      else {
-        led_Clippard.turnOn();
-        led_SloBlo.turnOn();
-        led_TopWhite.turnOn();
-        led_Hat2.turnOn();
-      }
-
-      if(ms_hat_2.justFinished()) {
-        ms_hat_2.start(i_hat_2_delay);
-
-        if(!b_device_mash_error) {
-          playEffect(S_BEEPS_LOW);
-          playEffect(S_BEEPS);
-        }
-      }
-
-      if(ms_hat_1.justFinished()) {
-        if(!b_device_mash_error) {
-          playEffect(S_BEEPS);
-        }
-
-        ms_hat_1.start(i_hat_2_delay * 4);
-      }
-    break;
-
-    case MODE_ON:
-      if(!ms_hat_1.isRunning() && !ms_hat_2.isRunning()) {
-        // Hat 2 stays solid while the Single-Shot Blaster is on.
-        led_Hat2.turnOn();
-      }
-
-      // Top white light.
-      if(ms_white_light.justFinished()) {
-        ms_white_light.repeat();
-        if(led_TopWhite.getState() == LOW) {
-          led_TopWhite.turnOff();
-        }
-        else {
-          led_TopWhite.turnOn();
-        }
-      }
-
-      vibrationSetting();
-    break;
-  }
-
   // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
   checkDeviceAction();
 
-  if(b_firing && DEVICE_ACTION_STATUS != ACTION_FIRING) {
-    modeFireStop();
+  // Update the timer for the slo-blo blink.
+  if(ms_slo_blo_blink.justFinished()) {
+    ms_slo_blo_blink.start(i_slo_blo_blink_delay);
   }
 
-  // Play the firing pulse effect animation.
-  if(ms_firing_pulse.justFinished()) {
-    firePulseEffect();
-  }
-
-  // Update the barrel LEDs and restart the timer.
+  // Update all addressable LEDs and restart the timer.
   if(ms_fast_led.justFinished()) {
     FastLED.show();
     ms_fast_led.start(i_fast_led_delay);
   }
 
-  bargraphUpdate(1); // Update bargraph with latest state changes.
-}
-
-// Manage lights in pairs to move in a predefined sequence, fading each light in and out.
-void updateCyclotron(uint8_t i_colour) {
-  static bool sb_toggle = true; // Static toggle to remain scoped to this function between calls
-  static uint8_t sb_pairing = 0; // Which pair of LEDs to use for each "cycle" of fade in/out actions
-  static uint8_t si_brightness_in = i_cyclotron_min_brightness; // Static brightness variable for fade-in effect
-  static uint8_t si_brightness_out = i_cyclotron_max_brightness; // Static brightness variable for fade-out effect
-
-  if(ms_cyclotron.justFinished()) {
-    // Change the timing (delay) based on the power level selected.
-    uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((getPowerLevel() - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
-    ms_cyclotron.start(i_dynamic_delay);
-
-    // Increment brightness for fade-in effect
-    if(si_brightness_in < i_cyclotron_max_brightness - 1) {
-      si_brightness_in += i_cyc_fade_step;
-
-      if(si_brightness_in > i_cyclotron_max_brightness - 1) {
-        si_brightness_in = i_cyclotron_max_brightness;
-      }
-    }
-
-    // Decrement brightness for fade-out effect
-    if(si_brightness_out > i_cyclotron_min_brightness + 1) {
-      si_brightness_out -= i_cyc_fade_step;
-
-      if(si_brightness_out < i_cyclotron_min_brightness + 1) {
-        si_brightness_out = i_cyclotron_min_brightness;
-      }
-    }
-
-    // Toggle between the LEDs in the i_cyclotron_pair using the given color.
-    if(sb_toggle) {
-      system_leds[i_cyclotron_pair[sb_pairing][0]] = getHueAsRGB(i_colour).nscale8(si_brightness_in);  // Fade in LED 1 in the pair
-      system_leds[i_cyclotron_pair[sb_pairing][1]] = getHueAsRGB(i_colour).nscale8(si_brightness_out); // Fade out LED 2 in the pair
-    }
-    else {
-      system_leds[i_cyclotron_pair[sb_pairing][0]] = getHueAsRGB(i_colour).nscale8(si_brightness_out); // Fade out LED 1 in the pair
-      system_leds[i_cyclotron_pair[sb_pairing][1]] = getHueAsRGB(i_colour).nscale8(si_brightness_in);  // Fade in LED 2 in the pair
-    }
-
-    // Toggle state and reset brightness variables after fade-in is complete.
-    if (si_brightness_in == i_cyclotron_max_brightness && si_brightness_out == i_cyclotron_min_brightness) {
-      sb_toggle = !sb_toggle;
-      si_brightness_in = i_cyclotron_min_brightness;
-      si_brightness_out = i_cyclotron_max_brightness;
-      sb_pairing = (sb_pairing + 1) % i_cyclotron_max_steps; // Change to next pair on each toggle.
-    }
-  }
-}
-
-void deviceTipSpark() {
-  i_heatup_counter = 0;
-  i_heatdown_counter = 100;
-  i_bmash_spark_index = 0;
-  ms_device_heatup_fade.start(i_delay_heatup);
+  // Update bargraph with latest state and pattern changes.
+  bargraphUpdate(1);
 }
 
 // Change the DEVICE_STATE here based on switches changing or pressed.
 void checkSwitches() {
-  if(ms_slo_blo_blink.justFinished()) {
-    ms_slo_blo_blink.start(i_slo_blo_blink_delay);
-  }
-
   switch(DEVICE_STATUS) {
     case MODE_OFF:
       if(switch_activate.on() && DEVICE_ACTION_STATUS == ACTION_IDLE) {
-        // Turn device on.
+        // Activate the device if previously idle.
         DEVICE_ACTION_STATUS = ACTION_ACTIVATE;
       }
     break;
@@ -514,6 +286,7 @@ void checkSwitches() {
     break;
 
     case MODE_ON:
+      // Determine if the grip button has been pressed (eg. menu operation);
       gripButtonCheck();
 
       // Determine the light status on the device and any beeps.
@@ -523,6 +296,13 @@ void checkSwitches() {
       fireControlCheck();
     break;
   }
+}
+
+void deviceTipSpark() {
+  i_heatup_counter = 0;
+  i_heatdown_counter = 100;
+  i_bmash_spark_index = 0;
+  ms_device_heatup_fade.start(i_delay_heatup);
 }
 
 // Determine the light status on the device and any beeps.
@@ -1699,6 +1479,7 @@ void deviceExitMenu() {
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   allLightsOff();
+  bargraph.off();
 }
 
 // Exit the device menu EEPROM system while the device is off.
@@ -1715,6 +1496,7 @@ void deviceExitEEPROMMenu() {
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   allLightsOff();
+  bargraph.off();
 }
 
 // Included last as the contained logic will control all aspects of the device using the defined functions above.

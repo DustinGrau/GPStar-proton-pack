@@ -131,21 +131,23 @@ struct Bargraph {
     }
 
     void setMenu(uint8_t i_level) {
+      // Enable the correct element based on the menu level chosen.
+      // Remember, menu values are 5-1, ordered top to bottom.
       for(uint8_t i = 0; i < Bargraph::Elements; i++) {
         switch(i_level){
-          case 1:
+          case 5:
             setElement(i, Menu1[i]);
           break;
-          case 2:
+          case 4:
             setElement(i, Menu2[i]);
           break;
           case 3:
             setElement(i, Menu3[i]);
           break;
-          case 4:
+          case 2:
             setElement(i, Menu4[i]);
           break;
-          case 5:
+          case 1:
             setElement(i, Menu5[i]);
           break;
         }

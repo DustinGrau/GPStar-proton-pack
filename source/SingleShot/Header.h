@@ -33,12 +33,14 @@ millisDelay ms_fast_led; // Timer for all updates to addressable LEDs across the
 
 /*
  * Device state.
+ * Typically either on or off, but could be in an intermediate error state.
  */
 enum DEVICE_STATE { MODE_OFF, MODE_ON, MODE_ERROR };
 enum DEVICE_STATE DEVICE_STATUS;
 
 /*
  * Various device action states.
+ * Indicates a specific mode of operation as initiated by the user.
  */
 enum DEVICE_ACTION_STATE { ACTION_IDLE, ACTION_OFF, ACTION_ACTIVATE, ACTION_FIRING, ACTION_SETTINGS, ACTION_ERROR, ACTION_CONFIG_EEPROM_MENU };
 enum DEVICE_ACTION_STATE DEVICE_ACTION_STATUS;
@@ -64,34 +66,6 @@ enum POWER_LEVELS POWER_LEVEL_PREV;
 CRGB system_leds[CYCLOTRON_LED_COUNT + BARREL_LED_COUNT];
 const uint8_t i_barrel_led = CYCLOTRON_LED_COUNT; // This will be the index of the light, not the count
 const uint8_t i_num_cyclotron_leds = CYCLOTRON_LED_COUNT; // This will be the number of cyclotron LEDs (jewel)
-
-/*
- * Mini Cyclotron
- * Alternates between a pair of LEDs in the jewel, fading in by some number of steps per update of the timer.
- */
-millisDelay ms_cyclotron;
-const uint8_t i_cyclotron_leds[i_num_cyclotron_leds] = {0, 1, 2, 3, 4, 5, 6}; // Note: 0 is the dead center of the jewel
-const uint8_t i_cyclotron_max_steps = 12; // Set a reusable constant for the maximum number of steps to cycle through
-// Sequence: 1, 4, 2, 5, 3, 6, 4, 1, 5, 2, 6, 3
-const uint8_t i_cyclotron_pair[i_cyclotron_max_steps][2] = {
-  {1, 3}, // 1:in, 3:out,
-  {1, 4}, // 1:out, 4:in,
-  {2, 4}, // 2:in, 4:out,
-  {2, 5}, // 2:out, 5:in,
-  {3, 5}, // 3:in, 5:out,
-  {3, 6}, // 3:out, 6:in,
-  {4, 6}, // 4:in, 6:out,
-  {4, 1}, // 4:out, 1:in,
-  {5, 1}, // 5:in, 1:out,
-  {5, 2}, // 5:out, 2:in,
-  {6, 2}, // 6:in, 2:out,
-  {6, 3}  // 6:out, 3:in,
-};
-const uint16_t i_base_cyclotron_delay = 30; // Set delay between LED updates at normal speed, at the lowest power level
-const uint16_t i_min_cyclotron_delay = 10;  // Set the minimum (fastest) transition time desired for a cyclotron update
-const uint8_t i_cyc_fade_step = 15; // Step size for each fade-in increment (must be a divisor of 255: 3, 5, 15, 17, 51, 85)
-const uint8_t i_cyclotron_min_brightness = 0;   // Minimum brightness for each LED (use fade step for changes)
-const uint8_t i_cyclotron_max_brightness = 255; // Maximum brightness for each LED (use fade step for changes)
 
 /*
  * Non-addressable LEDs

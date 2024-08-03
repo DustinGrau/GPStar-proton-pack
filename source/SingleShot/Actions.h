@@ -22,14 +22,158 @@
 #pragma once
 
 void checkDeviceAction() {
+
+  if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
+    if(ms_bmash.remaining() < 1) {
+      // Clear counter until user begins firing (post any lock-out period).
+      i_bmash_count = 0;
+
+      if(b_device_mash_error) {
+        // Return the device to a normal firing state after lock-out from button mashing.
+        b_device_mash_error = false;
+
+        DEVICE_STATUS = MODE_ON;
+        DEVICE_ACTION_STATUS = ACTION_IDLE;
+
+        postActivation();
+
+        // stopEffect(S_SMASH_ERROR_LOOP);
+        // playEffect(S_SMASH_ERROR_RESTART);
+
+        bargraph.clear();
+      }
+    }
+  }
+
+  switch(DEVICE_STATUS) {
+    case MODE_OFF:
+      if(DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
+        if(switch_grip.pushed()) {
+          if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+            playEffect(S_CLICK);
+
+            DEVICE_ACTION_STATUS = ACTION_SETTINGS;
+            DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+
+            i_device_menu = 5;
+            ms_settings_blinking.start(i_settings_blinking_delay);
+
+            bargraph.clear();
+
+            // Make sure some of the device lights are off.
+            allLightsOffMenuSystem();
+          }
+          else {
+            // Only exit the settings menu when on menu #5 in the top menu
+            if(i_device_menu == 5 && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+              deviceExitMenu();
+            }
+          }
+        }
+      }
+
+      // Reset the count of the device switch
+      if(!switch_intensify.on()) {
+        deviceSwitchedCount = 0;
+        ventSwitchedCount = 0;
+      }
+
+      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU
+         && switch_intensify.on() && ventSwitchedCount >= 5) {
+        stopEffect(S_BEEPS);
+        playEffect(S_BEEPS);
+
+        stopEffect(S_VOICE_EEPROM_CONFIG_MENU);
+        playEffect(S_VOICE_EEPROM_CONFIG_MENU);
+
+        i_device_menu = 5;
+
+        DEVICE_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
+        DEVICE_MENU_LEVEL = MENU_LEVEL_1;
+
+        ms_settings_blinking.start(i_settings_blinking_delay);
+
+        // Make sure some of the device lights are off.
+        allLightsOffMenuSystem();
+      }
+
+      // If the power indicator is enabled. Blink the LED on the Single-Shot Blaster body next to the clippard valve to indicator the system has battery power.
+      if(b_power_on_indicator && DEVICE_ACTION_STATUS == ACTION_IDLE) {
+        if(ms_power_indicator.isRunning() && ms_power_indicator.remaining() < 1) {
+          if(!ms_power_indicator_blink.isRunning() || ms_power_indicator_blink.justFinished()) {
+            ms_power_indicator_blink.start(i_ms_power_indicator_blink);
+          }
+
+          if(ms_power_indicator_blink.remaining() < i_ms_power_indicator_blink / 2) {
+            led_Clippard.turnOff();
+          }
+          else {
+            led_Clippard.turnOn();
+          }
+        }
+      }
+    break;
+
+    case MODE_ERROR:
+      if(ms_hat_2.remaining() < i_hat_2_delay / 2) {
+        led_Clippard.turnOff();
+        led_SloBlo.turnOff();
+        led_TopWhite.turnOff();
+        led_Hat2.turnOff();
+      }
+      else {
+        led_Clippard.turnOn();
+        led_SloBlo.turnOn();
+        led_TopWhite.turnOn();
+        led_Hat2.turnOn();
+      }
+
+      if(ms_hat_2.justFinished()) {
+        ms_hat_2.start(i_hat_2_delay);
+
+        if(!b_device_mash_error) {
+          playEffect(S_BEEPS_LOW);
+          playEffect(S_BEEPS);
+        }
+      }
+
+      if(ms_hat_1.justFinished()) {
+        if(!b_device_mash_error) {
+          playEffect(S_BEEPS);
+        }
+
+        ms_hat_1.start(i_hat_2_delay * 4);
+      }
+    break;
+
+    case MODE_ON:
+      if(!ms_hat_1.isRunning() && !ms_hat_2.isRunning()) {
+        // Hat 2 stays solid while the Single-Shot Blaster is on.
+        led_Hat2.turnOn();
+      }
+
+      // Top white light.
+      if(ms_white_light.justFinished()) {
+        ms_white_light.repeat();
+        if(led_TopWhite.getState() == LOW) {
+          led_TopWhite.turnOff();
+        }
+        else {
+          led_TopWhite.turnOn();
+        }
+      }
+
+      vibrationSetting();
+    break;
+  }
+
   switch(DEVICE_ACTION_STATUS) {
     case ACTION_IDLE:
     default:
       if(DEVICE_STATUS == MODE_ON) {
         if(!ms_cyclotron.isRunning()) {
           // Start the cyclotron animation with consideration for timing from the power level.
-          uint16_t i_dynamic_delay = i_base_cyclotron_delay - ((getPowerLevel() - 1) * (i_base_cyclotron_delay - i_min_cyclotron_delay) / 4);
-          ms_cyclotron.start(i_dynamic_delay);
+          ms_cyclotron.start(getCyclotronDelay());
         }
 
         switch(POWER_LEVEL) {
@@ -129,5 +273,14 @@ void checkDeviceAction() {
     case ACTION_SETTINGS:
       // TODO: Re-introduce standard runtime menu options for this device
     break;
+  }
+
+  if(b_firing && DEVICE_ACTION_STATUS != ACTION_FIRING) {
+    modeFireStop();
+  }
+
+  // Play the firing pulse effect animation.
+  if(ms_firing_pulse.justFinished()) {
+    firePulseEffect();
   }
 }
