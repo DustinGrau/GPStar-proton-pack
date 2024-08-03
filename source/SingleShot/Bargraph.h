@@ -50,7 +50,7 @@
  * - Mid: Denotes bargraph pattern reached the middle of the display
  * - Full: Denotes bargraph was last seen as completely full (lit)
  */
-enum BARGRAPH_PATTERNS { BG_RAMP_UP, BG_RAMP_DOWN, BG_OUTER_INNER, BG_INNER_PULSE, BG_POWER_RAMP, BG_POWER_DOWN, BG_POWER_UP };
+enum BARGRAPH_PATTERNS { BG_NONE, BG_RAMP_UP, BG_RAMP_DOWN, BG_OUTER_INNER, BG_INNER_PULSE, BG_POWER_RAMP, BG_POWER_DOWN, BG_POWER_UP };
 enum BARGRAPH_STATES { BG_OFF, BG_ON, BG_EMPTY, BG_MID, BG_FULL, BG_BARS };
 
 /*
@@ -133,28 +133,34 @@ struct Bargraph {
     void showBars(uint8_t i_count) {
       off(); // Clear previous state and display.
 
+      PATTERN = BG_NONE;
       STATE = BG_BARS;
 
       // Display evenly spaced indicators for values 1-5.
+      bool b_power = 0;
       for(uint8_t i = 0; i < Bargraph::Elements; i++) {
         switch(i_count){
           case 1:
-            setElement(i, Bar_1[i]);
+            b_power = Bar_1[i];
           break;
           case 2:
-            setElement(i, Bar_2[i]);
+            b_power = Bar_2[i];
           break;
           case 3:
-            setElement(i, Bar_3[i]);
+            b_power = Bar_3[i];
           break;
           case 4:
-            setElement(i, Bar_4[i]);
+            b_power = Bar_4[i];
           break;
           case 5:
-            setElement(i, Bar_5[i]);
+            b_power = Bar_5[i];
           break;
         }
+
+        setElement(i, b_power);
       }
+
+      commit(); // Immediately change state.
     }
 
     void setElement(int8_t i_element, bool b_power) {
@@ -171,12 +177,7 @@ struct Bargraph {
         // Otherwise use the element as given.
         element = i_element;
       }
-debug("bg_el_");
-debug(i_element);
-debug(":");
-debug(element);
-debug(":");
-debugln(b_power);
+
       if(present) {
         // This simplifies the process of turning individual elements on or off.
         // Uses mapping information which accounts for installation orientation.
@@ -473,6 +474,11 @@ void bargraphUpdate(uint8_t i_delay_divisor = 1) {
 
         // Reset timer for next iteration, with slight delay as the steps increase.
         bargraph.ms_timer.start(i_current_delay + bargraph.step);
+      break;
+
+      BG_NONE:
+      default:
+        // No-Op
       break;
     }
   }
