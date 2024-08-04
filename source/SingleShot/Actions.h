@@ -51,7 +51,7 @@ void checkDeviceAction() {
       // Determine if the special grip button has been pressed (eg. firing, menu operation);
       gripButtonCheck();
 
-      // When device is currently off but gets activated while idle, this is when we fully activate teh device.
+      // When device is currently off but gets activated while idle, this is when we fully activate the device.
       if(switch_activate.on() && DEVICE_ACTION_STATUS == ACTION_IDLE) {
         // Activate the device if previously idle.
         DEVICE_ACTION_STATUS = ACTION_ACTIVATE;
