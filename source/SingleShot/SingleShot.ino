@@ -480,9 +480,27 @@ void mainLoop() {
   // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
   checkDeviceAction();
 
+  // Update bargraph with latest state and pattern changes.
+  if(ms_firing_pulse.isRunning()) {
+    // Increase the speed for updates while this timer is still running.
+    bargraphUpdate(POWER_LEVEL - 1);
+  }
+  else {
+    // Otherwise run with the standard timing.
+    bargraphUpdate();
+  }
+
+  // Keep the cyclotron spinning as necessary.
+  checkCyclotron();
+
+  // Perform updates/actions based on timer events.
+  checkGeneralTimers();
+}
+
+void checkGeneralTimers() {
   // Play the firing pulse effect animation if timer completed.
   if(ms_firing_pulse.justFinished()) {
-    firePulseEffect();
+    firePulseEffect(); // Single shot animation.
   }
 
   // Update the timer for the slo-blo blink.
@@ -495,12 +513,6 @@ void mainLoop() {
     FastLED.show();
     ms_fast_led.start(i_fast_led_delay);
   }
-
-  // Update bargraph with latest state and pattern changes.
-  bargraphUpdate();
-
-  // Keep the cyclotron spinning as necessary.
-  checkCyclotron();
 }
 
 void checkCyclotron() {
@@ -531,12 +543,12 @@ void checkCyclotron() {
   }
 }
 
-void deviceTipSpark() {
-  i_heatup_counter = 0;
-  i_heatdown_counter = 100;
-  i_bmash_spark_index = 0;
-  ms_device_heatup_fade.start(i_delay_heatup);
-}
+// void deviceTipSpark() {
+//   i_heatup_counter = 0;
+//   i_heatdown_counter = 100;
+//   i_bmash_spark_index = 0;
+//   ms_device_heatup_fade.start(i_delay_heatup);
+// }
 
 // Determine the light status on the device and any beeps.
 void deviceLightControlCheck() {
@@ -683,7 +695,7 @@ void fireControlCheck() {
 
       b_device_mash_error = true;
       modeError();
-      deviceTipSpark();
+      //deviceTipSpark();
 
       // Adjust the cool down lockout period based on the power level.
       switch(POWER_LEVEL) {
@@ -796,7 +808,7 @@ void fireControlCheck() {
       if((switch_intensify.pushed() || (switch_grip.pushed())) && !ms_device_heatup_fade.isRunning() && switch_vent.on() && switch_device.on()) {
         // stopEffect(S_DEVICE_MASH_ERROR);
         // playEffect(S_DEVICE_MASH_ERROR);
-        deviceTipSpark();
+        //deviceTipSpark();
       }
     }
   }

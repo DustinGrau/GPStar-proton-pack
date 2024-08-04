@@ -323,15 +323,19 @@ void settingsMenuCheck() {
     break;
 
     case MENU_LEVEL_2:
+      // No-Op. Not currently used.
     break;
 
     case MENU_LEVEL_3:
+      // No-Op. Not currently used.
     break;
 
     case MENU_LEVEL_4:
+      // No-Op. Not currently used.
     break;
 
     case MENU_LEVEL_5:
+      // No-Op. Not currently used.
     break;
   }
 }
@@ -349,7 +353,7 @@ void gripButtonCheck() {
         deviceEnterMenu();
       }
       else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && MENU_OPTION_LEVEL == OPTION_5) {
-        // Only exit the settings when at option #5 on menu level 1.
+        // Only exit the settings menu when at option #5 on menu level 1.
         DEVICE_ACTION_STATUS = ACTION_IDLE;
         ms_settings_blinking.stop();
         deviceExitMenu();
