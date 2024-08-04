@@ -1036,17 +1036,29 @@ void firePulseEffect() {
       system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
     break;
     case 4:
-      system_leds[i_barrel_led] = getHueAsRGB(C_RED4);
+      system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
     break;
     case 5:
-      system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
+      system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
     break;
     case 6:
+      system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
+    break;
+    case 7:
+      system_leds[i_barrel_led] = getHueAsRGB(C_WHITE);
+    break;
+    case 8:
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED4);
+    break;
+    case 9:
+      system_leds[i_barrel_led] = getHueAsRGB(C_RED2);
+    break;
+    case 10:
       system_leds[i_barrel_led] = getHueAsRGB(C_RED);
       // Bolt has reached barrel tip, so turn on tip light.
       led_Tip.turnOn();
     break;
-    case 7:
+    case 11:
       system_leds[i_barrel_led] = getHueAsRGB(C_BLACK);
     break;
     default:

@@ -282,9 +282,9 @@ millisDelay ms_semi_automatic_check; // Timer used to set the rate of fire for t
 millisDelay ms_semi_automatic_firing; // Timer used to handle firing effect duration for the semi-automatic firing modes.
 const uint16_t i_single_shot_rate = 2000; // Single shot firing rate, locking out actions after each blast.
 const uint16_t i_firing_timer_length = 15000; // 15 seconds. Used by ms_firing_length_timer to determine which tail_end sound effects to play.
-const uint8_t i_firing_pulse = 60; // Used to drive semi-automatic firing stream effect timers.
+const uint8_t i_firing_pulse = 40; // Used to drive semi-automatic firing stream effect timers.
 const uint8_t i_firing_stream = 100; // Used to drive all stream effects timers. Default: 100ms.
-const uint8_t i_pulse_step_max = 8; // Total number of steps per pulse animation.
+const uint8_t i_pulse_step_max = 12; // Total number of steps per pulse animation.
 uint8_t i_pulse_step = 0; // Used to keep track of which pulse animation step we are on.
 uint16_t i_last_firing_effect_mix = 0; // Used by standalone Single-Shot Blaster.
 
