@@ -92,7 +92,7 @@ bool b_power_on_indicator = true;
  * This can be enabled or disabled from the device sub menu system.
  * Default = true.
  */
-bool b_vibration_enabled = false;
+bool b_vibration_enabled = true;
 
 /*
  * When set to true and b_vibration_enabled is also set to true, the Single-Shot Blaster will only vibrate during firing.
