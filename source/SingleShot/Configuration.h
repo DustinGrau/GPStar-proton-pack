@@ -54,7 +54,7 @@ const uint8_t STARTUP_VOLUME_EFFECTS = 100;
  * Values must be from 0 to -70. 0 = the loudest and -70 = the quietest.
  * Volume changes are based on percentages.
  */
-const int8_t MINIMUM_VOLUME = -60;
+const int8_t MINIMUM_VOLUME = -70;
 
 /*
  * Percentage increments of main volume change.
