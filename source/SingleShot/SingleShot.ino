@@ -250,37 +250,49 @@ bool lowerMenuLevel() {
 
   switch(DEVICE_MENU_LEVEL){
     case MENU_LEVEL_1:
-      DEVICE_MENU_LEVEL = MENU_LEVEL_2;
-      led_SloBlo.turnOn(); // Level 2
-      led_Vent.turnOff(); // Level 3
-      led_TopWhite.turnOff(); // Level 4
-      led_Clippard.turnOff(); // Level 5
+      if(DEVICE_STATUS == MODE_ON && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+        // Do not advance past level 1 for the settings menu when on.
+        b_changed = false;
+      }
+      else {
+        DEVICE_MENU_LEVEL = MENU_LEVEL_2;
+        led_SloBlo.turnOn(); // Level 2
+        led_Vent.turnOff(); // Level 3
+        led_TopWhite.turnOff(); // Level 4
+        led_Clippard.turnOff(); // Level 5
 
-      stopEffect(S_BEEPS);
-      playEffect(S_BEEPS);
+        stopEffect(S_BEEPS);
+        playEffect(S_BEEPS);
 
-      stopEffect(S_VOICE_LEVEL_1);
-      playEffect(S_VOICE_LEVEL_2);
-      stopEffect(S_VOICE_LEVEL_3);
-      stopEffect(S_VOICE_LEVEL_4);
-      stopEffect(S_VOICE_LEVEL_5);
+        stopEffect(S_VOICE_LEVEL_1);
+        playEffect(S_VOICE_LEVEL_2);
+        stopEffect(S_VOICE_LEVEL_3);
+        stopEffect(S_VOICE_LEVEL_4);
+        stopEffect(S_VOICE_LEVEL_5);
+        }
     break;
     case MENU_LEVEL_2:
-      DEVICE_MENU_LEVEL = MENU_LEVEL_3;
-      led_SloBlo.turnOn(); // Level 2
-      led_Vent.turnOn(); // Level 3
-      led_TopWhite.turnOff(); // Level 4
-      led_Clippard.turnOff(); // Level 5
+      if(DEVICE_STATUS == MODE_OFF && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+        // Do not advance past level 2 for the settings menu when off.
+        b_changed = false;
+      }
+      else {
+        DEVICE_MENU_LEVEL = MENU_LEVEL_3;
+        led_SloBlo.turnOn(); // Level 2
+        led_Vent.turnOn(); // Level 3
+        led_TopWhite.turnOff(); // Level 4
+        led_Clippard.turnOff(); // Level 5
 
-      stopEffect(S_BEEPS);
-      playEffect(S_BEEPS);
+        stopEffect(S_BEEPS);
+        playEffect(S_BEEPS);
 
-      stopEffect(S_VOICE_LEVEL_1);
-      stopEffect(S_VOICE_LEVEL_2);
-      playEffect(S_VOICE_LEVEL_3);
-      stopEffect(S_VOICE_LEVEL_4);
-      stopEffect(S_VOICE_LEVEL_5);
-    break;
+        stopEffect(S_VOICE_LEVEL_1);
+        stopEffect(S_VOICE_LEVEL_2);
+        playEffect(S_VOICE_LEVEL_3);
+        stopEffect(S_VOICE_LEVEL_4);
+        stopEffect(S_VOICE_LEVEL_5);
+      }
+     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
       led_SloBlo.turnOn(); // Level 2
@@ -1192,7 +1204,8 @@ void deviceSwitched(void* n) {
 
 // Enter the device menu system.
 void deviceEnterMenu() {
-  debugln("deviceEnterMenu");
+  debug("deviceEnterMenu|");
+  debugln(DEVICE_ACTION_STATUS);
 
   // Enter a menu at level 1, at option #5
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;
@@ -1210,7 +1223,8 @@ void deviceEnterMenu() {
 
 // Exit the device menu system while the device is off.
 void deviceExitMenu() {
-  debugln("deviceExitMenu");
+  debug("deviceExitMenu|");
+  debugln(DEVICE_ACTION_STATUS);
 
   // Reset the menu level/option to default
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;
@@ -1230,7 +1244,8 @@ void deviceExitMenu() {
 
 // Exit the device menu EEPROM system while the device is off.
 void deviceExitEEPROMMenu() {
-  debugln("deviceExitEEPROMMenu");
+  debug("deviceExitEEPROMMenu|");
+  debugln(DEVICE_ACTION_STATUS);
 
   // Reset the menu level/option to default
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;

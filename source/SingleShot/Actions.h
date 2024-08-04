@@ -23,6 +23,7 @@
 
 // Forward function declarations
 void gripButtonCheck();
+void settingsMenuCheck();
 
 void checkDeviceAction() {
   switch(DEVICE_STATUS) {
@@ -32,7 +33,8 @@ void checkDeviceAction() {
         deviceSwitchedCount = 0;
         ventSwitchedCount = 0;
       }
-      else if(switch_intensify.on() && ventSwitchedCount >= 5 && DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
+
+      if(switch_intensify.on() && ventSwitchedCount >= 5 && DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
         // Enter the Config EEPROM menu if holding the Intensify button while toggling the vent switch (lower right) a minimum of 5 times, while not in a menu already.
         stopEffect(S_BEEPS);
         playEffect(S_BEEPS);
@@ -46,6 +48,10 @@ void checkDeviceAction() {
         deviceEnterMenu();
       }
 
+      // Determine if the special grip button has been pressed (eg. firing, menu operation);
+      gripButtonCheck();
+
+      // When device is currently off but gets activated while idle, this is when we fully activate teh device.
       if(switch_activate.on() && DEVICE_ACTION_STATUS == ACTION_IDLE) {
         // Activate the device if previously idle.
         DEVICE_ACTION_STATUS = ACTION_ACTIVATE;
@@ -126,7 +132,7 @@ void checkDeviceAction() {
       // Update vibration level based on power level when not firing.
       vibrationSetting();
 
-      // Determine if the special grip button has been pressed (eg. menu operation);
+      // Determine if the special grip button has been pressed (eg. firing, menu operation);
       gripButtonCheck();
 
       // Determine the light status on the device and any beeps.
@@ -135,6 +141,14 @@ void checkDeviceAction() {
       // Check if we should fire, or if the device was turned off.
       fireControlCheck();
     break;
+  }
+
+  // Exit the settings menu at any time if the user turns the device switches back on.
+  if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
+    DEVICE_ACTION_STATUS = ACTION_IDLE;
+    ms_settings_blinking.stop();
+    bargraph.clear();
+    deviceExitMenu();
   }
 
   if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
@@ -159,6 +173,7 @@ void checkDeviceAction() {
     }
   }
 
+  // Use the current action status to determine next steps.
   switch(DEVICE_ACTION_STATUS) {
     case ACTION_IDLE:
     default:
@@ -222,7 +237,7 @@ void checkDeviceAction() {
 
       modeFiring();
 
-      // Stop firing if any of the main switches are turned off or the barrel is retracted.
+      // Stop firing if any of the main switches are turned off.
       if(!switch_vent.on() || !switch_device.on()) {
         modeFireStop();
       }
@@ -232,12 +247,13 @@ void checkDeviceAction() {
       // No-op, add actions here as needed.
     break;
 
-    case ACTION_CONFIG_EEPROM_MENU:
-      // TODO: Re-introduce Config EEPROM menu options for this device
+    case ACTION_SETTINGS:
+      // Respond to button actions based on menu level/option.
+      settingsMenuCheck();
     break;
 
-    case ACTION_SETTINGS:
-      // TODO: Re-introduce standard runtime menu options for this device
+    case ACTION_CONFIG_EEPROM_MENU:
+      // TODO: Re-introduce Config EEPROM menu options for this device
     break;
   }
 
@@ -247,14 +263,87 @@ void checkDeviceAction() {
   }
 }
 
+// Perform actions based on button press while in the settings menu.
+void settingsMenuCheck() {
+  if(DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+    return; // Leave if not in the settings menu.
+  }
+
+  switch(DEVICE_MENU_LEVEL){
+    case MENU_LEVEL_1:
+      switch(MENU_OPTION_LEVEL) {
+        case OPTION_5:
+          // Intensify: Enable/Disable Music Track Looping
+          if(switch_intensify.on()) {
+            toggleMusicLoop();
+          }
+
+          // Grip: Exits the menu system
+          // Allow the method gripButtonCheck() handle this on the next loop
+        break;
+
+        case OPTION_4:
+          // No Current Actions
+        break;
+
+        case OPTION_3:
+          // Intensity + Dial = Effects Volume
+          // Grip + Dial = Music Volume
+        break;
+
+        case OPTION_2:
+          // Intensify: Previous Track
+          if(switch_intensify.pushed()) {
+            musicPrevTrack();
+          }
+
+          // Grip: Next Track
+          if(switch_grip.pushed()) {
+            musicNextTrack();
+          }
+        break;
+
+        case OPTION_1:
+          // Intensify: Start/Stop Music
+          if(switch_intensify.pushed()) {
+            if(!b_playing_music) {
+              playMusic();
+            }
+            else {
+              stopMusic();
+            }
+          }
+
+          // Grip: System Mute
+          if(switch_grip.pushed()) {
+            // TODO: Create mute function
+          }
+        break;
+      }
+    break;
+
+    case MENU_LEVEL_2:
+    break;
+
+    case MENU_LEVEL_3:
+    break;
+
+    case MENU_LEVEL_4:
+    break;
+
+    case MENU_LEVEL_5:
+    break;
+  }
+}
+
 // Check the state of the grip button to determine whether we have entered the settings menu.
 void gripButtonCheck() {
   // Proceed if device is in an idle state or already in the settings menu.
   if(DEVICE_ACTION_STATUS == ACTION_IDLE || DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
     if(switch_grip.pushed() && !(switch_device.on() && switch_vent.on())) {
       // Switch between firing mode and settings mode, but only when right toggles are both off.
-      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && !(switch_vent.on() || switch_device.on())) {
-        // Not currently in settings system.
+      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && !switch_vent.on() && !switch_device.on()) {
+        // Not currently in the settings menu so set that as the current action.
         DEVICE_ACTION_STATUS = ACTION_SETTINGS;
         ms_settings_blinking.start(i_settings_blinking_delay);
         deviceEnterMenu();
@@ -290,7 +379,7 @@ void encoderChangedMenuOption() {
   }
 }
 
-// Performs an action directly related to input actions via the encoder.
+// Performs an action directly related to actions via the encoder.
 void checkEncoderAction() {
   if(encoder.STATE == ENCODER_IDLE) {
     return; // Leave if no change has occurred.
@@ -321,6 +410,9 @@ void checkEncoderAction() {
         case ACTION_SETTINGS:
           // Perform menu and option navigation.
           encoderChangedMenuOption();
+
+          // Respond to button actions based on menu level/option.
+          settingsMenuCheck();
         break;
 
         case ACTION_CONFIG_EEPROM_MENU:
