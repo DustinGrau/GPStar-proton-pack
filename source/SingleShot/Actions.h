@@ -1,3 +1,4 @@
+#include "Audio.h"
 #include "Header.h"
 /**
  *   GPStar Single-Shot Blaster
@@ -43,9 +44,11 @@ void checkDeviceAction() {
         playEffect(S_VOICE_EEPROM_CONFIG_MENU);
 
         DEVICE_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
+        ventSwitchedCount = 0; // We did it, now clear the count.
 
         ms_settings_blinking.start(i_settings_blinking_delay);
         deviceEnterMenu();
+        return;
       }
 
       // Determine if the special grip button has been pressed (eg. firing, menu operation);
@@ -149,6 +152,7 @@ void checkDeviceAction() {
     ms_settings_blinking.stop();
     bargraph.clear();
     deviceExitMenu();
+    return;
   }
 
   if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
@@ -274,8 +278,9 @@ void settingsMenuCheck() {
       switch(MENU_OPTION_LEVEL) {
         case OPTION_5:
           // Intensify: Enable/Disable Music Track Looping
-          if(switch_intensify.on()) {
+          if(b_playing_music && switch_intensify.pushed()) {
             toggleMusicLoop();
+            debugln("Toggle Music Loop");
           }
 
           // Grip: Exits the menu system
@@ -283,23 +288,52 @@ void settingsMenuCheck() {
         break;
 
         case OPTION_4:
-          // No Current Actions
+          // Grip + Dial = System Volume
+          if(switch_grip.on()) {
+            if(encoder.STATE == ENCODER_CW) {
+              // Increase the master system volume.
+              increaseVolume();
+              debug("Menu, System Vol+ ");
+              debugln(i_volume_master);
+            }
+            else if(encoder.STATE == ENCODER_CCW) {
+              // Decrease the master system volume.
+              decreaseVolume();
+              debug("Menu, System Vol- ");
+              debugln(i_volume_master);
+            }
+          }
         break;
 
         case OPTION_3:
-          // Intensity + Dial = Effects Volume
-          // Grip + Dial = Music Volume
+          // Grip + Dial = Effects Volume
+          if(switch_grip.on()) {
+            if(encoder.STATE == ENCODER_CW) {
+              // Increase the effects volume.
+              increaseVolumeEffects();
+              debug("Menu, Effects Vol+ ");
+              debugln(i_volume_effects);
+            }
+            else if(encoder.STATE == ENCODER_CCW) {
+              // Decrease the effects volume.
+              decreaseVolumeEffects();
+              debug("Menu, Effects Vol- ");
+              debugln(i_volume_effects);
+            }
+          }
         break;
 
         case OPTION_2:
           // Intensify: Previous Track
-          if(switch_intensify.pushed()) {
+          if(b_playing_music && switch_intensify.pushed()) {
             musicPrevTrack();
+            debugln("Prev Track");
           }
 
           // Grip: Next Track
-          if(switch_grip.pushed()) {
+          if(b_playing_music && switch_grip.pushed()) {
             musicNextTrack();
+            debugln("Next Track");
           }
         break;
 
@@ -308,15 +342,28 @@ void settingsMenuCheck() {
           if(switch_intensify.pushed()) {
             if(!b_playing_music) {
               playMusic();
+              debugln("Play Music");
             }
             else {
               stopMusic();
+              debugln("Stop Music");
             }
           }
 
-          // Grip: System Mute
-          if(switch_grip.pushed()) {
-            // TODO: Create mute function
+          // Grip + Dial = Music Volume
+          if(switch_grip.on()) {
+            if(encoder.STATE == ENCODER_CW) {
+              // Increase the music volume.
+              increaseVolumeMusic();
+              debug("Menu, Music Vol+ ");
+              debugln(i_volume_music);
+            }
+            else if(encoder.STATE == ENCODER_CCW) {
+              // Decrease the music volume.
+              decreaseVolumeMusic();
+              debug("Menu, Music Vol- ");
+              debugln(i_volume_music);
+            }
           }
         break;
       }
@@ -351,12 +398,14 @@ void gripButtonCheck() {
         DEVICE_ACTION_STATUS = ACTION_SETTINGS;
         ms_settings_blinking.start(i_settings_blinking_delay);
         deviceEnterMenu();
+        return;
       }
       else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && MENU_OPTION_LEVEL == OPTION_5) {
         // Only exit the settings menu when at option #5 on menu level 1.
         DEVICE_ACTION_STATUS = ACTION_IDLE;
         ms_settings_blinking.stop();
         deviceExitMenu();
+        return;
       }
     }
     else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
@@ -365,20 +414,31 @@ void gripButtonCheck() {
       ms_settings_blinking.stop();
       bargraph.clear();
       deviceExitMenu();
+      return;
     }
   }
 }
 
 void encoderChangedMenuOption() {
+  if(encoder.STATE == ENCODER_IDLE) {
+    return; // Leave if no change has occurred.
+  }
+
+  if(switch_intensify.on() || switch_grip.on()) {
+    // If either of these buttons is pressed while turning the rotary dial,
+    // then we assume the user is not actually intending to change menu level.
+    return;
+  }
+
   // Handle menu navigation based on rotation of the encoder
   if(encoder.STATE == ENCODER_CW) {
     if(decreaseOptionLevel()) {
-      bargraph.showBars(MENU_OPTION_LEVEL);
+      bargraph.showBars(MENU_OPTION_LEVEL); // Update change to menu.
     }
   }
   else if(encoder.STATE == ENCODER_CCW) {
     if(increaseOptionLevel()) {
-      bargraph.showBars(MENU_OPTION_LEVEL);
+      bargraph.showBars(MENU_OPTION_LEVEL); // Update change to menu.
     }
   }
 }
@@ -391,14 +451,19 @@ void checkEncoderAction() {
 
   switch(DEVICE_STATUS) {
     case MODE_OFF:
-      if(b_playing_music) {
+      if(b_playing_music && DEVICE_ACTION_STATUS != ACTION_SETTINGS) {
+        // If playing music while off, and NOT in the settings menu, change the music volume only.
         if(encoder.STATE == ENCODER_CW) {
             // Increase the music volume.
             increaseVolumeMusic();
+            debug("Device Off, Music Vol+ ");
+            debugln(i_volume_music);
         }
         else if(encoder.STATE == ENCODER_CCW) {
             // Decrease the music volume.
             decreaseVolumeMusic();
+            debug("Device Off, Music Vol- ");
+            debugln(i_volume_music);
         }
       }
 
@@ -430,10 +495,14 @@ void checkEncoderAction() {
       if(encoder.STATE == ENCODER_CW) {
         // Increase the overall system volume.
         increaseVolume();
+        debug("Error, System Vol+ ");
+        debugln(i_volume_master);
       }
       else if(encoder.STATE == ENCODER_CCW) {
         // Decrease the overall system volume.
         decreaseVolume();
+        debug("Error, System Vol- ");
+        debugln(i_volume_master);
       }
     break; // MODE_ERROR
 
@@ -461,15 +530,19 @@ void checkEncoderAction() {
           }
         }
 
-        // Intensify button is pressed while the device/vent toggles are off.
-        if(switch_intensify.on() && !switch_vent.on() && !switch_device.on()) {
+        // Intensify button is pressed while activated, but the device/vent toggles are both off.
+        if(switch_intensify.on() && switch_activate.on() && !switch_vent.on() && !switch_device.on()) {
           if(encoder.STATE == ENCODER_CW) {
             // Increase the master system volume.
             increaseVolume();
+            debug("Device On, System Vol+ ");
+            debugln(i_volume_master);
           }
           else if(encoder.STATE == ENCODER_CCW) {
             // Decrease the master system volume.
             decreaseVolume();
+            debug("Device On, System Vol- ");
+            debugln(i_volume_master);
           }
         }
       }

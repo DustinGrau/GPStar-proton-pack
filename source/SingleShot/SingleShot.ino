@@ -895,19 +895,19 @@ void soundIdleLoop(bool fadeIn) {
   switch(POWER_LEVEL) {
     case LEVEL_1:
     default:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
     break;
     case LEVEL_2:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
     break;
     case LEVEL_3:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
     break;
     case LEVEL_4:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
     break;
     case LEVEL_5:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 3000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
     break;
   }
 }

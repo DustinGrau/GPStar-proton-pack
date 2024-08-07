@@ -45,7 +45,7 @@ uint16_t i_music_count = 0;
 uint16_t i_current_music_track = 0;
 const uint16_t i_music_track_start = 500; // Music tracks start on file named 500_ and higher.
 const int8_t i_volume_abs_min = -70; // System (absolute) minimum volume possible.
-const int8_t i_volume_abs_max = 10; // System (absolute) maximum volume possible.
+const int8_t i_volume_abs_max = 0; // System (absolute) maximum volume possible.
 bool b_playing_music = false;
 bool b_music_paused = false;
 bool b_repeat_track = false;
@@ -178,6 +178,7 @@ void updateEffectsVolume() {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
       // Since adjusting only happens while in the menu mode, only certain effects need to be adjusted on the fly.
+      audio.trackGain(S_IDLE_LOOP, i_volume_effects);
     break;
 
     case A_NONE:
