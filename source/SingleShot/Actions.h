@@ -45,7 +45,6 @@ void checkDeviceAction() {
 
         DEVICE_ACTION_STATUS = ACTION_CONFIG_EEPROM_MENU;
         ventSwitchedCount = 0; // We did it, now clear the count.
-
         ms_settings_blinking.start(i_settings_blinking_delay);
         deviceEnterMenu();
         return;
@@ -144,15 +143,6 @@ void checkDeviceAction() {
       // Check if we should fire, or if the device was turned off.
       fireControlCheck();
     break;
-  }
-
-  // Exit the settings menu at any time if the user turns the device switches back on.
-  if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
-    DEVICE_ACTION_STATUS = ACTION_IDLE;
-    ms_settings_blinking.stop();
-    bargraph.clear();
-    deviceExitMenu();
-    return;
   }
 
   if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
@@ -389,11 +379,11 @@ void settingsMenuCheck() {
 
 // Check the state of the grip button to determine whether we have entered the settings menu.
 void gripButtonCheck() {
-  // Proceed if device is in an idle state or already in the settings menu.
-  if(DEVICE_ACTION_STATUS == ACTION_IDLE || DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
+  // Proceed if device is in an idle state or in either the settings or EEPROM menus.
+  if(DEVICE_ACTION_STATUS == ACTION_IDLE || DEVICE_ACTION_STATUS == ACTION_SETTINGS || DEVICE_ACTION_STATUS == ACTION_CONFIG_EEPROM_MENU) {
     if(switch_grip.pushed() && !(switch_device.on() && switch_vent.on())) {
       // Switch between firing mode and settings mode, but only when right toggles are both off.
-      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && !switch_vent.on() && !switch_device.on()) {
+      if(DEVICE_ACTION_STATUS != ACTION_SETTINGS && DEVICE_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU && !switch_vent.on() && !switch_device.on()) {
         // Not currently in the settings menu so set that as the current action.
         DEVICE_ACTION_STATUS = ACTION_SETTINGS;
         ms_settings_blinking.start(i_settings_blinking_delay);
@@ -407,14 +397,14 @@ void gripButtonCheck() {
         deviceExitMenu();
         return;
       }
-    }
-    else if(DEVICE_ACTION_STATUS == ACTION_SETTINGS && (switch_vent.on() || switch_device.on())) {
-      // Exit the settings menu if the user turns the device switches back on.
-      DEVICE_ACTION_STATUS = ACTION_IDLE;
-      ms_settings_blinking.stop();
-      bargraph.clear();
-      deviceExitMenu();
-      return;
+      else if(DEVICE_ACTION_STATUS == ACTION_CONFIG_EEPROM_MENU && DEVICE_MENU_LEVEL == MENU_LEVEL_1 && MENU_OPTION_LEVEL == OPTION_5) {
+        // Only exit the settings menu when at option #5 on menu level 1.
+        DEVICE_ACTION_STATUS = ACTION_IDLE;
+        ms_settings_blinking.stop();
+        bargraph.clear();
+        deviceExitEEPROMMenu();
+        return;
+      }
     }
   }
 }
@@ -485,7 +475,8 @@ void checkEncoderAction() {
         break;
 
         case ACTION_CONFIG_EEPROM_MENU:
-          // No-Op, for now
+          // Perform menu and option navigation.
+          encoderChangedMenuOption();
         break;
       }
     break; // MODE_OFF

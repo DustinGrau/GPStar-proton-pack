@@ -23,7 +23,7 @@
 #endif
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // Debug macros
 #if DEBUG == 1
@@ -191,6 +191,8 @@ void systemPOST() {
 }
 
 bool increasePowerLevel() {
+  bool b_changed = true;
+
   switch(POWER_LEVEL){
     case LEVEL_1:
       POWER_LEVEL_PREV = POWER_LEVEL;
@@ -209,18 +211,26 @@ bool increasePowerLevel() {
       POWER_LEVEL = LEVEL_5;
     break;
     case LEVEL_5:
-      // No-op, at highest level.
+      // No change, at highest level.
+      b_changed = false;
     break;
   }
 
+  if(b_changed) {
+    playEffect(S_BEEPS);
+  }
+
   // Returns true if value was changed.
-  return (POWER_LEVEL_PREV != POWER_LEVEL);
+  return b_changed;
 }
 
 bool decreasePowerLevel() {
+  bool b_changed = true;
+
   switch(POWER_LEVEL){
     case LEVEL_1:
-      // No-op, at lowest level.
+      // No change, at lowest level.
+      b_changed = false;
     break;
     case LEVEL_2:
       POWER_LEVEL_PREV = POWER_LEVEL;
@@ -240,8 +250,12 @@ bool decreasePowerLevel() {
     break;
   }
 
+  if(b_changed) {
+    playEffect(S_BEEPS);
+  }
+
   // Returns true if value was changed.
-  return (POWER_LEVEL_PREV != POWER_LEVEL);
+  return b_changed;
 }
 
 // Increasing the menu level means the user is going deeper
@@ -895,19 +909,19 @@ void soundIdleLoop(bool fadeIn) {
   switch(POWER_LEVEL) {
     case LEVEL_1:
     default:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 5000);
     break;
     case LEVEL_2:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 5000);
     break;
     case LEVEL_3:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 5000);
     break;
     case LEVEL_4:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 5000);
     break;
     case LEVEL_5:
-      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 4000);
+      playEffect(S_IDLE_LOOP, true, i_volume_effects, fadeIn, 5000);
     break;
   }
 }
@@ -1236,8 +1250,6 @@ void deviceEnterMenu() {
   MENU_OPTION_LEVEL = OPTION_5;
 
   playEffect(S_CLICK);
-
-  DEVICE_ACTION_STATUS = ACTION_SETTINGS;
 
   allLightsOff();
   allMenuLightsOff();
