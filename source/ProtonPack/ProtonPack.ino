@@ -2161,8 +2161,10 @@ void cyclotronControl() {
         if(!usingSlimeCyclotron()) {
           resetCyclotronState();
         }
+        else {
+          clearCyclotronFades();
+        }
 
-        clearCyclotronFades();
         ms_cyclotron.start(0);
         ms_alarm.start(0);
       }
@@ -2364,19 +2366,24 @@ void cyclotronFade() {
     case SYSTEM_1984:
     case SYSTEM_1989:
       if(b_fade_cyclotron_led == true) {
+        if(b_overheating && (STREAM_MODE == HOLIDAY || STREAM_MODE == SPECTRAL)) {
+          // When overheating in 84/89 and in Holiday/Spectral mode, revert to red cyclotron.
+          i_colour_scheme = C_RED;
+        }
+
         for(uint8_t i = 0; i < i_cyclotron_leds_total; i++) {
           if(r_cyclotron_led_fade_in[i].isRunning()) {
             b_cyclotron_led_fading_in[i] = true;
             uint8_t i_curr_brightness = r_cyclotron_led_fade_in[i].update();
 
-            pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_curr_brightness, false, true);
+            pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_curr_brightness, false, !b_overheating);
             i_cyclotron_led_value[i] = i_curr_brightness;
           }
 
           uint8_t i_new_brightness = getBrightness(i_cyclotron_brightness);
 
           if(r_cyclotron_led_fade_in[i].isFinished() && i_cyclotron_led_value[i] > (i_new_brightness - 1) && b_cyclotron_led_fading_in[i] == true) {
-            pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_new_brightness, false, true);
+            pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_new_brightness, false, !b_overheating);
             i_cyclotron_led_value[i] = i_new_brightness;
           }
 
@@ -2391,7 +2398,7 @@ void cyclotronFade() {
               b_cyclotron_led_fading_in[i] = true;
             }
             else {
-              pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_curr_brightness, false, true);
+              pack_leds[i + i_cyclotron_led_start] = getHueAsRGB(CYCLOTRON_OUTER, i_colour_scheme, i_curr_brightness, false, !b_overheating);
               i_cyclotron_led_value[i] = i_curr_brightness;
               b_cyclotron_led_fading_in[i] = false;
             }
@@ -2901,6 +2908,11 @@ void cyclotron1984Alarm() {
   uint8_t led3 = i_cyclotron_led_start + cyclotron84LookupTable(2);
   uint8_t led4 = i_cyclotron_led_start + cyclotron84LookupTable(3);
   uint8_t i_led_array_width = 1; // Variable to store the number of LEDs to either side of the center LED.
+
+  if(STREAM_MODE == HOLIDAY || STREAM_MODE == SPECTRAL) {
+    // When in an alarm state in 84/89 and in Holiday/Spectral mode, revert to red cyclotron.
+    i_colour_scheme = C_RED;
+  }
 
   /*
   if(i_cyclotron_leds == FRUTTO_CYCLOTRON_LED_COUNT) {
@@ -3545,25 +3557,23 @@ void cyclotronOverheating() {
           }
         }
       }
-      else {
-        if(ms_alarm.remaining() < i_1984_delay / 4) {
-          if(b_overheat_lights_off != true) {
-            vibrationPack(i_vibration_lowest_level);
+      else if(ms_alarm.remaining() < i_1984_delay / 4) {
+        if(b_overheat_lights_off != true) {
+          vibrationPack(i_vibration_lowest_level);
 
-            if(!usingSlimeCyclotron()) {
-              cyclotron1984Alarm();
-            }
+          if(!usingSlimeCyclotron()) {
+            cyclotron1984Alarm();
           }
-          else if(b_overheat_lights_off == true && i_powercell_led > 0) {
-            vibrationPack(i_vibration_lowest_level);
+        }
+        else if(b_overheat_lights_off == true && i_powercell_led > 0) {
+          vibrationPack(i_vibration_lowest_level);
 
-            if(!usingSlimeCyclotron()) {
-              cyclotron1984Alarm();
-            }
+          if(!usingSlimeCyclotron()) {
+            cyclotron1984Alarm();
           }
-          else {
-            vibrationOff();
-          }
+        }
+        else {
+          vibrationOff();
         }
       }
     break;
