@@ -95,8 +95,8 @@ For connecting the UART pins, use a suitable FTDI chip such as the same **FTDI B
 
 ## Operation Guide
 
-TBD
+Full guide TBD as features are completed.
 
 ## Firmware Updates
 
-TBD
+Please follow the standard [FLASHING guide](FLASHING.md) using the `binaries/blaster/SingleShot.hex` firmware file.
