@@ -8,13 +8,14 @@ It may go by many names, though we know it as the arm-mounted Neutrona Wand as s
 
 There is no shortage of resources for the device shell itself, as it has been modeled and remixed by several members of the Ghostbusters community. Below are some of the found sources offering either the 3D files or pre-printed parts. If you know of another resource for either please let us know and we'll update this list.
 
-- [3D Files by EctoLabs](https://github.com/EctoLabs/wrist-thrower) with [Build Guide on GBFans](https://www.gbfans.com/forum/viewtopic.php?t=51824)
+- [3D Files by EctoLabs](https://github.com/EctoLabs/wrist-thrower)
 - [3D Files by Right Coast Creative (Craig Rivest, aka. @scoleri_brothers)](https://rightcoastcreative.com/ghostbusters/p/frozen-empire-arm-gauntlet)
 - [Ghostbusters Frozen Empire Compact Arm Thrower by ShapeforgeProps](https://www.etsy.com/listing/1700904381/ghostbusters-frozen-empire-compact-arm)
 
 ## Bill of Materials
 
-Until formal release of a kit is made possible, the following list of parts will allow you to build your own internals to run the device.
+Until formal release of a kit is made possible, the following list of parts will allow you to assemble the electronics and internal components to run the device. For a complete list of additional cosmetic parts and advice on assembly of the external components please see the incredibly detailed [Build Guide on GBFans](https://www.gbfans.com/forum/viewtopic.php?t=51824) by EctoLabs.
+
 
 | Qty | Desc | Use | Link |
 |-----|------|-----|------|
@@ -27,9 +28,17 @@ Until formal release of a kit is made possible, the following list of parts will
 |  1  | 12mm Momentary Push Button | Hand grip button | [https://a.co/d/8QxaSBm](https://a.co/d/8QxaSBm) |
 |  1  | DC Coreless Vibration Motors | Vibration feedback | [https://a.co/d/iMxmbfp](https://a.co/d/iMxmbfp) |
 |  3  | Mini SPST Toggle Switches | Device switches | [https://a.co/d/84qX5Yz](https://a.co/d/84qX5Yz) |
-|  2  | Mini Monentary Switches | Device buttons | [https://a.co/d/6e83Clb](https://a.co/d/6e83Clb) |
+|  2  | Mini Momentary Switches | Device buttons | [https://a.co/d/6e83Clb](https://a.co/d/6e83Clb) |
 |  1  | 15mm x 5mm Convex Lens | Barrel lens | [https://a.co/d/8Mr8ZMc](https://a.co/d/8Mr8ZMc) |
 |  5  | 5MM 3V Prewired LEDs | Various colored lights | [https://a.co/d/hqEyph8](https://a.co/d/hqEyph8) |
+|  1  | OPTIONAL: Micro UART Programmer | For built-in programming via USB | [https://a.co/d/ibHTVA5](https://a.co/d/ibHTVA5) |
+|  1  | Adafruit PowerBoost 1000<sup>1</sup> | For battery power + charging | [https://a.co/d/cl2kFy8](https://a.co/d/cl2kFy8) |
+|  1  | Micro Slide Switch | Turn battery output on/off | [https://a.co/d/hVaKDSl](https://a.co/d/hVaKDSl) |
+|  1  | 3.7V LiPo or Li-Ion Battery<sup>2</sup> | Rechargeable lithium battery (min 2500mAh) | [https://a.co/d/gQlJsY0](https://a.co/d/gQlJsY0)<br/>[https://a.co/d/gML6MVC](https://a.co/d/gML6MVC) |
+
+<sup>1</sup> While most Lithium batteries come with a JST-PH connector by default, the polarity may be reversed. Please observe the correct polarity for the charger! With the silver tabs up and the JST socket facing toward you, the positive (red) lead should be on the right. There will be -/+ markings on the power connector to the Adafruit PowerBoost to help you confirm BEFORE plugging in the battery.
+
+<sup>2</sup> Battery power must be at least 2500mAh (2.5Ah) to provide sufficient power to the booster. This device will draw around 0.8A at full volume.
 
 ## PCB Connection Details
 
@@ -66,11 +75,12 @@ Connections for the device should be made according to the tables below.
 | GND | Clippard LED (Top Left) GND |
 | R+ | Rumble (vibration) motor VCC |
 | R- | Rumble (vibration) motor GND |
+| VCC | Power (+) for rotary encoder |
 | D12 | Blinking top right LED |
 | D13 | White vent light LED |
 | VL+ | VCC for top/vent lights |
-| D7 | Rotary encoder B |
-| D6 | Rotary encoder A |
+| D7 | Rotary encoder B (DT) |
+| D6 | Rotary encoder A (CLK) |
 | ROT- | Ground for rotary encoder |
 
 ### Special Connectors
@@ -95,7 +105,7 @@ For connecting the UART pins, use a suitable FTDI chip such as the same **FTDI B
 
 ## Operation Guide
 
-Full guide TBD as features are completed.
+Full guide will be written as features are completed and operation is determined.
 
 ## Firmware Updates
 

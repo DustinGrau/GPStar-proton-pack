@@ -1,3 +1,4 @@
+#include "Header.h"
 /**
  *   GPStar Proton Pack - Ghostbusters Proton Pack & Neutrona Wand.
  *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
@@ -293,12 +294,12 @@ void serial1SendData(uint8_t i_message) {
       packConfig.defaultYearThemePack = SYSTEM_EEPROM_YEAR;
       packConfig.currentYearThemePack = SYSTEM_YEAR;
       packConfig.defaultSystemVolume = i_volume_master_percentage;
-      packConfig.protonStreamEffects = b_stream_effects;
-      packConfig.overheatStrobeNF = b_overheat_strobe;
-      packConfig.overheatLightsOff = b_overheat_lights_off;
-      packConfig.overheatSyncToFan = b_overheat_sync_to_fan;
-      packConfig.demoLightMode = b_demo_light_mode;
-      packConfig.ribbonCableAlarm = b_use_ribbon_cable;
+      packConfig.protonStreamEffects = b_stream_effects ? 1 : 0;
+      packConfig.overheatStrobeNF = b_overheat_strobe ? 1 : 0;
+      packConfig.overheatLightsOff = b_overheat_lights_off ? 1 : 0;
+      packConfig.overheatSyncToFan = b_overheat_sync_to_fan ? 1 : 0;
+      packConfig.demoLightMode = b_demo_light_mode ? 1 : 0;
+      packConfig.ribbonCableAlarm = b_use_ribbon_cable ? 1 : 0;
 
       switch(VIBRATION_MODE_EEPROM) {
         case VIBRATION_ALWAYS:
@@ -320,24 +321,35 @@ void serial1SendData(uint8_t i_message) {
       packConfig.ledCycLidCount = i_cyclotron_leds;
       packConfig.ledCycLidHue = i_spectral_cyclotron_custom_colour;
       packConfig.ledCycLidSat = i_spectral_cyclotron_custom_saturation;
-      packConfig.cyclotronDirection = b_clockwise;
-      packConfig.ledCycLidCenter = b_cyclotron_single_led;
-      packConfig.ledVGCyclotron = b_cyclotron_colour_toggle;
-      packConfig.ledCycLidSimRing = b_cyclotron_simulate_ring;
+      packConfig.cyclotronDirection = b_clockwise ? 1 : 0;
+      packConfig.ledCycLidCenter = b_cyclotron_single_led ? 1 : 0;
+      packConfig.ledVGCyclotron = b_cyclotron_colour_toggle ? 1 : 0;
+      packConfig.ledCycLidSimRing = b_cyclotron_simulate_ring ? 1 : 0;
 
       // Inner Cyclotron
-      packConfig.ledCycInnerPanel = b_inner_cyclotron_led_panel;
+      switch(INNER_CYC_PANEL_MODE) {
+        case PANEL_INDIVIDUAL:
+        default:
+          packConfig.ledCycInnerPanel = 1;
+        break;
+        case PANEL_RGB_STATIC:
+          packConfig.ledCycInnerPanel = 2;
+        break;
+        case PANEL_RGB_DYNAMIC:
+          packConfig.ledCycInnerPanel = 3;
+        break;
+      }
       packConfig.ledCycCakeCount = i_inner_cyclotron_cake_num_leds;
       packConfig.ledCycCakeHue = i_spectral_cyclotron_inner_custom_colour;
       packConfig.ledCycCakeSat = i_spectral_cyclotron_inner_custom_saturation;
-      packConfig.ledCycCakeGRB = b_grb_cyclotron_cake;
+      packConfig.ledCycCakeGRB = b_grb_cyclotron_cake ? 1 : 0;
       packConfig.ledCycCavCount = i_inner_cyclotron_cavity_num_leds;
 
       // Power Cell
       packConfig.ledPowercellCount = i_powercell_leds;
       packConfig.ledPowercellHue = i_spectral_powercell_custom_colour;
       packConfig.ledPowercellSat = i_spectral_powercell_custom_saturation;
-      packConfig.ledVGPowercell = b_powercell_colour_toggle;
+      packConfig.ledVGPowercell = b_powercell_colour_toggle ? 1 : 0;
 
       i_send_size = serial1Coms.txObj(packConfig);
       serial1Coms.sendData(i_send_size, (uint8_t) PACKET_PACK);
@@ -351,11 +363,11 @@ void serial1SendData(uint8_t i_message) {
 
     case A_SEND_PREFERENCES_SMOKE:
       // Determines whether smoke effects while firing is enabled by power level.
-      smokeConfig.overheatContinuous5 = b_smoke_continuous_level_5;
-      smokeConfig.overheatContinuous4 = b_smoke_continuous_level_4;
-      smokeConfig.overheatContinuous3 = b_smoke_continuous_level_3;
-      smokeConfig.overheatContinuous2 = b_smoke_continuous_level_2;
-      smokeConfig.overheatContinuous1 = b_smoke_continuous_level_1;
+      smokeConfig.overheatContinuous5 = b_smoke_continuous_level_5 ? 1 : 0;
+      smokeConfig.overheatContinuous4 = b_smoke_continuous_level_4 ? 1 : 0;
+      smokeConfig.overheatContinuous3 = b_smoke_continuous_level_3 ? 1 : 0;
+      smokeConfig.overheatContinuous2 = b_smoke_continuous_level_2 ? 1 : 0;
+      smokeConfig.overheatContinuous1 = b_smoke_continuous_level_1 ? 1 : 0;
 
       // Duration (in seconds) an overheat event persists once activated.
       smokeConfig.overheatDuration5 = i_ms_overheating_length_5 / 1000;
@@ -365,7 +377,7 @@ void serial1SendData(uint8_t i_message) {
       smokeConfig.overheatDuration1 = i_ms_overheating_length_1 / 1000;
 
       // Enable or disable smoke effects overall.
-      smokeConfig.smokeEnabled = b_smoke_enabled;
+      smokeConfig.smokeEnabled = b_smoke_enabled ? 1 : 0;
 
       i_send_size = serial1Coms.txObj(smokeConfig);
       serial1Coms.sendData(i_send_size, (uint8_t) PACKET_SMOKE);
@@ -638,7 +650,18 @@ void checkSerial1() {
           b_cyclotron_simulate_ring = (packConfig.ledCycLidSimRing == 1);
 
           // Inner Cyclotron
-          b_inner_cyclotron_led_panel = (packConfig.ledCycInnerPanel == 1);
+          switch(packConfig.ledCycInnerPanel) {
+            case 1:
+            default:
+              INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
+            break;
+            case 2:
+              INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
+            break;
+            case 3:
+              INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
+            break;
+          }
           i_inner_cyclotron_cake_num_leds = packConfig.ledCycCakeCount;
           i_spectral_cyclotron_inner_custom_colour = packConfig.ledCycCakeHue;
           i_spectral_cyclotron_inner_custom_saturation = packConfig.ledCycCakeSat;
@@ -1053,13 +1076,17 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
     case A_REQUEST_PREFERENCES_WAND:
       // If requested by the serial device, tell the wand we need its EEPROM preferences.
       // This is merely a command to the wand which tells it to send back a data payload.
-      packSerialSend(P_SEND_PREFERENCES_WAND);
+      if(b_wand_connected){
+        packSerialSend(P_SEND_PREFERENCES_WAND);
+      }
     break;
 
     case A_REQUEST_PREFERENCES_SMOKE:
       // If requested by the serial device, tell the wand we need its EEPROM preferences.
       // This is merely a command to the wand which tells it to send back a data payload.
-      packSerialSend(P_SEND_PREFERENCES_SMOKE);
+      if(b_wand_connected){
+        packSerialSend(P_SEND_PREFERENCES_SMOKE);
+      }
     break;
 
     case A_MUSIC_PLAY_TRACK:
@@ -1158,6 +1185,19 @@ void checkWand() {
 
         case PACKET_SMOKE:
           if(!b_wand_connected) {
+            // Provide some default values when a wand is not attached.
+            // TODO: The pack should control these in this situation.
+            smokeConfig.overheatLevel5 = 10;
+            smokeConfig.overheatLevel4 = 10;
+            smokeConfig.overheatLevel3 = 10;
+            smokeConfig.overheatLevel2 = 10;
+            smokeConfig.overheatLevel1 = 10;
+            smokeConfig.overheatDelay5 = 30;
+            smokeConfig.overheatDelay4 = 30;
+            smokeConfig.overheatDelay3 = 30;
+            smokeConfig.overheatDelay2 = 30;
+            smokeConfig.overheatDelay1 = 30;
+
             // Can't proceed if the wand isn't connected; prevents phantom actions from occurring.
             return;
           }
@@ -1683,59 +1723,33 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case W_BUTTON_MASHING:
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          switch(SYSTEM_YEAR) {
-            case SYSTEM_1984:
-              if(i_wand_power_level != i_wand_power_level_max) {
-                stopEffect(S_FIRING_END);
-                stopEffect(S_FIRING_END_MID);
-                stopEffect(S_GB1_1984_FIRE_END_SHORT);
-              }
-              else {
-                stopEffect(S_GB1_1984_FIRE_END_HIGH_POWER);
-              }
-            break;
-            case SYSTEM_1989:
-              stopEffect(S_FIRING_END_GUN);
-              stopEffect(S_FIRING_END_MID);
-              stopEffect(S_FIRING_END);
-            break;
-            case SYSTEM_AFTERLIFE:
-            default:
-              stopEffect(S_AFTERLIFE_FIRE_END_SHORT);
-              stopEffect(S_AFTERLIFE_FIRE_END_MID);
-              stopEffect(S_AFTERLIFE_FIRE_END_LONG);
-            break;
-            case SYSTEM_FROZEN_EMPIRE:
-              stopEffect(S_FROZEN_EMPIRE_FIRE_END);
-            break;
-          }
-        break;
-        case SLIME:
-          stopEffect(S_SLIME_END);
-        break;
-        case STASIS:
-          stopEffect(S_STASIS_END);
-        break;
-      }
-      b_wand_mash_lockout = true;
+      // User has triggered a lockout by repeated button presses on the wand.
+      startWandMashLockout(i_value);
     break;
 
     case W_SMASH_ERROR_LOOP:
-      stopEffect(S_SMASH_ERROR_LOOP);
-      playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
+      // Begins a looping audio track while the wand is locked out.
+      // Note: Command is only sent when extra pack sounds are used.
+      switch(SYSTEM_YEAR) {
+        case SYSTEM_FROZEN_EMPIRE:
+          // No-op for this theme, as this is handled in startWandMashLockout
+        break;
+        default:
+          // Plays the alarm loop as heard on the wand.
+          stopSmashErrorSounds();
+          playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
+        break;
+      }
     break;
 
     case W_SMASH_ERROR_LOOP_STOP:
-      stopEffect(S_SMASH_ERROR_LOOP);
+      // Ends the wand lockout loop sounds.
+      stopSmashErrorSounds();
     break;
 
     case W_SMASH_ERROR_RESTART:
-      stopEffect(S_SMASH_ERROR_LOOP);
-      stopEffect(S_SMASH_ERROR_RESTART);
-      playEffect(S_SMASH_ERROR_RESTART);
+      // Initiates a restart of the pack after a lockout.
+      restartFromWandMash();
     break;
 
     case W_PROTON_MODE:
@@ -2070,23 +2084,37 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_TOGGLE_INNER_CYCLOTRON_PANEL:
       // Toggle the optional inner cyclotron LED panel board.
-      if(b_inner_cyclotron_led_panel == true) {
-        b_inner_cyclotron_led_panel = false;
+      switch(INNER_CYC_PANEL_MODE) {
+        case PANEL_INDIVIDUAL:
+          INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
 
-        stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
-        stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_ENABLED);
-        playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
+          playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
 
-        packSerialSend(P_TOGGLE_INNER_CYCLOTRON_PANEL_DISABLED);
-      }
-      else {
-        b_inner_cyclotron_led_panel = true;
+          packSerialSend(P_INNER_CYCLOTRON_PANEL_STATIC);
+        break;
+        case PANEL_RGB_STATIC:
+          INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
 
-        stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_ENABLED);
-        stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
-        playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_ENABLED);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
+          playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
 
-        packSerialSend(P_TOGGLE_INNER_CYCLOTRON_PANEL_ENABLED);
+          packSerialSend(P_INNER_CYCLOTRON_PANEL_DYNAMIC);
+        break;
+        case PANEL_RGB_DYNAMIC:
+          INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
+
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
+          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
+          playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
+
+          packSerialSend(P_INNER_CYCLOTRON_PANEL_DISABLED);
+        break;
       }
 
       // Reset the LED count for the panel and update the LED counts.
