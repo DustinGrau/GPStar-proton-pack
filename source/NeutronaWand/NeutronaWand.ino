@@ -277,20 +277,18 @@ void mainLoop() {
 
       if(b_wand_mash_error == true) {
         // Return the wand to a normal firing state after lock-out from button mashing.
-        b_wand_mash_error = false;
-
         WAND_STATUS = MODE_ON;
         WAND_ACTION_STATUS = ACTION_IDLE;
 
         postActivation();
 
+        b_wand_mash_error = false;
+
         stopEffect(S_STASIS_IDLE_LOOP);
         stopEffect(S_SMASH_ERROR_LOOP);
         playEffect(S_SMASH_ERROR_RESTART);
 
-        if(b_extra_pack_sounds == true) {
-          wandSerialSend(W_SMASH_ERROR_RESTART);
-        }
+        wandSerialSend(W_SMASH_ERROR_RESTART);
 
         bargraphClearAlt();
       }
@@ -861,11 +859,7 @@ void toggleOverheating() {
 void overheatingFinished() {
   bargraphClearAlt();
 
-  // Since the Proton Pack tells the Neutrona Wand when venting is finished, standalone wand needs its own timer.
-  if(b_gpstar_benchtest == true) {
-    ms_overheating.stop();
-  }
-
+  ms_overheating.stop();
   ms_settings_blinking.stop();
 
   // Turn off hat light 2.
@@ -891,11 +885,13 @@ void overheatingFinished() {
     break;
   }
 
-  WAND_ACTION_STATUS = ACTION_IDLE;
-
   if(switch_vent.on() == false && (getNeutronaWandYearMode() == SYSTEM_AFTERLIFE || getNeutronaWandYearMode() == SYSTEM_FROZEN_EMPIRE)) {
-    afterLifeRamp1();
+    afterlifeRampSound1();
   }
+
+  // Reset to idle after resetting bargraph speed, but before actually ramping it up.
+  WAND_ACTION_STATUS = ACTION_IDLE;
+  b_overheat_recovery = true;
 
   bargraphRampUp();
 }
@@ -1455,7 +1451,7 @@ void checkSwitches() {
           }
           else {
             // Determine the light status on the wand and any beeps.
-            wandLightControlCheck();
+            wandVentStateCheck();
           }
 
           // Check if we should fire, or if the wand and pack turn off.
@@ -1467,7 +1463,7 @@ void checkSwitches() {
           altWingButtonCheck();
 
           // Determine the light status on the wand and any beeps.
-          wandLightControlCheck();
+          wandVentStateCheck();
 
           // Check if we should fire, or if the wand and pack turn off.
           fireControlCheck();
@@ -1477,8 +1473,8 @@ void checkSwitches() {
   }
 }
 
-// Determine the light status on the wand and any beeps.
-void wandLightControlCheck() {
+// Vent light, idle sound, and beep sound checks are here.
+void wandVentStateCheck() {
   if(WAND_ACTION_STATUS != ACTION_OVERHEATING && b_pack_alarm != true) {
     // Vent light and first stage of the safety system.
     if(switch_vent.on() == true) {
@@ -1605,8 +1601,6 @@ void wandOff() {
 
   stopEffect(S_WAND_BOOTUP);
   stopEffect(S_SMASH_ERROR_RESTART);
-
-  b_sound_afterlife_idle_2_fade = true;
 
   if(WAND_ACTION_STATUS == ACTION_ERROR && b_wand_boot_error_on != true && b_wand_mash_error != true) {
     // We are exiting Wand Boot Error, so change wand state back to off/idle without informing Proton Pack.
@@ -1986,7 +1980,7 @@ void fireControlCheck() {
                   // Increment the Slime Tether counter.
                   i_slime_tether_count++;
                 }
-                else if (i_slime_tether_count < 2){
+                else if (i_slime_tether_count < 2) {
                   modePulseStart();
 
                   // Increment the Slime Tether counter.
@@ -2253,13 +2247,12 @@ void modeError() {
 }
 
 void modeActivate() {
-  b_sound_afterlife_idle_2_fade = true;
+  // Clear counter until user begins firing.
+  i_bmash_count = 0;
+  b_wand_mash_error = false;
 
   switch(SYSTEM_MODE) {
     case MODE_ORIGINAL:
-      b_wand_mash_error = false;
-      i_bmash_count = 0;
-
       WAND_STATUS = MODE_ON;
       WAND_ACTION_STATUS = ACTION_IDLE;
 
@@ -2286,19 +2279,13 @@ void modeActivate() {
         modeError();
       }
       else {
-        WAND_STATUS = MODE_ON;
-
         // Proper startup. Continue booting up the wand.
+        WAND_STATUS = MODE_ON;
         WAND_ACTION_STATUS = ACTION_IDLE;
 
         // Tell the pack the wand is turned on.
         wandSerialSend(W_ON);
-
-        // Clear counter until user begins firing.
-        i_bmash_count = 0;
       }
-
-      b_wand_mash_error = false;
 
       postActivation(); // Enable lights and bargraph after wand activation.
     break;
@@ -2329,7 +2316,7 @@ void postActivation() {
         case MODE_SUPER_HERO:
           bargraphRampUp();
           if(switch_vent.on() == true) {
-            b_all_switch_activation = true; // If vent switch is already on when Activate is flipped, set to true for soundIdleLoop() to use
+            b_all_switch_activation = true; // If vent switch is already on when Activate is flipped, set to true for soundIdleStart() to use
           }
         break;
       }
@@ -2358,7 +2345,7 @@ void postActivation() {
           if(b_pack_on) {
             playEffect(S_WAND_BOOTUP_SHORT);
 
-            if(b_extra_pack_sounds) {
+            if(b_extra_pack_sounds && b_pack_on && !b_wand_mash_error) {
               wandSerialSend(W_WAND_BOOTUP_SHORT_SOUND);
             }
           }
@@ -2374,14 +2361,14 @@ void postActivation() {
           if(b_pack_on && !switch_vent.on()) {
             playEffect(S_WAND_BOOTUP_SHORT);
 
-            if(b_extra_pack_sounds) {
+            if(b_extra_pack_sounds && b_pack_on && !b_wand_mash_error) {
               wandSerialSend(W_WAND_BOOTUP_SHORT_SOUND);
             }
           }
           else {
             playEffect(S_GB2_WAND_START);
 
-            if(b_extra_pack_sounds && b_pack_on) {
+            if(b_extra_pack_sounds && b_pack_on && !b_wand_mash_error) {
               wandSerialSend(W_WAND_BOOTUP_1989);
             }
           }
@@ -2398,7 +2385,7 @@ void postActivation() {
           soundIdleLoop(true);
 
           if(switch_vent.on() == false && b_pack_alarm != true) {
-            afterLifeRamp1();
+            afterlifeRampSound1();
           }
         break;
       }
@@ -2510,14 +2497,14 @@ void soundIdleStart() {
             stopEffect(S_GB2_WAND_START);
             playEffect(S_GB2_WAND_START);
 
-            if(b_extra_pack_sounds) {
+            if(b_extra_pack_sounds && !b_overheat_recovery) {
               wandSerialSend(W_WAND_BOOTUP_1989);
             }
           }
           else {
             playEffect(S_WAND_BOOTUP);
 
-            if(b_extra_pack_sounds) {
+            if(b_extra_pack_sounds && !b_overheat_recovery) {
               wandSerialSend(W_WAND_BOOTUP_SOUND);
             }
           }
@@ -2580,7 +2567,9 @@ void soundIdleStart() {
     }
   }
 
+  // Reset all special startup flags.
   b_all_switch_activation = false;
+  b_overheat_recovery = false;
 }
 
 void soundIdleStop() {
@@ -2639,6 +2628,7 @@ void soundIdleStop() {
   }
 
   b_sound_idle = false;
+  b_sound_afterlife_idle_2_fade = true;
 }
 
 void soundBeepLoopStop() {
@@ -9189,8 +9179,10 @@ void checkRotaryEncoder() {
             }
 
             // Decrease the music volume if the wand/pack is off. A quick easy way to adjust the music volume on the go.
-            if(WAND_STATUS == MODE_OFF && b_playing_music == true && switch_intensify.on() != true) {
-              decreaseVolumeMusic();
+            if(WAND_STATUS == MODE_OFF && switch_intensify.on() != true) {
+              if(b_playing_music == true) {
+                decreaseVolumeMusic();
+              }
 
               // Tell pack to lower music volume.
               wandSerialSend(W_VOLUME_MUSIC_DECREASE);
@@ -9302,8 +9294,10 @@ void checkRotaryEncoder() {
             }
 
             // Increase the music volume if the wand/pack is off. A quick easy way to adjust the music volume on the go.
-            if(WAND_STATUS == MODE_OFF && b_playing_music == true && switch_intensify.on() != true) {
-              increaseVolumeMusic();
+            if(WAND_STATUS == MODE_OFF && switch_intensify.on() != true) {
+              if(b_playing_music == true) {
+                increaseVolumeMusic();
+              }
 
               // Tell pack to increase music volume.
               wandSerialSend(W_VOLUME_MUSIC_INCREASE);
@@ -9615,7 +9609,7 @@ void stopAfterLifeSounds() {
   stopEffect(S_AFTERLIFE_WAND_RAMP_DOWN_2_FADE_OUT);
 }
 
-void afterLifeRamp1() {
+void afterlifeRampSound1() {
   stopAfterLifeSounds();
 
   playEffect(S_AFTERLIFE_WAND_RAMP_1, false, i_volume_effects - 1);
