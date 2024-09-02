@@ -41,12 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - uses: arduino/cache@main
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{runner.os}}-pio
       - uses: actions/setup-python@main
         with:
           python-version: '3.11'
