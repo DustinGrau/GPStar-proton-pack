@@ -440,16 +440,6 @@ void packSerialSendData(uint8_t i_message) {
 
   // Provide additional data with certain messages.
   switch(i_message) {
-    case P_VOLUME_SYNC:
-      // Send the current volume levels.
-      sendDataW.d[0] = i_volume_master_percentage;
-      sendDataW.d[1] = i_volume_effects_percentage;
-      sendDataW.d[2] = i_volume_music_percentage;
-
-      i_send_size = packComs.txObj(sendDataW);
-      packComs.sendData(i_send_size, (uint8_t) PACKET_DATA);
-    break;
-
     case P_SAVE_PREFERENCES_WAND:
       i_send_size = packComs.txObj(wandConfig);
       packComs.sendData(i_send_size, (uint8_t) PACKET_WAND);
@@ -861,7 +851,7 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
           break;
 
           case HOLIDAY:
-            serial1Send(A_HOLIDAY_MODE);
+            serial1Send(A_HOLIDAY_MODE, b_christmas ? 2 : 1);
           break;
 
           case SPECTRAL_CUSTOM:
@@ -1297,11 +1287,16 @@ void doWandSync() {
     break;
 
     case HOLIDAY:
-      packSync.streamMode = 6; // 6 = Holiday Mode
+      if(!b_christmas) {
+        packSync.streamMode = 6; // 6 = Holiday (Halloween) Mode
+      }
+      else {
+        packSync.streamMode = 7; // 7 = Holiday (Christmas) Mode
+      }
     break;
 
     case SPECTRAL_CUSTOM:
-      packSync.streamMode = 7; // 7 = Spectral Custom Mode.
+      packSync.streamMode = 8; // 8 = Spectral Custom Mode.
     break;
 
     case PROTON:
@@ -1594,10 +1589,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       playEffect(S_AFTERLIFE_WAND_BARREL_EXTEND);
     break;
 
-    case W_AFTERLIFE_RAMP_LOOP_STOP:
-      stopEffect(S_AFTERLIFE_WAND_IDLE_1);
-    break;
-
     case W_AFTERLIFE_RAMP_LOOP_2_STOP:
       stopEffect(S_AFTERLIFE_WAND_IDLE_2);
     break;
@@ -1713,11 +1704,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
     break;
 
-    case W_SMASH_ERROR_LOOP_STOP:
-      // Ends the wand lockout loop sounds.
-      stopSmashErrorSounds();
-    break;
-
     case W_SMASH_ERROR_RESTART:
       // Initiates a restart of the pack after a lockout.
       restartFromWandMash();
@@ -1750,7 +1736,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Proton mode.
       STREAM_MODE = PROTON;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -1791,7 +1781,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Slime mode.
       STREAM_MODE = SLIME;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron states.
@@ -1842,7 +1836,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Stasis mode.
       STREAM_MODE = STASIS;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -1884,7 +1882,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Meson mode.
       STREAM_MODE = MESON;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(AUDIO_DEVICE == A_GPSTAR_AUDIO) {
         // Tell GPStar Audio we need short audio mode.
@@ -1935,7 +1937,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Proton mode.
       STREAM_MODE = SPECTRAL;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -1981,7 +1987,12 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Proton mode.
       STREAM_MODE = HOLIDAY;
-      playEffect(S_CLICK);
+      b_christmas = (i_value == 2);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -1997,7 +2008,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Update the Inner Cyclotron LEDs if required.
       cyclotronSwitchLEDUpdate();
 
-      serial1Send(A_HOLIDAY_MODE);
+      serial1Send(A_HOLIDAY_MODE, i_value);
     break;
 
     case W_SPECTRAL_CUSTOM_MODE:
@@ -2027,7 +2038,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Proton mode.
       STREAM_MODE = SPECTRAL_CUSTOM;
-      playEffect(S_CLICK);
+
+      if(b_settings) {
+        playEffect(S_CLICK);
+        b_settings = false;
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -2049,6 +2064,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_SETTINGS_MODE:
       // Settings mode
       playEffect(S_CLICK);
+      b_settings = true;
 
       serial1Send(A_SETTINGS_MODE);
     break;
@@ -2101,14 +2117,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_VENTING:
       // Quick Vent function.
       packVentingStart();
-    break;
-
-    // No longer used.
-    case W_OVERHEATING_FINISHED:
-      // Overheating finished
-      packOverheatingFinished();
-
-      serial1Send(A_OVERHEATING_FINISHED);
     break;
 
     case W_CYCLOTRON_NORMAL_SPEED:
@@ -2296,13 +2304,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
         b_sound_firing_intensify_trigger = true;
       }
-
-    break;
-
-    case W_FIRING_INTENSIFY_STOPPED:
-      // Wand no longer firing in intensify mode. (UNUSED, uses W_FIRING_STOPPED instead)
-      b_firing_intensify = false;
-      b_sound_firing_intensify_trigger = false;
     break;
 
     case W_FIRING_INTENSIFY_STOPPED_MIX:
@@ -2354,12 +2355,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
         playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, false, 0, false);
       }
-    break;
-
-    case W_FIRING_ALT_STOPPED:
-      // Wand no longer firing in alt mode. (UNUSED, uses W_FIRING_STOPPED instead)
-      b_firing_alt = false;
-      b_sound_firing_alt_trigger = false;
     break;
 
     case W_FIRING_ALT_STOPPED_MIX:
@@ -2453,30 +2448,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       playEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START, false, i_volume_effects, false, 0, false);
     break;
 
-    case W_FIRING_CROSSING_THE_STREAMS_STOPPED_1984:
-      // The wand is no longer crossing the streams. (UNUSED, uses W_FIRING_STOPPED instead)
-      STATUS_CTS = CTS_NOT_FIRING;
-
-      if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
-        stopEffect(S_CROSS_STREAMS_START);
-        stopEffect(S_CROSS_STREAMS_END);
-      }
-
-      playEffect(S_CROSS_STREAMS_END, false, i_volume_effects, false, 0, false);
-    break;
-
-    case W_FIRING_CROSSING_THE_STREAMS_STOPPED_2021:
-      // The wand is no longer crossing the streams. (UNUSED, uses W_FIRING_STOPPED instead)
-      STATUS_CTS = CTS_NOT_FIRING;
-
-      if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
-        stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
-        stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END);
-      }
-
-      playEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END, false, i_volume_effects, false, 0, false);
-    break;
-
     case W_FIRING_CROSSING_THE_STREAMS_STOPPED_MIX_1984:
       // The wand is no longer crossing the streams.
       STATUS_CTS = CTS_NOT_FIRING;
@@ -2561,18 +2532,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       stopEffect(S_VOICE_SPECTRAL_MODES_DISABLED);
       stopEffect(S_VOICE_SPECTRAL_MODES_ENABLED);
       playEffect(S_VOICE_SPECTRAL_MODES_DISABLED);
-    break;
-
-    case W_SOUND_NEUTRONA_WAND_SPEAKER_AMP_ENABLED:
-      stopEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_ENABLED);
-      stopEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_DISABLED);
-      playEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_ENABLED);
-    break;
-
-    case W_SOUND_NEUTRONA_WAND_SPEAKER_AMP_DISABLED:
-      stopEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_DISABLED);
-      stopEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_ENABLED);
-      playEffect(S_VOICE_NEUTRONA_WAND_SPEAKER_AMP_DISABLED);
     break;
 
     case W_VIBRATION_DISABLED:
@@ -3212,48 +3171,22 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       stopEffect(S_VOICE_CTS_1984);
       stopEffect(S_VOICE_CTS_DEFAULT);
       stopEffect(S_VOICE_CTS_AFTERLIFE);
-      stopEffect(S_VOICE_CTS_1989);
-      stopEffect(S_VOICE_CTS_FROZEN_EMPIRE);
 
       playEffect(S_VOICE_CTS_1984);
-    break;
-
-    case W_CTS_1989:
-      stopEffect(S_VOICE_CTS_1989);
-      stopEffect(S_VOICE_CTS_1984);
-      stopEffect(S_VOICE_CTS_DEFAULT);
-      stopEffect(S_VOICE_CTS_AFTERLIFE);
-      stopEffect(S_VOICE_CTS_FROZEN_EMPIRE);
-
-      playEffect(S_VOICE_CTS_1989);
     break;
 
     case W_CTS_AFTERLIFE:
       stopEffect(S_VOICE_CTS_AFTERLIFE);
       stopEffect(S_VOICE_CTS_1984);
-      stopEffect(S_VOICE_CTS_1989);
-      stopEffect(S_VOICE_CTS_FROZEN_EMPIRE);
       stopEffect(S_VOICE_CTS_DEFAULT);
 
       playEffect(S_VOICE_CTS_AFTERLIFE);
-    break;
-
-    case W_CTS_FROZEN_EMPIRE:
-      stopEffect(S_VOICE_CTS_FROZEN_EMPIRE);
-      stopEffect(S_VOICE_CTS_DEFAULT);
-      stopEffect(S_VOICE_CTS_AFTERLIFE);
-      stopEffect(S_VOICE_CTS_1984);
-      stopEffect(S_VOICE_CTS_1989);
-
-      playEffect(S_VOICE_CTS_FROZEN_EMPIRE);
     break;
 
     case W_CTS_DEFAULT:
       stopEffect(S_VOICE_CTS_DEFAULT);
       stopEffect(S_VOICE_CTS_AFTERLIFE);
       stopEffect(S_VOICE_CTS_1984);
-      stopEffect(S_VOICE_CTS_1989);
-      stopEffect(S_VOICE_CTS_FROZEN_EMPIRE);
 
       playEffect(S_VOICE_CTS_DEFAULT);
     break;
@@ -3742,7 +3675,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         break;
 
         case 26:
-        default:
           // Switching: 26 -> 35 LEDs.
           i_inner_cyclotron_cake_num_leds = 35;
           i_1984_inner_delay = INNER_CYCLOTRON_DELAY_1984_35_LED;
@@ -3753,6 +3685,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         break;
 
         case 35:
+        default:
           // Switching: 35 -> 36 LEDs.
           i_inner_cyclotron_cake_num_leds = 36;
           i_1984_inner_delay = INNER_CYCLOTRON_DELAY_1984_36_LED;
@@ -3933,20 +3866,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       stopEffect(S_VOICE_BOOTUP_ERRORS_DISABLED);
 
       playEffect(S_VOICE_BOOTUP_ERRORS_ENABLED);
-    break;
-
-    case W_VENT_LIGHT_INTENSITY_ENABLED:
-      stopEffect(S_VOICE_VENT_LIGHT_INTENSITY_DISABLED);
-      stopEffect(S_VOICE_VENT_LIGHT_INTENSITY_ENABLED);
-
-      playEffect(S_VOICE_VENT_LIGHT_INTENSITY_ENABLED);
-    break;
-
-    case W_VENT_LIGHT_INTENSITY_DISABLED:
-      stopEffect(S_VOICE_VENT_LIGHT_INTENSITY_DISABLED);
-      stopEffect(S_VOICE_VENT_LIGHT_INTENSITY_ENABLED);
-
-      playEffect(S_VOICE_VENT_LIGHT_INTENSITY_DISABLED);
     break;
 
     case W_DEMO_LIGHT_MODE_TOGGLE:
@@ -4392,24 +4311,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_MUSIC_PREV_TRACK:
       musicPrevTrack();
-    break;
-
-    case W_MUSIC_PLAY_TRACK:
-      // Music track number to be played.
-      if(i_music_count > 0 && i_value >= i_music_track_start) {
-        if(b_playing_music == true) {
-          stopMusic(); // Stops current track before change.
-
-          // Only update after the music is stopped.
-          i_current_music_track = i_value;
-
-          // Play the appropriate track on pack and wand, and notify the serial1 device.
-          playMusic();
-        }
-        else {
-          i_current_music_track = i_value;
-        }
-      }
     break;
 
     case W_COM_SOUND_NUMBER:

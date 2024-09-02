@@ -284,7 +284,7 @@ void mainLoop() {
 
         b_wand_mash_error = false;
 
-        stopEffect(S_STASIS_IDLE_LOOP);
+        stopEffect(S_WAND_STASIS_IDLE_LOOP);
         stopEffect(S_SMASH_ERROR_LOOP);
         playEffect(S_SMASH_ERROR_RESTART);
 
@@ -303,7 +303,7 @@ void mainLoop() {
           if(b_pack_ion_arm_switch_on == true) {
             b_pack_ion_arm_switch_on = false;
 
-            if(switch_vent.on() == true && switch_wand.on() == true && b_mode_original_toggle_sounds_enabled == true) {
+            if(switch_vent.on() == true && switch_wand.on() == true) {
               stopEffect(S_WAND_HEATDOWN);
               stopEffect(S_WAND_HEATUP_ALT);
               playEffect(S_WAND_HEATDOWN);
@@ -317,11 +317,9 @@ void mainLoop() {
             b_pack_ion_arm_switch_on = true;
 
             if(switch_vent.on() == true && switch_wand.on() == true) {
-              if(b_mode_original_toggle_sounds_enabled == true) {
-                stopEffect(S_WAND_HEATDOWN);
-                stopEffect(S_WAND_HEATUP_ALT);
-                playEffect(S_WAND_HEATUP_ALT);
-              }
+              stopEffect(S_WAND_HEATDOWN);
+              stopEffect(S_WAND_HEATUP_ALT);
+              playEffect(S_WAND_HEATUP_ALT);
 
               if(b_28segment_bargraph == true) {
                 bargraphPowerCheck2021Alt(false);
@@ -903,7 +901,7 @@ void quickVentFinished() {
     playEffect(S_QUICK_VENT_CLOSE);
 
     if(STREAM_MODE == SLIME && WAND_STATUS == MODE_ON && switch_vent.on() == true) {
-      playEffect(S_PACK_SLIME_TANK_LOOP, true);
+      playEffect(S_WAND_SLIME_IDLE_LOOP, true);
     }
   }
 
@@ -918,7 +916,7 @@ void startQuickVent() {
     ms_overheating.start(i_ms_overheating >= 4000 ? i_ms_overheating / 2 : 2000);
 
     stopEffect(S_SLIME_EMPTY);
-    stopEffect(S_PACK_SLIME_TANK_LOOP);
+    stopEffect(S_WAND_SLIME_IDLE_LOOP);
     stopEffect(S_QUICK_VENT_CLOSE);
     playEffect(S_QUICK_VENT_OPEN);
 
@@ -1319,28 +1317,24 @@ void checkSwitches() {
                 if(switch_wand.switched() || switch_vent.switched()) {
                   if(switch_vent.switched()) {
                     if(switch_vent.on() == true && switch_wand.on() == false && switch_intensify.on() == false) {
-                      if(b_mode_original_toggle_sounds_enabled == true) {
-                        if(b_extra_pack_sounds == true) {
-                          wandSerialSend(W_BEEPS_ALT);
-                        }
-
-                        stopEffect(S_BEEPS_ALT);
-                        playEffect(S_BEEPS_ALT);
+                      if(b_extra_pack_sounds == true) {
+                        wandSerialSend(W_BEEPS_ALT);
                       }
+
+                      stopEffect(S_BEEPS_ALT);
+                      playEffect(S_BEEPS_ALT);
                     }
                   }
 
                   if(switch_vent.on() == true && switch_wand.on() == true) {
-                    if(b_mode_original_toggle_sounds_enabled == true) {
-                      if(b_extra_pack_sounds == true) {
-                        wandSerialSend(W_MODE_ORIGINAL_HEATDOWN_STOP);
-                        wandSerialSend(W_MODE_ORIGINAL_HEATUP);
-                      }
-
-                      stopEffect(S_WAND_HEATDOWN);
-                      stopEffect(S_WAND_HEATUP_ALT);
-                      playEffect(S_WAND_HEATUP_ALT);
+                    if(b_extra_pack_sounds == true) {
+                      wandSerialSend(W_MODE_ORIGINAL_HEATDOWN_STOP);
+                      wandSerialSend(W_MODE_ORIGINAL_HEATUP);
                     }
+
+                    stopEffect(S_WAND_HEATDOWN);
+                    stopEffect(S_WAND_HEATUP_ALT);
+                    playEffect(S_WAND_HEATUP_ALT);
 
                     if(b_28segment_bargraph == true) {
                       bargraphPowerCheck2021Alt(false);
@@ -1348,7 +1342,7 @@ void checkSwitches() {
 
                     prepBargraphRampUp();
                   }
-                  else if(switch_wand.switched() == true && switch_vent.on() == true && switch_wand.on() == false && b_mode_original_toggle_sounds_enabled == true) {
+                  else if(switch_wand.switched() == true && switch_vent.on() == true && switch_wand.on() == false) {
                     if(b_extra_pack_sounds == true) {
                       wandSerialSend(W_MODE_ORIGINAL_HEATUP_STOP);
                       wandSerialSend(W_MODE_ORIGINAL_HEATDOWN);
@@ -1358,7 +1352,7 @@ void checkSwitches() {
                     stopEffect(S_WAND_HEATDOWN);
                     playEffect(S_WAND_HEATDOWN);
                   }
-                  else if(switch_vent.switched() == true && switch_wand.on() == true && b_mode_original_toggle_sounds_enabled == true) {
+                  else if(switch_vent.switched() == true && switch_wand.on() == true) {
                     if(b_extra_pack_sounds == true) {
                       wandSerialSend(W_MODE_ORIGINAL_HEATUP_STOP);
                       wandSerialSend(W_MODE_ORIGINAL_HEATDOWN);
@@ -1557,7 +1551,7 @@ void wandOff() {
 
       case HOLIDAY:
         // Tell the pack we are in holiday mode.
-        wandSerialSend(W_HOLIDAY_MODE);
+        wandSerialSend(W_HOLIDAY_MODE, b_christmas ? 2 : 1);
       break;
 
       case SPECTRAL_CUSTOM:
@@ -1617,7 +1611,7 @@ void wandOff() {
     WAND_ACTION_STATUS = ACTION_IDLE;
 
     if(b_wand_mash_error == true) {
-      stopEffect(S_STASIS_IDLE_LOOP);
+      stopEffect(S_WAND_STASIS_IDLE_LOOP);
       stopEffect(S_SMASH_ERROR_LOOP);
       stopEffect(S_SMASH_ERROR_RESTART);
     }
@@ -2146,6 +2140,11 @@ void altWingButtonCheck() {
         bargraphPowerCheck2021Alt(true);
       }
     }
+    else if(STREAM_MODE == HOLIDAY && switch_wand.on() == true && switch_vent.on() == true && switch_mode.pushed()) {
+      // Used to switch the Holiday firing mode between Halloween and Christmas colours.
+      b_christmas = !b_christmas;
+      streamModeCheck();
+    }
   }
 }
 
@@ -2154,7 +2153,7 @@ void streamModeCheck() {
     switch(STREAM_MODE) {
       case HOLIDAY:
         // Tell the pack we are in holiday mode.
-        wandSerialSend(W_HOLIDAY_MODE);
+        wandSerialSend(W_HOLIDAY_MODE, b_christmas ? 2 : 1);
       break;
 
       case SPECTRAL:
@@ -2233,7 +2232,7 @@ void modeError() {
   else if(b_wand_mash_error == true) {
     if(getNeutronaWandYearMode() == SYSTEM_FROZEN_EMPIRE) {
       // Use the crakling ice sound from the statis mode.
-      playEffect(S_STASIS_IDLE_LOOP);
+      playEffect(S_WAND_STASIS_IDLE_LOOP);
     }
     else {
       // Use the standard error alarm for this effect.
@@ -2257,7 +2256,7 @@ void modeActivate() {
       WAND_ACTION_STATUS = ACTION_IDLE;
 
       // If starting up directly from any of the non-toggle-sequence switches, play the wand heatup sound.
-      if(switch_activate.switched() == false && b_mode_original_toggle_sounds_enabled == true) {
+      if(switch_activate.switched() == false) {
         if(b_extra_pack_sounds == true) {
           wandSerialSend(W_MODE_ORIGINAL_HEATUP);
         }
@@ -2420,10 +2419,10 @@ void soundIdleLoop(bool fadeIn) {
   if(b_gpstar_benchtest == true && fadeIn == true) {
     switch(STREAM_MODE) {
       case SLIME:
-        playEffect(S_PACK_SLIME_TANK_LOOP, true, 0, true, 900);
+        playEffect(S_WAND_SLIME_IDLE_LOOP, true, 0, true, 900);
       break;
       case STASIS:
-        playEffect(S_STASIS_IDLE_LOOP, true, 0, true, 900);
+        playEffect(S_WAND_STASIS_IDLE_LOOP, true, 0, true, 900);
       break;
       case MESON:
         playEffect(S_MESON_IDLE_LOOP, true, 0, true, 900);
@@ -2466,10 +2465,10 @@ void soundIdleLoopStop(bool stopAlts) {
   if(stopAlts == true && b_gpstar_benchtest == true) {
     switch(STREAM_MODE) {
       case SLIME:
-        stopEffect(S_PACK_SLIME_TANK_LOOP);
+        stopEffect(S_WAND_SLIME_IDLE_LOOP);
       break;
       case STASIS:
-        stopEffect(S_STASIS_IDLE_LOOP);
+        stopEffect(S_WAND_STASIS_IDLE_LOOP);
       break;
       case MESON:
         stopEffect(S_MESON_IDLE_LOOP);
@@ -3238,7 +3237,6 @@ void modeFireStopSounds() {
   if(b_firing_cross_streams == true) {
     switch(WAND_YEAR_CTS) {
       case CTS_AFTERLIFE:
-      case CTS_FROZEN_EMPIRE:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END);
@@ -3250,7 +3248,6 @@ void modeFireStopSounds() {
       break;
 
       case CTS_1984:
-      case CTS_1989:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_CROSS_STREAMS_START);
           stopEffect(S_CROSS_STREAMS_END);
@@ -3480,7 +3477,6 @@ void modeFiring() {
 
     switch(WAND_YEAR_CTS) {
       case CTS_AFTERLIFE:
-      case CTS_FROZEN_EMPIRE:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END);
@@ -3499,7 +3495,6 @@ void modeFiring() {
       break;
 
       case CTS_1984:
-      case CTS_1989:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_CROSS_STREAMS_START);
           stopEffect(S_CROSS_STREAMS_END);
@@ -3574,7 +3569,6 @@ void modeFiring() {
 
     switch(WAND_YEAR_CTS) {
       case CTS_AFTERLIFE:
-      case CTS_FROZEN_EMPIRE:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END);
@@ -3586,7 +3580,6 @@ void modeFiring() {
       break;
 
       case CTS_1984:
-      case CTS_1989:
         if(AUDIO_DEVICE != A_GPSTAR_AUDIO) {
           stopEffect(S_CROSS_STREAMS_START);
           stopEffect(S_CROSS_STREAMS_END);
@@ -3774,8 +3767,14 @@ void modeFiring() {
     break;
 
     case HOLIDAY:
-      c_temp_start = C_REDGREEN;
-      c_temp_effect = c_temp_start;
+      if(b_christmas) {
+        c_temp_start = C_REDGREEN;
+        c_temp_effect = c_temp_start;
+      }
+      else {
+        c_temp_start = C_ORANGEPURPLE;
+        c_temp_effect = c_temp_start;
+      }
     break;
 
     case SPECTRAL_CUSTOM:
@@ -3888,8 +3887,8 @@ void wandHeatUp() {
   stopEffect(S_MODE_SWITCH);
 
   if(b_gpstar_benchtest == true) {
-    stopEffect(S_PACK_SLIME_TANK_LOOP);
-    stopEffect(S_STASIS_IDLE_LOOP);
+    stopEffect(S_WAND_SLIME_IDLE_LOOP);
+    stopEffect(S_WAND_STASIS_IDLE_LOOP);
     stopEffect(S_MESON_IDLE_LOOP);
   }
 
@@ -3903,7 +3902,7 @@ void wandHeatUp() {
       playEffect(S_PACK_SLIME_OPEN);
 
       if(b_gpstar_benchtest == true && WAND_STATUS == MODE_ON && switch_vent.on() == true) {
-        playEffect(S_PACK_SLIME_TANK_LOOP, true, 0, true, 900);
+        playEffect(S_WAND_SLIME_IDLE_LOOP, true, 0, true, 900);
       }
     break;
 
@@ -3911,7 +3910,7 @@ void wandHeatUp() {
       playEffect(S_STASIS_OPEN);
 
       if(b_gpstar_benchtest == true && WAND_STATUS == MODE_ON && switch_vent.on() == true) {
-        playEffect(S_STASIS_IDLE_LOOP, true, 0, true, 900);
+        playEffect(S_WAND_STASIS_IDLE_LOOP, true, 0, true, 900);
       }
     break;
 
@@ -4023,7 +4022,12 @@ void wandBarrelHeatUp() {
       break;
 
       case HOLIDAY:
-        c_temp = C_REDGREEN;
+        if(b_christmas) {
+          c_temp = C_REDGREEN;
+        }
+        else {
+          c_temp = C_ORANGEPURPLE;
+        }
       break;
 
       case SPECTRAL_CUSTOM:
@@ -4147,7 +4151,12 @@ void wandBarrelHeatDown() {
       break;
 
       case HOLIDAY:
-        c_temp = C_REDGREEN;
+        if(b_christmas) {
+          c_temp = C_REDGREEN;
+        }
+        else {
+          c_temp = C_ORANGEPURPLE;
+        }
       break;
 
       case SPECTRAL_CUSTOM:
@@ -5333,7 +5342,12 @@ void fireEffectEnd() {
       break;
 
       case HOLIDAY:
-        c_temp = C_REDGREEN;
+        if(b_christmas) {
+          c_temp = C_REDGREEN;
+        }
+        else {
+          c_temp = C_ORANGEPURPLE;
+        }
       break;
 
       case SPECTRAL_CUSTOM:
@@ -9483,7 +9497,7 @@ void wandExitMenu() {
 
     case HOLIDAY:
       // Tell the pack we are in holiday mode.
-      wandSerialSend(W_HOLIDAY_MODE);
+      wandSerialSend(W_HOLIDAY_MODE, b_christmas ? 2 : 1);
     break;
 
     case SPECTRAL_CUSTOM:
@@ -9511,7 +9525,7 @@ void wandExitMenu() {
   // In original mode, we need to re-initalise the 28 segment bargraph if some switches are already toggled on.
   if(SYSTEM_MODE == MODE_ORIGINAL) {
     if(switch_vent.on() == true && switch_wand.on() == true) {
-      if(b_pack_ion_arm_switch_on == true && b_28segment_bargraph == true && b_mode_original_toggle_sounds_enabled == true) {
+      if(b_pack_ion_arm_switch_on == true && b_28segment_bargraph == true) {
         if(b_extra_pack_sounds == true) {
           wandSerialSend(W_MODE_ORIGINAL_HEATUP);
         }

@@ -117,7 +117,7 @@ enum BARGRAPH_EEPROM_FIRING_ANIMATIONS BARGRAPH_EEPROM_FIRING_ANIMATION;
  * This affects which CTS "Cross The Streams" sounds are used as the sound effects are different depending on the year.
  * CTS_DEFAULT lets the system choose based on the year setting of the Proton Pack.
  */
-enum WAND_YEAR_CTS_SETTING { CTS_DEFAULT, CTS_1984, CTS_1989, CTS_AFTERLIFE, CTS_FROZEN_EMPIRE };
+enum WAND_YEAR_CTS_SETTING { CTS_DEFAULT, CTS_1984, CTS_AFTERLIFE };
 enum WAND_YEAR_CTS_SETTING WAND_YEAR_CTS;
 
 /*
@@ -343,6 +343,7 @@ enum FIRING_MODES FIRING_MODE;
 enum FIRING_MODES LAST_FIRING_MODE;
 enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM };
 enum STREAM_MODES STREAM_MODE;
+bool b_christmas = false; // Used in HOLIDAY mode to change from orange/purple to red/green.
 
 /*
  * Firing timers.
