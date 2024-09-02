@@ -41,31 +41,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - uses: arduino/compile-sketches@main
+      - uses: arduino/cache@main
         with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            enable-deltas-report: true
-            fqbn: arduino:avr:mega
-            sketch-paths: |
-              - source/SingleShot
-            libraries: |
-              - name: Switch
-              - name: ezButton
-              - name: CRC32
-              - name: digitalWriteFast
-              - name: FastLED
-              - name: Ramp
-              - name: SafeString
-              - name: SerialTransfer
-              - name: Simple ht16k33 Library
-              - name: ArduinoINA219
-            verbose: false
-      # This step is needed to pass the size data to the report job
-      - name: Upload sketches report to workflow artifact
-        uses: actions/upload-artifact@main
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{runner.os}}-pio
+      - uses: actions/setup-python@main
         with:
-          name: sketch-report-atmega
-          path: ${{ env.SKETCHES_REPORTS_PATH }}
+          python-version: '3.11'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+      - name: Build PlatformIO Project
+        working-directory: source/SingleShot
+        run: pio run
   compile-nano:
     runs-on: ubuntu-latest
     steps:
