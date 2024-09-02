@@ -18,6 +18,10 @@
  *
  */
 
+// Required for PlatformIO
+#include <Arduino.h>
+
+// Defines the microcontroller as part of a GPStar PCB
 #if defined(__AVR_ATmega2560__)
   #define GPSTAR_NEUTRONA_DEVICE_PCB
 #endif
@@ -59,6 +63,33 @@
 #include "Audio.h"
 #include "Preferences.h"
 
+// Forward function declarations
+void allLightsOff();
+void barrelLightsOff();
+void systemPOST();
+void switchLoops();
+void mainLoop();
+void checkCyclotron();
+void checkEncoderAction(); 
+void checkGeneralTimers();
+void checkRotaryEncoder();
+void checkMenuVibration();
+void deviceOff();
+void deviceEnterMenu();
+void deviceLightControlCheck();
+void fireControlCheck();
+void firePulseEffect();
+void gripButtonCheck();
+void modeFireStop();
+void modeError();
+void modePulseStart();
+void postActivation();
+void settingsMenuCheck();
+void soundIdleLoop(bool fadeIn);
+void soundIdleLoopStop();
+void vibrationSetting();
+void vibrationOff();
+
 void setup() {
   Serial.begin(9600); // Standard serial (USB) console.
 
@@ -99,9 +130,6 @@ void setup() {
 
   pinMode(vibration, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.
 
-  // Make sure lights are off, including the bargraph.
-  allLightsOff();
-
   // Device status.
   DEVICE_STATUS = MODE_OFF;
   DEVICE_ACTION_STATUS = ACTION_IDLE;
@@ -128,6 +156,9 @@ void setup() {
 
   // Reset our master volume manually.
   resetMasterVolume();
+
+  // Make sure lights are off, including the bargraph.
+  allLightsOff();
 
   // System Power On Self Test
   systemPOST();
@@ -1259,11 +1290,11 @@ void deviceExitEEPROMMenu() {
   vibrationOff(); // Make sure we stop any menu-related vibration, if any.
 }
 
-// Included last as the contained logic will control all aspects of the device using the defined functions above.
-#include "Actions.h"
-
 // Checks the top rotary dial on the device.
 void checkRotaryEncoder() {
   encoder.check(); // Update the latest state of the device resulting from any user input.
   checkEncoderAction(); // Take action specifically from interaction by the user.
 }
+
+// Define this last as it ensures most functions have been declared.
+#include "Actions.h"

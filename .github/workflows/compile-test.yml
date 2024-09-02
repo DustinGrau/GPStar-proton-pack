@@ -6,7 +6,7 @@ env:
   # It's convenient to set variables for values used multiple times in the workflow
   SKETCHES_REPORTS_PATH: sketches-reports
 jobs:
-  compile-mega:
+  compile-packwand:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
@@ -16,13 +16,41 @@ jobs:
             enable-deltas-report: true
             fqbn: arduino:avr:mega
             sketch-paths: |
-              - source/NeutronaWand
               - source/ProtonPack
-              - source/SingleShot
+              - source/NeutronaWand
             libraries: |
               - name: Switch
               - name: ezButton
               - name: ADS1115_WE
+              - name: CRC32
+              - name: digitalWriteFast
+              - name: FastLED
+              - name: Ramp
+              - name: SafeString
+              - name: SerialTransfer
+              - name: Simple ht16k33 Library
+              - name: ArduinoINA219
+            verbose: false
+      # This step is needed to pass the size data to the report job
+      - name: Upload sketches report to workflow artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: sketch-report-atmega
+          path: ${{ env.SKETCHES_REPORTS_PATH }}
+  compile-blaster:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: arduino/compile-sketches@main
+        with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            enable-deltas-report: true
+            fqbn: arduino:avr:mega
+            sketch-paths: |
+              - source/SingleShot
+            libraries: |
+              - name: Switch
+              - name: ezButton
               - name: CRC32
               - name: digitalWriteFast
               - name: FastLED

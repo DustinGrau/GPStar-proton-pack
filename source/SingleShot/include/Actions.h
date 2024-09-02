@@ -1,5 +1,3 @@
-#include "Audio.h"
-#include "Header.h"
 /**
  *   GPStar Single-Shot Blaster
  *   Copyright (C) 2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
@@ -21,10 +19,6 @@
  */
 
 #pragma once
-
-// Forward function declarations
-void gripButtonCheck();
-void settingsMenuCheck();
 
 void checkDeviceAction() {
   switch(DEVICE_STATUS) {
