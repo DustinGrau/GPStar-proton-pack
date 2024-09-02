@@ -36,3 +36,16 @@ Before installing a library you'll need a project in context. Alternatively, onc
 	- **Switch** by Abhijit Bose (1.2.7+)
 
 
+## Command Line Tools
+
+To compile a PlatformIO project via shell script, you will need the "pio" utility which can be installed via [Python v3.11 or higher](https://www.python.org/downloads/).
+
+After installing Python3 run the following:
+
+`pip install platformio`
+
+If you need to upgrade pip that can be done using the following:
+
+`pip install --upgrade pip`
+
+Once the `pio` utility is available, the included scripts in the project's `.github/` folder may be used to compile code.
