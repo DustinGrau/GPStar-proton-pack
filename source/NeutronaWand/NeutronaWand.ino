@@ -2936,13 +2936,13 @@ void modeFireStartSounds() {
     case SLIME:
       stopEffect(S_SLIME_END);
       playEffect(S_SLIME_START, false, i_volume_effects, false, 0, false);
-      playEffect(S_SLIME_LOOP, true, i_volume_effects, false, 1500, false);
+      playEffect(S_SLIME_LOOP, true, i_volume_effects, true, 1500, false);
     break;
 
     case STASIS:
       stopEffect(S_STASIS_END);
       playEffect(S_STASIS_START, false, i_volume_effects, false, 0, false);
-      playEffect(S_STASIS_LOOP, true, i_volume_effects, false, 1000, false);
+      playEffect(S_STASIS_LOOP, true, i_volume_effects, true, 1000, false);
     break;
 
     case MESON:
@@ -9578,6 +9578,12 @@ void wandExitEEPROMMenu() {
 bool switchBarrel() {
   if(switch_barrel.on()) {
     if(b_switch_barrel_extended) {
+      if(b_extra_pack_sounds) {
+        wandSerialSend(W_WAND_BARREL_RETRACT);
+      }
+
+      playEffect(S_WAND_BARREL_RETRACT, false, i_volume_effects - 1);
+
       wandSerialSend(W_BARREL_RETRACTED);
       b_switch_barrel_extended = false;
     }
