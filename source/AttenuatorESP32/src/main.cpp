@@ -159,7 +159,12 @@ void setup() {
   // Feedback devices (piezo buzzer and vibration motor)
   pinMode(BUZZER_PIN, OUTPUT);
   // Note: "ledcAttach" is a combined method for the arduino-esp32 v3.x board library
-  ledcAttach(VIBRATION_PIN, 5000, 8); // Uses 5 kHz frequency, 8-bit resolution
+  //ledcAttach(VIBRATION_PIN, 5000, 8); // Uses 5 kHz frequency, 8-bit resolution
+
+  // Attach pin to a channel (we'll use the same # as the vibration pin for consistency)
+  ledcAttachPin(VIBRATION_PIN, VIBRATION_PIN);
+  // Configure LEDC PWM channel (using a consistent value, the vibration pin #)
+  ledcSetup(VIBRATION_PIN, 5000, 8);
 
   // Turn off any user feedback.
   noTone(BUZZER_PIN);
