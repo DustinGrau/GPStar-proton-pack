@@ -34,8 +34,8 @@ else
 fi
 
 # Copy the new firmware to the expected binaries directory
-if [ -f ${SRCDIR}/SingleShot/.pio/build/megaatmega2560/firmware.hex ]; then
-  mv ${SRCDIR}/SingleShot/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/blaster/SingleShot.hex
+if [ -f ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ]; then
+  mv ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/blaster/SingleShot.hex
 fi
 echo "Done."
 echo ""

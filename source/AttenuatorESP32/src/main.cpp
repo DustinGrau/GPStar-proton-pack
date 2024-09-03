@@ -18,11 +18,12 @@
  *
  */
 
-#if defined(__XTENSA__)
-  // ESP - Suppress warning about SPI hardware pins
-  // Define this before including <FastLED.h>
-  #define FASTLED_INTERNAL
-#endif
+// Required for PlatformIO
+#include <Arduino.h>
+
+// ESP - Suppress warning about SPI hardware pins
+// Define this before including <FastLED.h>
+#define FASTLED_INTERNAL
 
 // PROGMEM macro
 #define PROGMEM_READU32(x) pgm_read_dword_near(&(x))
@@ -44,24 +45,27 @@
 #include "Bargraph.h"
 #include "Colours.h"
 #include "Serial.h"
-#if defined(__XTENSA__)
-  // ESP - Include WiFi Capabilities (+WebServer and UI Code)
-  #include "Wireless.h"
-#endif
+#include "Wireless.h"
+
+// Forward function declarations
+void buzzOn(uint16_t i_freq);
+void buzzOff();
+void checkRotaryEncoder();
+void checkRotaryPress();
+void mainLoop();
+void readEncoder();
+void switchLoops();
+void updateLEDs();
+void useVibration(uint16_t i_duration);
+void vibrateOff();
 
 void setup() {
   // Enable Serial connection(s) and communication with GPStar Proton Pack PCB.
-  #if defined(__XTENSA__)
-    // ESP - Serial Console for messages and Device Comms via Serial2
-    Serial.begin(115200);
-    Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-    packComs.begin(Serial2, false);
-    pinMode(BUILT_IN_LED, OUTPUT);
-  #else
-    // Nano - Utilizes the only Serial connection
-    Serial.begin(9600);
-    packComs.begin(Serial);
-  #endif
+  // ESP - Serial Console for messages and Device Comms via Serial2
+  Serial.begin(115200);
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  packComs.begin(Serial2, false);
+  pinMode(BUILT_IN_LED, OUTPUT);
 
   // Assume the Super Hero arming mode with Afterlife (default for Haslab).
   SYSTEM_MODE = MODE_SUPER_HERO;
@@ -74,49 +78,50 @@ void setup() {
   // Set a default animation for the radiation indicator.
   RAD_LENS_IDLE = AMBER_PULSE;
 
-  #if defined(__XTENSA__)
-    // ESP - Get Special Device Preferences
+  // ESP - Get Special Device Preferences
+  preferences.begin("device", true); // Access namespace in read-only mode.
 
-    preferences.begin("device", true); // Access namespace in read-only mode.
-    // Return stored values if available, otherwise use a default value.
-    b_invert_leds = preferences.getBool("invert_led", false);
-    b_enable_buzzer = preferences.getBool("buzzer_enabled", true);
-    b_enable_vibration = preferences.getBool("vibration_enabled", true);
-    b_overheat_feedback = preferences.getBool("overheat_feedback", true);
-    b_firing_feedback = preferences.getBool("firing_feedback", false);
-    switch(preferences.getShort("radiation_idle", 0)) {
-      case 0:
-        RAD_LENS_IDLE = AMBER_PULSE;
-      break;
-      case 1:
-        RAD_LENS_IDLE = ORANGE_FADE;
-      break;
-      case 2:
-        RAD_LENS_IDLE = RED_FADE;
-      break;
-    }
-    switch(preferences.getShort("display_type", 0)) {
-      case 0:
-        DISPLAY_TYPE = STATUS_TEXT;
-      break;
-      case 1:
-        DISPLAY_TYPE = STATUS_GRAPHIC;
-      break;
-      case 2:
-      default:
-        DISPLAY_TYPE = STATUS_BOTH;
-      break;
-    }
-    s_track_listing = preferences.getString("track_list", "");
-    preferences.end();
+  // Return stored values if available, otherwise use a default value.
+  b_invert_leds = preferences.getBool("invert_led", false);
+  b_enable_buzzer = preferences.getBool("buzzer_enabled", true);
+  b_enable_vibration = preferences.getBool("vibration_enabled", true);
+  b_overheat_feedback = preferences.getBool("overheat_feedback", true);
+  b_firing_feedback = preferences.getBool("firing_feedback", false);
 
-    // CPU Frequency MHz: 80, 160, 240 [Default]
-    // Lower frequency means less power consumption.
-    setCpuFrequencyMhz(240);
-    Serial.print(F("CPU Freq (MHz): "));
-    Serial.println(getCpuFrequencyMhz());
-  #endif
+  switch(preferences.getShort("radiation_idle", 0)) {
+    case 0:
+      RAD_LENS_IDLE = AMBER_PULSE;
+    break;
+    case 1:
+      RAD_LENS_IDLE = ORANGE_FADE;
+    break;
+    case 2:
+      RAD_LENS_IDLE = RED_FADE;
+    break;
+  }
 
+  switch(preferences.getShort("display_type", 0)) {
+    case 0:
+      DISPLAY_TYPE = STATUS_TEXT;
+    break;
+    case 1:
+      DISPLAY_TYPE = STATUS_GRAPHIC;
+    break;
+    case 2:
+    default:
+      DISPLAY_TYPE = STATUS_BOTH;
+    break;
+  }
+
+  s_track_listing = preferences.getString("track_list", "");
+  preferences.end();
+
+  // CPU Frequency MHz: 80, 160, 240 [Default]
+  // Lower frequency means less power consumption.
+  setCpuFrequencyMhz(240);
+  Serial.print(F("CPU Freq (MHz): "));
+  Serial.println(getCpuFrequencyMhz());
+ 
   if(!b_wait_for_pack) {
     // If not waiting for the pack set power level to 5.
     POWER_LEVEL = LEVEL_5;
@@ -153,13 +158,8 @@ void setup() {
 
   // Feedback devices (piezo buzzer and vibration motor)
   pinMode(BUZZER_PIN, OUTPUT);
-  #if defined(__XTENSA__)
-    // ESP32 - Note: "ledcAttach" is a combined method for the arduino-esp32 v3.x board library
-    ledcAttach(VIBRATION_PIN, 5000, 8); // Uses 5 kHz frequency, 8-bit resolution
-  #else
-    // Nano
-    pinMode(VIBRATION_PIN, OUTPUT);
-  #endif
+  // Note: "ledcAttach" is a combined method for the arduino-esp32 v3.x board library
+  ledcAttach(VIBRATION_PIN, 5000, 8); // Uses 5 kHz frequency, 8-bit resolution
 
   // Turn off any user feedback.
   noTone(BUZZER_PIN);
@@ -168,19 +168,17 @@ void setup() {
   // Get initial switch/button states.
   switchLoops();
 
-  #if defined(__XTENSA__)
-    // Delay before configuring WiFi and web access.
-    delay(100);
+  // Delay before configuring WiFi and web access.
+  delay(100);
 
-    // ESP - Setup WiFi and WebServer
-    if(startWiFi()) {
-      // Start the local web server.
-      startWebServer();
+  // ESP - Setup WiFi and WebServer
+  if(startWiFi()) {
+    // Start the local web server.
+    startWebServer();
 
-      // Begin timer for remote client events.
-      ms_cleanup.start(i_websocketCleanup);
-    }
-  #endif
+    // Begin timer for remote client events.
+    ms_cleanup.start(i_websocketCleanup);
+  }
 
   // Delay to allow any other devices to start up first.
   delay(100);
@@ -205,22 +203,20 @@ void loop() {
     i_device_led[2] = 2; // Lower
   }
 
-  #if defined(__XTENSA__)
-    // ESP - Manage cleanup for old WebSocket clients.
-    if(ms_cleanup.remaining() < 1) {
-      // Clean up oldest WebSocket connections.
-      ws.cleanupClients();
+  // ESP - Manage cleanup for old WebSocket clients.
+  if(ms_cleanup.remaining() < 1) {
+    // Clean up oldest WebSocket connections.
+    ws.cleanupClients();
 
-      // Restart timer for next cleanup action.
-      ms_cleanup.start(i_websocketCleanup);
-    }
+    // Restart timer for next cleanup action.
+    ms_cleanup.start(i_websocketCleanup);
+  }
 
-    // Handle device reboot after an OTA update.
-    ElegantOTA.loop();
+  // Handle device reboot after an OTA update.
+  ElegantOTA.loop();
 
-    // Update the current count of AP clients.
-    i_ap_client_count = WiFi.softAPgetStationNum();
-  #endif
+  // Update the current count of AP clients.
+  i_ap_client_count = WiFi.softAPgetStationNum();
 
   if(b_wait_for_pack) {
     // Wait and synchronise some settings with the pack.
@@ -228,10 +224,8 @@ void loop() {
 
     if(!b_wait_for_pack) {
       // Indicate that we are no longer waiting on the pack.
-      #if defined(__XTENSA__)
-        // ESP - Illuminate built-in LED.
-        digitalWrite(BUILT_IN_LED, HIGH);
-      #endif
+      // ESP - Illuminate built-in LED.
+      digitalWrite(BUILT_IN_LED, HIGH);
     }
     else {
       // Pause and try again in a moment.
@@ -246,22 +240,11 @@ void loop() {
 
 void debug(String message) {
   // Writes a debug message to the serial console.
-  #if defined(__XTENSA__)
-    // ESP32
-    #if defined(DEBUG_SEND_TO_CONSOLE)
-      Serial.println(message); // Print to serial console.
-    #endif
-    #if defined(DEBUG_SEND_TO_WEBSOCKET)
-      ws.textAll(message); // Send a copy to the WebSocket.
-    #endif
-  #else
-    // Nano
-    if(!b_wait_for_pack) {
-      // Can only use Serial output if pack is not connected.
-      #if defined(DEBUG_SEND_TO_CONSOLE)
-        Serial.println(message);
-      #endif
-    }
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    Serial.println(message); // Print to serial console.
+  #endif
+  #if defined(DEBUG_SEND_TO_WEBSOCKET)
+    ws.textAll(message); // Send a copy to the WebSocket.
   #endif
 }
 
@@ -408,18 +391,16 @@ void mainLoop() {
     ms_fast_led.start(i_fast_led_delay);
   }
 
-  #if defined(__XTENSA__)
-    /**
-     * ESP - Alert any WebSocket clients after an API call was received.
-     *
-     * Note: We only perform this action if we have data from the pack
-     * which resulted in a significant state change--this prevents the
-     * device from spamming any downstream clients with unchanged data.
-     */
-    if(b_notify) {
-      notifyWSClients(); // Send latest status to the WebSocket.
-    }
-  #endif
+  /**
+   * ESP - Alert any WebSocket clients after an API call was received.
+   *
+   * Note: We only perform this action if we have data from the pack
+   * which resulted in a significant state change--this prevents the
+   * device from spamming any downstream clients with unchanged data.
+   */
+  if(b_notify) {
+    notifyWSClients(); // Send latest status to the WebSocket.
+  }
 }
 
 void buzzOn(uint16_t i_freq) {
@@ -445,13 +426,7 @@ void useVibration(uint16_t i_duration) {
   if(b_enable_vibration) {
     if(!b_vibrate_on) {
       // Ensures only vibration is started once per call to this method.
-      #if defined(__XTENSA__)
-        // ESP32
-        ledcWrite(VIBRATION_PIN, i_max_power);
-      #else
-        // Nano
-        analogWrite(VIBRATION_PIN, i_max_power);
-      #endif
+      ledcWrite(VIBRATION_PIN, i_max_power);
 
       // Set timer for shorter of given duration or max runtime.
       ms_vibrate.start(min(i_duration, i_vibrate_max_time));
@@ -462,13 +437,7 @@ void useVibration(uint16_t i_duration) {
 
 void vibrateOff() {
   if(b_vibrate_on) {
-    #if defined(__XTENSA__)
-      // ESP32
-      ledcWrite(VIBRATION_PIN, i_min_power);
-    #else
-      // Nano
-      analogWrite(VIBRATION_PIN, i_min_power);
-    #endif
+    ledcWrite(VIBRATION_PIN, i_min_power);
     ms_vibrate.stop();
     b_vibrate_on = false;
   }
@@ -478,17 +447,15 @@ void vibrateOff() {
  * Determine the current state of any LEDs before next FastLED refresh.
  */
 void updateLEDs() {
-  #if defined(__XTENSA__)
-    // ESP - Change top LED colour based on wireless connections.
-    if(i_ap_client_count > 0 || i_ws_client_count > 0) {
-      // Change to green when clients are connected remotely.
-      i_top_led_colour = C_GREEN;
-    }
-    else {
-      // Return to red if no wireless clients are connected.
-      i_top_led_colour = C_RED;
-    }
-  #endif
+  // ESP - Change top LED colour based on wireless connections.
+  if(i_ap_client_count > 0 || i_ws_client_count > 0) {
+    // Change to green when clients are connected remotely.
+    i_top_led_colour = C_GREEN;
+  }
+  else {
+    // Return to red if no wireless clients are connected.
+    i_top_led_colour = C_RED;
+  }
 
   // Update the top LED based on certain system statuses.
   switch(MENU_LEVEL) {
@@ -669,18 +636,14 @@ void checkRotaryPress() {
           // A short, single press should start or stop the music.
           attenuatorSerialSend(A_MUSIC_START_STOP);
           useVibration(i_vibrate_min_time); // Give a quick nudge.
-          #if defined(__XTENSA__)
-            debug("Music Start/Stop");
-          #endif
+          debug("Music Start/Stop");
         break;
 
         case MENU_2:
           // A short, single press should advance to the next track.
           attenuatorSerialSend(A_MUSIC_NEXT_TRACK);
           useVibration(i_vibrate_min_time); // Give a quick nudge.
-          #if defined(__XTENSA__)
-            debug("Next Track");
-          #endif
+          debug("Next Track");
         break;
       }
     break;
@@ -692,18 +655,14 @@ void checkRotaryPress() {
           // A double press should mute the pack and wand.
           attenuatorSerialSend(A_TOGGLE_MUTE);
           useVibration(i_vibrate_min_time); // Give a quick nudge.
-          #if defined(__XTENSA__)
-            debug("Toggle Mute");
-          #endif
+          debug("Toggle Mute");
         break;
 
         case MENU_2:
           // A double press should move back to the previous track.
           attenuatorSerialSend(A_MUSIC_PREV_TRACK);
           useVibration(i_vibrate_min_time); // Give a quick nudge.
-          #if defined(__XTENSA__)
-            debug("Previous Track");
-          #endif
+          debug("Previous Track");
         break;
       }
     break;
@@ -714,17 +673,13 @@ void checkRotaryPress() {
       switch(MENU_LEVEL) {
         case MENU_1:
           MENU_LEVEL = MENU_2; // Change menu level.
-          #if defined(__XTENSA__)
-            debug("Menu 2");
-          #endif
+          debug("Menu 2");
           useVibration(i_vibrate_min_time); // Give a quick nudge.
           buzzOn(784); // Tone as note G4
         break;
         case MENU_2:
           MENU_LEVEL = MENU_1; // Change menu level.
-          #if defined(__XTENSA__)
-            debug("Menu 1");
-          #endif
+          debug("Menu 1");
           useVibration(i_vibrate_min_time); // Give a quick nudge.
           buzzOn(440); // Tone as note A4
         break;
@@ -775,17 +730,13 @@ void checkRotaryEncoder() {
           case MENU_1:
             // Tell pack to increase overall volume.
             attenuatorSerialSend(A_VOLUME_INCREASE);
-            #if defined(__XTENSA__)
-              debug("Master Volume+");
-            #endif
+            debug("Master Volume+");
           break;
 
           case MENU_2:
             // Tell pack to increase effects volume.
             attenuatorSerialSend(A_VOLUME_SOUND_EFFECTS_INCREASE);
-            #if defined(__XTENSA__)
-              debug("Effects Volume+");
-            #endif
+            debug("Effects Volume+");
           break;
         }
       }
@@ -803,9 +754,7 @@ void checkRotaryEncoder() {
         i_rotary_count++;
         if(i_rotary_count % 5 == 0) {
           attenuatorSerialSend(A_WARNING_CANCELLED);
-          #if defined(__XTENSA__)
-            debug("Overheat Cancelled");
-          #endif
+          debug("Overheat Cancelled");
           i_rotary_count = 0;
         }
       }
@@ -815,17 +764,13 @@ void checkRotaryEncoder() {
           case MENU_1:
             // Tell pack to decrease overall volume.
             attenuatorSerialSend(A_VOLUME_DECREASE);
-            #if defined(__XTENSA__)
-              debug("Master Volume-");
-            #endif
+            debug("Master Volume-");
           break;
 
           case MENU_2:
             // Tell pack to decrease effects volume.
             attenuatorSerialSend(A_VOLUME_SOUND_EFFECTS_DECREASE);
-            #if defined(__XTENSA__)
-              debug("Effects Volume-");
-            #endif
+            debug("Effects Volume-");
           break;
         }
       }

@@ -22,19 +22,11 @@ Once PIO is available you can get to the Platforms and Libraries tabs to begin a
 
 Before installing a library you'll need a project in context. Alternatively, once a project is configured with libraries they will be downloaded automatically and kept up to date per an associated **platformio.ini** file.
 
-- Go to **PIO Home > Libraries**
-	- **ArduinoINA219** by Flavius Bindea (1.1.1+)
-	- **CRC32** by Christopher Baker (2.0.0+)
-	- **digitalWriteFast** by Armin Joachimsmeyer (1.2.0+)
-	- **ezButton** by ArduinoGetStarted.com (1.0.6+)
-	- **FastLED** by Daniel Garcia (3.7.4+)
-	- **Ramp** by Sylvain Garnavault (0.6.1+)
-	- **SafeString** by Matthew Ford "powerbroker2" (4.1.34+)
-	- **SerialTransfer** by PowerBroker2 (3.1.3+)
-	- **AltSoftSerial** by Paul Stoffregen (1.4.0+)
-	- **Simple ht16k33 Library** by Ipaseen (1.0.2+)
-	- **Switch** by Abhijit Bose (1.2.7+)
+1. Go to **PIO Home > Libraries**
+1. Search for the library you need to install
+1. Select the project for which the library is needed
 
+Once associated with a project, all libraries will be downloaded by PlatformIO upon opening the project.
 
 ## Command Line Tools
 

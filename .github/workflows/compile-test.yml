@@ -37,7 +37,7 @@ jobs:
         with:
           name: sketch-report-atmega
           path: ${{ env.SKETCHES_REPORTS_PATH }}
-  compile-blaster:
+  compile-platformio:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
@@ -46,69 +46,18 @@ jobs:
           python-version: '3.11'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-      - name: Build PlatformIO Project
+      - name: Compile Attenuator for Nano
+        working-directory: source/AttenuatorNano
+        run: pio run
+      - name: Compile Attenuator for ESP32
+        working-directory: source/AttenuatorESP32
+        run: pio run
+      - name: Compile SingleShot Project
         working-directory: source/SingleShot
         run: pio run
-  compile-nano:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@main
-      - uses: arduino/compile-sketches@main
-        with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            enable-deltas-report: true
-            fqbn: arduino:avr:nano
-            sketch-paths: |
-              - source/Attenuator
-            libraries: |
-              - name: ezButton
-              - name: FastLED
-              - name: Ramp
-              - name: SafeString
-              - name: SerialTransfer
-              - name: Simple ht16k33 Library
-            verbose: false
-      # This step is needed to pass the size data to the report job
-      - name: Upload sketches report to workflow artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: sketch-report-nano
-          path: ${{ env.SKETCHES_REPORTS_PATH }}
-  compile-esp32:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@main
-      - uses: arduino/compile-sketches@main
-        with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            enable-deltas-report: true
-            #platforms: |
-            #  - name: "esp32:esp32"
-            #    version: "3.0.4"
-            fqbn: esp32:esp32:esp32
-            sketch-paths: |
-              - source/Attenuator
-            libraries: |
-              - name: ArduinoJson
-              - name: AsyncTCP
-              - name: ESP Async WebServer
-              - name: ezButton
-              - name: FastLED@3.7.4
-              - name: Ramp
-              - name: SafeString
-              - name: SerialTransfer
-              - name: Simple ht16k33 Library
-              - source-url: https://github.com/DustinGrau/ElegantOTA.git
-            verbose: false
-            # Need this to ensure any warnings do not impede compilation
-            cli-compile-flags: |
-              - --warnings
-              - none
-              - --log-level
-              - error
-      # This step is needed to pass the size data to the report job
-      - name: Upload sketches report to workflow artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: sketch-report-esp32
-          path: ${{ env.SKETCHES_REPORTS_PATH }}
+  # This step is needed to pass the size data to the report job
+  - name: Upload sketches report to workflow artifact
+    uses: actions/upload-artifact@main
+    with:
+      name: sketch-report-nano
+      path: ${{ env.SKETCHES_REPORTS_PATH }}

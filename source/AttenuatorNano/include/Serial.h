@@ -23,11 +23,6 @@
 /*
  * Pack Communication
  */
-#if defined(__XTENSA__)
-  // ESP32 - Hardware Serial2 Pins
-  #define RXD2 16
-  #define TXD2 17
-#endif
 SerialTransfer packComs;
 bool b_sync_start = false; // Denotes whether pack communications have begun (initial: false).
 
@@ -181,13 +176,6 @@ void attenuatorSerialSend(uint8_t i_command, uint16_t i_value = 0) {
 
 // Sends an API to the Proton Pack
 void attenuatorSerialSendData(uint8_t i_message) {
-  uint16_t i_send_size = 0;
-
-  #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
-    // Can only debug communications when using the ESP32.
-    debug("Send Data: " + String(i_message));
-  #endif
-
   sendData.s = A_COM_START;
   sendData.m = i_message;
   sendData.s = A_COM_END;
@@ -196,39 +184,6 @@ void attenuatorSerialSendData(uint8_t i_message) {
   memset(sendData.d, 0, sizeof(sendData.d));
 
   switch(i_message) {
-    case A_SAVE_PREFERENCES_PACK:
-      #if defined(__XTENSA__)
-        #if defined(DEBUG_SERIAL_COMMS)
-          debug("Saving Pack Preferences");
-        #endif
-
-        i_send_size = packComs.txObj(packConfig);
-        packComs.sendData(i_send_size, (uint8_t) PACKET_PACK);
-      #endif
-    break;
-
-    case A_SAVE_PREFERENCES_WAND:
-      #if defined(__XTENSA__)
-        #if defined(DEBUG_SERIAL_COMMS)
-          debug("Saving Wand Preferences");
-        #endif
-
-        i_send_size = packComs.txObj(wandConfig);
-        packComs.sendData(i_send_size, (uint8_t) PACKET_WAND);
-      #endif
-    break;
-
-    case A_SAVE_PREFERENCES_SMOKE:
-      #if defined(__XTENSA__)
-        #if defined(DEBUG_SERIAL_COMMS)
-          debug("Saving Smoke Preferences");
-        #endif
-
-        i_send_size = packComs.txObj(smokeConfig);
-        packComs.sendData(i_send_size, (uint8_t) PACKET_SMOKE);
-      #endif
-    break;
-
     default:
       // No-op for all other communications.
     break;
@@ -243,10 +198,6 @@ bool checkPack() {
   // Pack communication to the Attenuator device.
   if(packComs.available() > 0) {
     uint8_t i_packet_id = packComs.currentPacketID();
-    #if defined(__XTENSA__)
-      // Advanced debugging message, only enable if absolutely needed!
-      // debug("PacketID: " + String(i_packet_id));
-    #endif
 
     if(i_packet_id > 0) {
       // Determine the type of packet which was sent by the serial1 device.
@@ -254,9 +205,6 @@ bool checkPack() {
         case PACKET_COMMAND:
           packComs.rxObj(recvCmd);
           if(recvCmd.c > 0 && recvCmd.s == A_COM_START && recvCmd.e == A_COM_END) {
-            #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
-              debug("Recv. Command: " + String(recvCmd.c));
-            #endif
             return handleCommand(recvCmd.c, recvCmd.d1);
           }
           else {
@@ -267,10 +215,6 @@ bool checkPack() {
         case PACKET_DATA:
           packComs.rxObj(recvData);
           if(recvData.m > 0 && recvData.s == A_COM_START && recvData.e == A_COM_END) {
-            #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
-              debug("Recv. Message: " + String(recvData.m));
-            #endif
-
             switch(recvData.m) {
               case A_VOLUME_SYNC:
                 // Only applies to ESP32 for the web UI.
