@@ -52,7 +52,7 @@ fi
 # Restore flag(s) from compilation
 sed -i -e 's/b_wait_for_pack = false/b_wait_for_pack = true/' ${PROJECT_DIR}/include/Configuration.h
 
-rm -f ${PROJECT_DIR}/*.h-e
+rm -f ${PROJECT_DIR}/include/*.h-e
 
 echo "Done."
 echo ""
