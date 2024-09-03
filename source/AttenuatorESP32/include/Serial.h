@@ -180,7 +180,7 @@ void attenuatorSerialSend(uint8_t i_command, uint16_t i_value = 0) {
 void attenuatorSerialSendData(uint8_t i_message) {
   uint16_t i_send_size = 0;
 
-  #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
+  #if defined(DEBUG_SERIAL_COMMS)
     // Can only debug communications when using the ESP32.
     debug("Send Data: " + String(i_message));
   #endif
@@ -251,7 +251,7 @@ bool checkPack() {
         case PACKET_COMMAND:
           packComs.rxObj(recvCmd);
           if(recvCmd.c > 0 && recvCmd.s == A_COM_START && recvCmd.e == A_COM_END) {
-            #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
+            #if defined(DEBUG_SERIAL_COMMS)
               debug("Recv. Command: " + String(recvCmd.c));
             #endif
             return handleCommand(recvCmd.c, recvCmd.d1);
@@ -264,7 +264,7 @@ bool checkPack() {
         case PACKET_DATA:
           packComs.rxObj(recvData);
           if(recvData.m > 0 && recvData.s == A_COM_START && recvData.e == A_COM_END) {
-            #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
+            #if defined(DEBUG_SERIAL_COMMS)
               debug("Recv. Message: " + String(recvData.m));
             #endif
 
@@ -925,7 +925,7 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case A_BATTERY_VOLTAGE_PACK:
-      #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
+      #if defined(DEBUG_SERIAL_COMMS)
         debug("Pack Voltage (x100): " + String(i_value));
       #endif
 
@@ -935,7 +935,7 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case A_WAND_POWER_AMPS:
-      #if defined(__XTENSA__) && defined(DEBUG_SERIAL_COMMS)
+      #if defined(DEBUG_SERIAL_COMMS)
         debug("Wand Current (x100): " + String(i_value));
       #endif
 

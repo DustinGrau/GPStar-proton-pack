@@ -23,14 +23,8 @@
 /*
  * Pin for Addressable LEDs.
  */
-#if defined(__XTENSA__)
-  // ESP32
-  #define DEVICE_LED_PIN 23
-  #define BUILT_IN_LED 2
-#else
-  // Nano
-  #define DEVICE_LED_PIN 9
-#endif
+#define DEVICE_LED_PIN 23
+#define BUILT_IN_LED 2
 // States there are 3 LEDs: Top, Upper, and Lower
 #define DEVICE_NUM_LEDS 3
 CRGB device_leds[DEVICE_NUM_LEDS];
@@ -94,15 +88,8 @@ bool b_top_led_off = false; // Denotes when top LED is mid-blink.
  * buzzOn(698); // F4
  * buzzOn(784); // G4
  */
-#if defined(__XTENSA__)
-  // ESP32
-  #define BUZZER_PIN 18
-  #define VIBRATION_PIN 19
-#else
-  // Nano
-  #define BUZZER_PIN 10
-  #define VIBRATION_PIN 11
-#endif
+#define BUZZER_PIN 18
+#define VIBRATION_PIN 19
 millisDelay ms_buzzer;
 millisDelay ms_vibrate;
 bool b_buzzer_on = false; // Denotes when pieze buzzer is active.
@@ -189,19 +176,10 @@ bool b_christmas = false; // Used in HOLIDAY mode to change from orange/purple t
  * Toggle Switches
  * Will be pulled LOW (down position) when considered "on".
  */
-#if defined(__XTENSA__)
-  // ESP32
-  #define LEFT_TOGGLE_PIN 34
-  #define RIGHT_TOGGLE_PIN 35
-  ezButton switch_left(LEFT_TOGGLE_PIN, EXTERNAL_PULLUP);
-  ezButton switch_right(RIGHT_TOGGLE_PIN, EXTERNAL_PULLUP);
-#else
-  // Nano
-  #define LEFT_TOGGLE_PIN 5
-  #define RIGHT_TOGGLE_PIN 6
-  ezButton switch_left(LEFT_TOGGLE_PIN, INTERNAL_PULLUP);
-  ezButton switch_right(RIGHT_TOGGLE_PIN, INTERNAL_PULLUP);
-#endif
+#define LEFT_TOGGLE_PIN 34
+#define RIGHT_TOGGLE_PIN 35
+ezButton switch_left(LEFT_TOGGLE_PIN, EXTERNAL_PULLUP);
+ezButton switch_right(RIGHT_TOGGLE_PIN, EXTERNAL_PULLUP);
 bool b_left_toggle_on = false;
 bool b_right_toggle_on = false;
 bool b_right_toggle_center_start = false;
@@ -215,17 +193,9 @@ const uint8_t rotary_debounce_time = 100;
 /*
  * Rotary encoder for various uses.
  */
-#if defined(__XTENSA__)
-  // ESP32
-  #define r_encoderA 32
-  #define r_encoderB 33
-  #define r_button 4
-#else
-  // Nano
-  #define r_encoderA 2
-  #define r_encoderB 3
-  #define r_button 4
-#endif
+#define r_encoderA 32
+#define r_encoderB 33
+#define r_button 4
 ezButton encoder_center(r_button); // For center-press on encoder dial.
 millisDelay ms_rotary_debounce; // Put some timing on the rotary so we do not overload the serial communication buffer.
 millisDelay ms_center_double_tap; // Timer for determinine when a double-tap was detected.
