@@ -23,11 +23,6 @@
 //#define DEBUG_SEND_TO_CONSOLE  // Send any messages to the serial (USB) console.
 
 /*
- * Used to reflect the last build date for the binary.
- */
-String build_date = "20240903015721";
-
-/*
  * Enable Physical Feedback Effects (Sound + Vibration)
  */
 bool b_enable_buzzer = true; // Enable/disable all buzzing via the local piezo buzzer
