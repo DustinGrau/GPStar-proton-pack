@@ -620,7 +620,7 @@ bool musicTrackStatus() {
   switch(AUDIO_DEVICE) {
     case A_WAV_TRIGGER:
     case A_GPSTAR_AUDIO:
-      return audio.currentMusicTrackStatus(i_current_music_track);
+      return audio.currentTrackStatus(i_current_music_track);
     break;
 
     case A_NONE:
@@ -726,7 +726,7 @@ bool setupAudioDevice() {
 
   char gVersion[VERSION_STRING_LEN];
 
-  audio.start();
+  audio.start(Serial3);
 
   delay(10);
 
