@@ -65,7 +65,9 @@ void setup() {
   Serial2.begin(9600); // Communication to the Neutrona Wand.
 
   // Initialize an optional power meter on the i2c bus.
-  powerMeterInit();
+  if(b_use_power_meter) {
+    powerMeterInit();
+  }
 
   // Connect the serial ports.
   serial1Coms.begin(Serial1, false); // Attenuator/Wireless
@@ -228,8 +230,10 @@ void loop() {
   // Update the available audio device.
   updateAudio();
 
-  // Check current voltage/amperage draw using available methods.
-  checkPowerMeter();
+  // Check current voltage/amperage draw using available methods if enabled.
+  if(b_use_power_meter) {
+    checkPowerMeter();
+  }
 
   // Check for any new serial commands were received from the Neutrona Wand.
   checkWand();
@@ -819,7 +823,7 @@ void packStartup(bool firstStart) {
 
       case SYSTEM_1989:
         playEffect(S_GB2_PACK_START);
-        playEffect(S_GB2_PACK_LOOP, true, i_volume_effects, true, 3000);
+        playEffect(S_GB2_PACK_LOOP, true, i_volume_effects, true, 3800);
       break;
 
       case SYSTEM_AFTERLIFE:
@@ -4369,7 +4373,7 @@ void modeFireStartSounds() {
             switch(SYSTEM_YEAR) {
               case SYSTEM_1984:
                 playEffect(S_GB1_1984_FIRE_START_SHORT, false, i_volume_effects, false, 0, false);
-                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 1350, false);
+                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 250, false);
               break;
 
               case SYSTEM_1989:
@@ -4379,13 +4383,13 @@ void modeFireStartSounds() {
 
               case SYSTEM_AFTERLIFE:
               default:
-                playEffect(S_GB1_FIRE_START, false, i_volume_effects, false, 0, false);
-                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 1000, false);
+                playEffect(S_AFTERLIFE_FIRE_START, false, i_volume_effects, false, 0, false);
+                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 275, false);
               break;
 
               case SYSTEM_FROZEN_EMPIRE:
                 playEffect(S_FROZEN_EMPIRE_FIRE_START, false, i_volume_effects, false, 0, false);
-                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 1000, false);
+                playEffect(S_GB1_1984_FIRE_LOOP_PACK, true, i_volume_effects, true, 200, false);
               break;
             }
 
@@ -4402,11 +4406,11 @@ void modeFireStartSounds() {
             }
             else if(SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
               playEffect(S_FROZEN_EMPIRE_FIRE_START, false, i_volume_effects, false, 0, false);
-              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 800, false);
+              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 300, false);
             }
             else {
               playEffect(S_FIRE_START, false, i_volume_effects, false, 0, false);
-              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 1000, false);
+              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 300, false);
             }
 
             b_sound_firing_alt_trigger = true;
@@ -4442,11 +4446,11 @@ void modeFireStartSounds() {
             if(SYSTEM_YEAR == SYSTEM_1984) {
               playEffect(S_GB1_1984_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 1700, false);
             }
-            else if(SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
-              playEffect(S_GB1_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 800, false);
+            else if(SYSTEM_YEAR == SYSTEM_1989) {
+              playEffect(S_GB1_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 700, false);
             }
             else {
-              playEffect(S_GB1_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 700, false);
+              playEffect(S_GB1_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 300, false);
             }
           }
           else {
@@ -4456,14 +4460,14 @@ void modeFireStartSounds() {
           if(b_firing_alt == true) {
             // Reset some sound triggers.
             b_sound_firing_alt_trigger = true;
-            if(SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
-              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 800, false);
+            if(SYSTEM_YEAR == SYSTEM_1989) {
+              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 700, false);
             }
             else if(SYSTEM_YEAR == SYSTEM_1984) {
               playEffect(S_GB1_1984_FIRE_HIGH_POWER_LOOP, true, i_volume_effects, true, 1700, false);
             }
             else {
-              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 700, false);
+              playEffect(S_FIRING_LOOP_GB1, true, i_volume_effects, true, 300, false);
             }
           }
           else {
@@ -4476,7 +4480,7 @@ void modeFireStartSounds() {
     case SLIME:
       stopEffect(S_SLIME_END);
       playEffect(S_SLIME_START, false, i_volume_effects, false, 0, false);
-      playEffect(S_SLIME_LOOP, true, i_volume_effects, true, 1500, false);
+      playEffect(S_SLIME_LOOP, true, i_volume_effects, true, 850, false);
     break;
 
     case STASIS:
@@ -4636,7 +4640,7 @@ void modeFireStopSounds() {
 
             case SYSTEM_FROZEN_EMPIRE:
               // Frozen Empire replaces all firing tail sounds with just a "thump".
-              playEffect(S_FROZEN_EMPIRE_FIRE_END, false, i_volume_effects, false, 0, false);
+              playEffect(S_AFTERLIFE_FIRE_END_MID, false, i_volume_effects, false, 0, false);
             break;
           }
         break;
@@ -5712,7 +5716,7 @@ void startWandMashLockout(uint16_t i_timeout) {
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
         break;
         case SYSTEM_FROZEN_EMPIRE:
-          stopEffect(S_FROZEN_EMPIRE_FIRE_END);
+          stopEffect(S_AFTERLIFE_FIRE_END_MID);
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_END);
           stopEffect(S_AFTERLIFE_CROSS_THE_STREAMS_START);
         break;

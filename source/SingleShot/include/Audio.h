@@ -726,15 +726,15 @@ bool setupAudioDevice() {
 
   char gVersion[VERSION_STRING_LEN];
 
-  // Configure to use the hardware Serial3 port.
   Serial3.begin(57600);
-  audio.start(Serial3);
 
-  delay(10);
+  audio.start(Serial3);
 
   // Ask for some Wav Trigger information.
   audio.requestVersionString();
   audio.requestSystemInfo();
+
+  delay(10);
 
   // Stop all tracks.
   audio.stopAllTracks();

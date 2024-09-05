@@ -65,7 +65,7 @@ void settingsMenuCheck() {
           // Intensify: Enable/Disable Music Track Looping
           if(b_playing_music && switch_intensify.pushed()) {
             toggleMusicLoop();
-            debugln("Toggle Music Loop");
+            debugln(F("Toggle Music Loop"));
           }
 
           // Grip: Exits the menu system
@@ -78,13 +78,13 @@ void settingsMenuCheck() {
             if(encoder.STATE == ENCODER_CW) {
               // Increase the master system volume.
               increaseVolume();
-              debug("Menu, System Vol+ ");
+              debug(F("Menu, System Vol+ "));
               debugln(i_volume_master);
             }
             else if(encoder.STATE == ENCODER_CCW) {
               // Decrease the master system volume.
               decreaseVolume();
-              debug("Menu, System Vol- ");
+              debug(F("Menu, System Vol- "));
               debugln(i_volume_master);
             }
           }
@@ -96,13 +96,13 @@ void settingsMenuCheck() {
             if(encoder.STATE == ENCODER_CW) {
               // Increase the effects volume.
               increaseVolumeEffects();
-              debug("Menu, Effects Vol+ ");
+              debug(F("Menu, Effects Vol+ "));
               debugln(i_volume_effects);
             }
             else if(encoder.STATE == ENCODER_CCW) {
               // Decrease the effects volume.
               decreaseVolumeEffects();
-              debug("Menu, Effects Vol- ");
+              debug(F("Menu, Effects Vol- "));
               debugln(i_volume_effects);
             }
           }
@@ -112,13 +112,13 @@ void settingsMenuCheck() {
           // Intensify: Previous Track
           if(b_playing_music && switch_intensify.pushed()) {
             musicPrevTrack();
-            debugln("Prev Track");
+            debugln(F("Prev Track"));
           }
 
           // Grip: Next Track
           if(b_playing_music && switch_grip.pushed()) {
             musicNextTrack();
-            debugln("Next Track");
+            debugln(F("Next Track"));
           }
         break;
 
@@ -127,11 +127,11 @@ void settingsMenuCheck() {
           if(switch_intensify.pushed()) {
             if(!b_playing_music) {
               playMusic();
-              debugln("Play Music");
+              debugln(F("Play Music"));
             }
             else {
               stopMusic();
-              debugln("Stop Music");
+              debugln(F("Stop Music"));
             }
           }
 
@@ -140,13 +140,13 @@ void settingsMenuCheck() {
             if(encoder.STATE == ENCODER_CW) {
               // Increase the music volume.
               increaseVolumeMusic();
-              debug("Menu, Music Vol+ ");
+              debug(F("Menu, Music Vol+ "));
               debugln(i_volume_music);
             }
             else if(encoder.STATE == ENCODER_CCW) {
               // Decrease the music volume.
               decreaseVolumeMusic();
-              debug("Menu, Music Vol- ");
+              debug(F("Menu, Music Vol- "));
               debugln(i_volume_music);
             }
           }
@@ -438,13 +438,13 @@ void checkEncoderAction() {
         if(encoder.STATE == ENCODER_CW) {
             // Increase the music volume.
             increaseVolumeMusic();
-            debug("Device Off, Music Vol+ ");
+            debug(F("Device Off, Music Vol+ "));
             debugln(i_volume_music);
         }
         else if(encoder.STATE == ENCODER_CCW) {
             // Decrease the music volume.
             decreaseVolumeMusic();
-            debug("Device Off, Music Vol- ");
+            debug(F("Device Off, Music Vol- "));
             debugln(i_volume_music);
         }
       }
@@ -478,13 +478,13 @@ void checkEncoderAction() {
       if(encoder.STATE == ENCODER_CW) {
         // Increase the overall system volume.
         increaseVolume();
-        debug("Error, System Vol+ ");
+        debug(F("Error, System Vol+ "));
         debugln(i_volume_master);
       }
       else if(encoder.STATE == ENCODER_CCW) {
         // Decrease the overall system volume.
         decreaseVolume();
-        debug("Error, System Vol- ");
+        debug(F("Error, System Vol- "));
         debugln(i_volume_master);
       }
     break; // MODE_ERROR
@@ -518,13 +518,13 @@ void checkEncoderAction() {
           if(encoder.STATE == ENCODER_CW) {
             // Increase the master system volume.
             increaseVolume();
-            debug("Device On, System Vol+ ");
+            debug(F("Device On, System Vol+ "));
             debugln(i_volume_master);
           }
           else if(encoder.STATE == ENCODER_CCW) {
             // Decrease the master system volume.
             decreaseVolume();
-            debug("Device On, System Vol- ");
+            debug(F("Device On, System Vol- "));
             debugln(i_volume_master);
           }
         }

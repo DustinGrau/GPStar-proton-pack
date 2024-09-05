@@ -27,7 +27,7 @@
 #endif
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // Debug macros
 #if DEBUG == 1
