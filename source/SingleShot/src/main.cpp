@@ -21,6 +21,11 @@
 // Required for PlatformIO
 #include <Arduino.h>
 
+// Specify all #define statements for task scheduler first
+#define _TASK_SCHEDULING_OPTIONS
+#define _TASK_SLEEP_ON_IDLE_RUN
+#include <TaskScheduler.h>
+
 // Defines the microcontroller as part of a GPStar PCB
 #if defined(__AVR_ATmega2560__)
   #define GPSTAR_NEUTRONA_DEVICE_PCB
@@ -64,6 +69,19 @@
 #include "Preferences.h"
 #include "System.h"
 #include "Actions.h"
+
+// Forward declaration of task callback(s)
+void animateTaskCallback();
+void inputTaskCallback();
+
+// Create the task scheduler
+Scheduler schedule;
+
+// Create a task to run every 15ms to update LED animations
+Task animateTask(15, TASK_FOREVER, &animateTaskCallback);
+
+// Task to check for user inputs via switches/encoders
+Task inputsTask(100, TASK_FOREVER, &inputTaskCallback);
 
 void setup() {
   Serial.begin(9600); // Standard serial (USB) console.
@@ -135,11 +153,26 @@ void setup() {
   // Make sure lights are off, including the bargraph.
   allLightsOff();
 
-  // System Power On Self Test
+  // Set the options for the task so that it "catches up" if there is a delay.
+  animateTask.setSchedulingOption(TASK_SCHEDULE);
+  inputsTask.setSchedulingOption(TASK_SCHEDULE);
+
+  // System POST (Power On Self Test)
   systemPOST();
 }
 
 void loop() {
+  // Task execution via the scheduler.
+  schedule.execute();
+}
+
+// Task callback for handling animations.
+void animateTaskCallback() {
+  debugln("animateTaskCallback");
+}
+
+// Task callback for handling user inputs.
+void inputTaskCallback() {
   updateAudio(); // Update the state of the selected sound board.
 
   checkMusic(); // Music control is here since in standalone mode.
@@ -147,4 +180,6 @@ void loop() {
   switchLoops(); // Poll for switch/button changes via user inputs.
 
   mainLoop(); // Continue on to the main loop for taking actions.
+
+  debugln("inputTaskCallback");
 }
