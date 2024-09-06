@@ -22,8 +22,11 @@
 #include <Arduino.h>
 
 // Specify all #define statements for task scheduler first
+// See: https://github.com/arkhipenko/TaskScheduler/tree/master/examples
 #define _TASK_SCHEDULING_OPTIONS
 #define _TASK_SLEEP_ON_IDLE_RUN
+#define _TASK_TIMECRITICAL
+// See: https://github.com/arkhipenko/TaskScheduler/wiki/API-Documentation
 #include <TaskScheduler.h>
 
 // Defines the microcontroller as part of a GPStar PCB
@@ -32,7 +35,7 @@
 #endif
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // Debug macros
 #if DEBUG == 1
@@ -70,19 +73,21 @@
 #include "System.h"
 #include "Actions.h"
 
-// Forward declaration of task callback(s)
+// Forward declaration of scheduler task callback(s).
 void animateTaskCallback();
 void inputTaskCallback();
 
-// Create the task scheduler
+// Create the primary task scheduler.
 Scheduler schedule;
 
-// Create a task to run every 15ms to update LED animations.
-// This will reflect a refresh rate equivalent to 60fps.
-Task animateTask(15, TASK_FOREVER, &animateTaskCallback);
+// Create a task to handle all updates for LED/Bargraph animations.
+// 33ms reflects a refresh rate equivalent to 30fps.
+// 16ms reflects a refresh rate equivalent to 60fps.
+Task animateTask(16, TASK_FOREVER, &animateTaskCallback);
 
-// Task to check for user inputs via switches/encoders.
-Task inputsTask(20, TASK_FOREVER, &inputTaskCallback);
+// Create a task to check for user inputs via switches/encoders.
+// Average visual reaction time to changes is 13-20ms.
+Task inputsTask(15, TASK_FOREVER, &inputTaskCallback);
 
 void setup() {
   Serial.begin(9600); // Standard serial (USB) console.
@@ -151,11 +156,11 @@ void setup() {
   // Execute the System POST (Power On Self Test)
   systemPOST();
 
-  // Set the options for the task so that it "catches up" if there is a delay.
+  // Set the options for the tasks so that it "catches up" if there is a delay.
   animateTask.setSchedulingOption(TASK_SCHEDULE);
   inputsTask.setSchedulingOption(TASK_SCHEDULE);
 
-  // Initialise the task scheduler and start the tasks.
+  // Initialize the task scheduler and enable the core tasks.
   schedule.init();
   schedule.addTask(animateTask);
   schedule.addTask(inputsTask);
