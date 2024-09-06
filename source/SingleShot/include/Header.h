@@ -24,14 +24,6 @@
 #define WIRE Wire
 
 /*
- * Delay for fastled to update the addressable LEDs.
- * 0.03 ms to update 1 LED. So 1.47 ms should be okay? Let's bump it up to 3 just in case.
- */
-#define FAST_LED_UPDATE_MS 3
-uint8_t i_fast_led_delay = FAST_LED_UPDATE_MS; // Default delay via standard definition
-millisDelay ms_fast_led; // Timer for all updates to addressable LEDs across the device
-
-/*
  * Device state.
  * Typically either on or off, but could be in an intermediate error state.
  */
@@ -290,26 +282,10 @@ millisDelay ms_settings_blinking;
  * Misc device settings and flags.
  */
 bool b_firing = false; // Check for general firing state.
-bool b_firing_intensify = false; // Check for Intensify button activity.
 bool b_firing_alt = false; // Check for grip button firing activity.
 bool b_firing_semi_automatic = false; // Check for semi-automatic firing modes.
-bool b_sound_firing_intensify_trigger = false;
 bool b_sound_firing_alt_trigger = false;
 bool b_device_boot_error_on = false;
-
-/*
- * Button Mashing Lock-out - Prevents excessive user input via the primary/secondary firing buttons.
- * This ensures that the user is not exceeding what would be considered "normal" for firing of the device,
- * otherwise an error mode will be engaged to provide a cool-down period. This does not apply to any
- * prolonged firing which would trigger the overheat or venting sequences; only rapid firing bursts.
- */
-millisDelay ms_bmash;              // Timer for the button mash lock-out period.
-uint16_t i_bmash_delay = 2000;     // Time period in which we consider rapid firing.
-uint16_t i_bmash_cool_down = 3000; // Time period for the lock-out of user input.
-uint8_t i_bmash_count = 0;         // Current count for rapid firing bursts.
-uint8_t i_bmash_max = 7;           // Burst count we consider before the lock-out.
-uint8_t i_bmash_spark_index = 0;   // Current spark number for the spark effect (0~2).
-bool b_device_mash_error = false;    // Indicates if device is in a lock-out phase.
 
 /*
  * A timer to turn on some Single-Shot Blaster lights when the system is shut down after some inactivity, as a reminder you left your power on to the system.

@@ -594,42 +594,9 @@ void checkGeneralTimers() {
   if(ms_slo_blo_blink.justFinished()) {
     ms_slo_blo_blink.start(i_slo_blo_blink_delay);
   }
-
-  // Update all addressable LEDs and restart the timer.
-  if(ms_fast_led.justFinished()) {
-    FastLED.show();
-    ms_fast_led.start(i_fast_led_delay);
-  }
-}
-
-void mainLoop() {
-  // Get the current state of any input devices (toggles, buttons, and switches).
-  checkRotaryEncoder();
-  checkMenuVibration();
-
-  // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
-  checkDeviceAction();
-
-  // Update bargraph with latest state and pattern changes.
-  if(ms_firing_pulse.isRunning()) {
-    // Increase the speed for updates while this timer is still running.
-    bargraphUpdate(POWER_LEVEL - 1);
-  }
-  else {
-    // Otherwise run with the standard timing.
-    bargraphUpdate();
-  }
-
-  // Keep the cyclotron spinning as necessary.
-  checkCyclotron();
-
-  // Perform updates/actions based on timer events.
-  checkGeneralTimers();
 }
 
 void modeFireStart() {
-  i_fast_led_delay = FAST_LED_UPDATE_MS;
-
   //modeFireStartSounds();
 
   // Just in case a semi-auto was fired before we started firing a stream, stop its timer.
@@ -643,7 +610,6 @@ void modeFireStart() {
 
 void modeFireStopSounds() {
   // Reset some sound triggers.
-  b_sound_firing_intensify_trigger = false;
   b_sound_firing_alt_trigger = false;
 
   ms_single_blast.stop();
@@ -653,7 +619,6 @@ void modeFireStop() {
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   b_firing = false;
-  b_firing_intensify = false;
   b_firing_alt = false;
 
   led_Hat2.turnOn(); // Make sure we turn on hat light 2 in case it's off as well.
@@ -667,14 +632,6 @@ void modeFireStop() {
 
 void modeFiring() {
   // Sound trigger flags.
-  if(b_firing_intensify && !b_sound_firing_intensify_trigger) {
-    b_sound_firing_intensify_trigger = true;
-  }
-
-  if(!b_firing_intensify && b_sound_firing_intensify_trigger) {
-    b_sound_firing_intensify_trigger = false;
-  }
-
   if(b_firing_alt && !b_sound_firing_alt_trigger) {
     b_sound_firing_alt_trigger = true;
   }
@@ -735,29 +692,18 @@ void deviceOff() {
   stopEffect(S_BOOTUP);
   //stopEffect(S_SMASH_ERROR_RESTART);
 
-  if(DEVICE_ACTION_STATUS == ACTION_ERROR && !b_device_boot_error_on && !b_device_mash_error) {
+  if(DEVICE_ACTION_STATUS == ACTION_ERROR && !b_device_boot_error_on) {
     // We are exiting Device Boot Error, so change device state back to off/idle.
     DEVICE_STATUS = MODE_OFF;
     DEVICE_ACTION_STATUS = ACTION_IDLE;
   }
-  else if(DEVICE_ACTION_STATUS != ACTION_ERROR && (b_device_boot_error_on || b_device_mash_error)) {
+  else if(DEVICE_ACTION_STATUS != ACTION_ERROR && (b_device_boot_error_on)) {
     // We are entering either Device Boot Error mode or Button Mash Timeout mode, so do nothing.
   }
   else {
     // Full device shutdown in all other situations.
     DEVICE_STATUS = MODE_OFF;
     DEVICE_ACTION_STATUS = ACTION_IDLE;
-
-    if(b_device_mash_error) {
-      // stopEffect(S_SMASH_ERROR_LOOP);
-      // stopEffect(S_SMASH_ERROR_RESTART);
-    }
-
-    // Turn off any barrel spark effects and reset the button mash lockout.
-    if(b_device_mash_error) {
-      barrelLightsOff();
-      b_device_mash_error = false;
-    }
 
     stopEffect(S_SHUTDOWN);
     playEffect(S_SHUTDOWN);
@@ -771,13 +717,6 @@ void deviceOff() {
   if(b_firing) {
     modeFireStop();
   }
-
-  if(DEVICE_ACTION_STATUS != ACTION_ERROR && b_device_mash_error) {
-    // playEffect(S_DEVICE_MASH_ERROR);
-  }
-
-  // Clear counter until user begins firing again.
-  i_bmash_count = 0;
 
   // Turn off some timers.
   ms_cyclotron.stop();
@@ -812,24 +751,18 @@ void modeError() {
   DEVICE_STATUS = MODE_ERROR;
   DEVICE_ACTION_STATUS = ACTION_ERROR;
 
-  if(!b_device_mash_error) {
-    // This is used for controlling the bargraph beeping while in boot error mode.
-    ms_hat_1.start(i_hat_2_delay * 4);
-    ms_hat_2.start(i_hat_2_delay);
-    ms_settings_blinking.start(i_settings_blinking_delay);
+  // This is used for controlling the bargraph beeping while in boot error mode.
+  ms_hat_1.start(i_hat_2_delay * 4);
+  ms_hat_2.start(i_hat_2_delay);
+  ms_settings_blinking.start(i_settings_blinking_delay);
 
-    playEffect(S_BEEPS_LOW);
-    playEffect(S_BEEPS);
-    playEffect(S_BEEPS);
-  }
-  else if(b_device_mash_error) {
-    // playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
-  }
+  playEffect(S_BEEPS_LOW);
+  playEffect(S_BEEPS);
+  playEffect(S_BEEPS);
 }
 
 void modePulseStart() {
   // Handles all "pulsed" fire modes.
-  i_fast_led_delay = FAST_LED_UPDATE_MS;
   barrelLightsOff();
 
   playEffect(S_FIRE_BLAST, false, i_volume_effects, false, 0, false);
@@ -848,70 +781,20 @@ void fireControlCheck() {
       return;
     }
 
-    if(i_bmash_count >= i_bmash_max) {
-      // User has exceeded "normal" firing rate.
+    if((switch_intensify.on() || switch_grip.on()) && switch_device.on() && switch_vent.on()) {
       switch(STREAM_MODE) {
         case PROTON:
         default:
-          stopEffect(S_FIRE_BLAST);
+          if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
+            DEVICE_ACTION_STATUS = ACTION_FIRING;
+          }
         break;
       }
-
-      b_device_mash_error = true;
-      modeError();
-      //deviceTipSpark();
-
-      // Adjust the cool down lockout period based on the power level.
-      switch(POWER_LEVEL) {
-        case LEVEL_1:
-        default:
-          ms_bmash.start(i_bmash_cool_down);
-        break;
-        case LEVEL_2:
-          ms_bmash.start(i_bmash_cool_down + 500);
-        break;
-        case LEVEL_3:
-          ms_bmash.start(i_bmash_cool_down + 1000);
-        break;
-        case LEVEL_4:
-          ms_bmash.start(i_bmash_cool_down + 1500);
-        break;
-        case LEVEL_5:
-          ms_bmash.start(i_bmash_cool_down + 2000);
-        break;
-      }
-    }
-    else {
-      if(switch_intensify.on() && switch_device.on() && switch_vent.on()) {
-        switch(STREAM_MODE) {
-          case PROTON:
-          default:
-            if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
-              DEVICE_ACTION_STATUS = ACTION_FIRING;
-            }
-
-            if(ms_bmash.remaining() < 1) {
-              // Clear counter/timer until user begins firing.
-              i_bmash_count = 0;
-              ms_bmash.start(i_bmash_delay);
-            }
-
-            if(!b_firing_intensify) {
-              // Increase count each time the user presses a firing button.
-              i_bmash_count++;
-            }
-
-            b_firing_intensify = true;
-          break;
-        }
-      }
-
-      if(STREAM_MODE == PROTON && DEVICE_ACTION_STATUS == ACTION_FIRING) {
-        if(switch_grip.on()) {
-          b_firing_alt = true;
-        }
-      }
-      else if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
+debugln(STREAM_MODE == PROTON);
+debugln(DEVICE_ACTION_STATUS == ACTION_FIRING);
+debug("grip_button:");
+debugln(switch_grip.on());
+      if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
         switch(STREAM_MODE) {
           case PROTON:
             // Handle Primary Blast fire start here.
@@ -935,12 +818,10 @@ void fireControlCheck() {
         switch(STREAM_MODE) {
           case PROTON:
           default:
-            if(b_firing && b_firing_intensify) {
+            if(b_firing) {
               if(!b_firing_alt) {
                 DEVICE_ACTION_STATUS = ACTION_IDLE;
               }
-
-              b_firing_intensify = false;
             }
           break;
         }
@@ -1009,12 +890,7 @@ void modeActivate() {
 
     // Proper startup. Continue booting up the device.
     DEVICE_ACTION_STATUS = ACTION_IDLE;
-
-    // Clear counter until user begins firing.
-    i_bmash_count = 0;
   }
-
-  b_device_mash_error = false;
 
   postActivation(); // Enable lights and bargraph after device activation.
 }
@@ -1121,6 +997,7 @@ void deviceExitMenu() {
   if(DEVICE_STATUS == MODE_ON && bargraph.STATE == BG_OFF) {
     bargraph.reset(); // Enable bargraph for use (resets variables and turns it on).
     bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
+    led_SloBlo.turnOn();
   }
 }
 

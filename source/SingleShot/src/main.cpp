@@ -32,7 +32,7 @@
 #endif
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -77,11 +77,12 @@ void inputTaskCallback();
 // Create the task scheduler
 Scheduler schedule;
 
-// Create a task to run every 15ms to update LED animations
+// Create a task to run every 15ms to update LED animations.
+// This will reflect a refresh rate equivalent to 60fps.
 Task animateTask(15, TASK_FOREVER, &animateTaskCallback);
 
-// Task to check for user inputs via switches/encoders
-Task inputsTask(100, TASK_FOREVER, &inputTaskCallback);
+// Task to check for user inputs via switches/encoders.
+Task inputsTask(20, TASK_FOREVER, &inputTaskCallback);
 
 void setup() {
   Serial.begin(9600); // Standard serial (USB) console.
@@ -135,14 +136,8 @@ void setup() {
     readEEPROM();
   }
 
-  // Start the button mash check timer.
-  ms_bmash.start(0);
-
   // Start up some timers for MODE_ORIGINAL.
   ms_slo_blo_blink.start(i_slo_blo_blink_delay);
-
-  // Initialize the fastLED state update timer.
-  ms_fast_led.start(i_fast_led_delay);
 
   // Check music timer for bench test mode only.
   ms_check_music.start(i_music_check_delay);
@@ -153,12 +148,19 @@ void setup() {
   // Make sure lights are off, including the bargraph.
   allLightsOff();
 
+  // Execute the System POST (Power On Self Test)
+  systemPOST();
+
   // Set the options for the task so that it "catches up" if there is a delay.
   animateTask.setSchedulingOption(TASK_SCHEDULE);
   inputsTask.setSchedulingOption(TASK_SCHEDULE);
 
-  // System POST (Power On Self Test)
-  systemPOST();
+  // Initialise the task scheduler and start the tasks.
+  schedule.init();
+  schedule.addTask(animateTask);
+  schedule.addTask(inputsTask);
+  animateTask.enable();
+  inputsTask.enable();
 }
 
 void loop() {
@@ -168,18 +170,38 @@ void loop() {
 
 // Task callback for handling animations.
 void animateTaskCallback() {
-  debugln("animateTaskCallback");
+  // Update bargraph with latest state and pattern changes.
+  if(ms_firing_pulse.isRunning()) {
+    // Increase the speed for updates while this timer is still running.
+    bargraphUpdate(POWER_LEVEL - 1);
+  }
+  else {
+    // Otherwise run with the standard timing.
+    bargraphUpdate();
+  }
+
+  // Keep the cyclotron spinning as necessary.
+  checkCyclotron();
+
+  // Update all addressable LEDs to reflect any changes.
+  FastLED.show();
 }
 
 // Task callback for handling user inputs.
 void inputTaskCallback() {
-  updateAudio(); // Update the state of the selected sound board.
+  updateAudio(); // Update the state of the available sound board.
 
-  checkMusic(); // Music control is here since in standalone mode.
+  checkMusic(); // Perform music control here as this is a standalone device.
 
-  switchLoops(); // Poll for switch/button changes via user inputs.
+  switchLoops(); // Standard polling for switch/button changes via user inputs.
 
-  mainLoop(); // Continue on to the main loop for taking actions.
+  // Get the current state of any input devices (toggles, buttons, and switches).
+  checkRotaryEncoder();
+  checkMenuVibration();
 
-  debugln("inputTaskCallback");
+  // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
+  checkDeviceAction();
+
+  // Perform updates/actions based on timer events.
+  checkGeneralTimers();
 }
