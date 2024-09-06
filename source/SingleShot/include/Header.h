@@ -282,8 +282,10 @@ millisDelay ms_settings_blinking;
  * Misc device settings and flags.
  */
 bool b_firing = false; // Check for general firing state.
+bool b_firing_intensify = false; // Check for Intensify button activity.
 bool b_firing_alt = false; // Check for grip button firing activity.
 bool b_firing_semi_automatic = false; // Check for semi-automatic firing modes.
+bool b_sound_firing_intensify_trigger = false;
 bool b_sound_firing_alt_trigger = false;
 bool b_device_boot_error_on = false;
 

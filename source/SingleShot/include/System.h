@@ -610,6 +610,7 @@ void modeFireStart() {
 
 void modeFireStopSounds() {
   // Reset some sound triggers.
+  b_sound_firing_intensify_trigger = false;
   b_sound_firing_alt_trigger = false;
 
   ms_single_blast.stop();
@@ -619,6 +620,7 @@ void modeFireStop() {
   DEVICE_ACTION_STATUS = ACTION_IDLE;
 
   b_firing = false;
+  b_firing_intensify = false;
   b_firing_alt = false;
 
   led_Hat2.turnOn(); // Make sure we turn on hat light 2 in case it's off as well.
@@ -632,6 +634,14 @@ void modeFireStop() {
 
 void modeFiring() {
   // Sound trigger flags.
+  if(b_firing_intensify && !b_sound_firing_intensify_trigger) {
+    b_sound_firing_intensify_trigger = true;
+  }
+
+  if(!b_firing_intensify && b_sound_firing_intensify_trigger) {
+    b_sound_firing_intensify_trigger = false;
+  }
+
   if(b_firing_alt && !b_sound_firing_alt_trigger) {
     b_sound_firing_alt_trigger = true;
   }
@@ -697,7 +707,7 @@ void deviceOff() {
     DEVICE_STATUS = MODE_OFF;
     DEVICE_ACTION_STATUS = ACTION_IDLE;
   }
-  else if(DEVICE_ACTION_STATUS != ACTION_ERROR && (b_device_boot_error_on)) {
+  else if(DEVICE_ACTION_STATUS != ACTION_ERROR && b_device_boot_error_on) {
     // We are entering either Device Boot Error mode or Button Mash Timeout mode, so do nothing.
   }
   else {
@@ -781,20 +791,24 @@ void fireControlCheck() {
       return;
     }
 
-    if((switch_intensify.on() || switch_grip.on()) && switch_device.on() && switch_vent.on()) {
+    if(switch_intensify.on() && switch_device.on() && switch_vent.on()) {
       switch(STREAM_MODE) {
         case PROTON:
         default:
           if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
             DEVICE_ACTION_STATUS = ACTION_FIRING;
           }
+
+          b_firing_intensify = true;
         break;
       }
-debugln(STREAM_MODE == PROTON);
-debugln(DEVICE_ACTION_STATUS == ACTION_FIRING);
-debug("grip_button:");
-debugln(switch_grip.on());
-      if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
+
+      if(STREAM_MODE == PROTON && DEVICE_ACTION_STATUS == ACTION_FIRING) {
+        if(switch_grip.on()) {
+          b_firing_alt = true;
+        }
+      }
+      else if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
         switch(STREAM_MODE) {
           case PROTON:
             // Handle Primary Blast fire start here.
@@ -818,10 +832,12 @@ debugln(switch_grip.on());
         switch(STREAM_MODE) {
           case PROTON:
           default:
-            if(b_firing) {
+            if(b_firing && b_firing_intensify) {
               if(!b_firing_alt) {
                 DEVICE_ACTION_STATUS = ACTION_IDLE;
               }
+
+              b_firing_intensify = false;
             }
           break;
         }
@@ -997,7 +1013,7 @@ void deviceExitMenu() {
   if(DEVICE_STATUS == MODE_ON && bargraph.STATE == BG_OFF) {
     bargraph.reset(); // Enable bargraph for use (resets variables and turns it on).
     bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
-    led_SloBlo.turnOn();
+    led_SloBlo.turnOn(); // Turn on SLO-BLO if device is on.
   }
 }
 
