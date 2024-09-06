@@ -791,24 +791,11 @@ void fireControlCheck() {
       return;
     }
 
-    if(switch_intensify.on() && switch_device.on() && switch_vent.on()) {
-      switch(STREAM_MODE) {
-        case PROTON:
-        default:
-          if(DEVICE_ACTION_STATUS != ACTION_FIRING) {
-            DEVICE_ACTION_STATUS = ACTION_FIRING;
-          }
+    // Otherwise the Activate switch is up, so check if in a firing state.
+    if(switch_device.on() && switch_vent.on()) {
+      if(switch_grip.on()) {
+        b_firing_alt = true;
 
-          b_firing_intensify = true;
-        break;
-      }
-
-      if(STREAM_MODE == PROTON && DEVICE_ACTION_STATUS == ACTION_FIRING) {
-        if(switch_grip.on()) {
-          b_firing_alt = true;
-        }
-      }
-      else if(switch_grip.on() && switch_device.on() && switch_vent.on()) {
         switch(STREAM_MODE) {
           case PROTON:
             // Handle Primary Blast fire start here.
