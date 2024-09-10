@@ -150,6 +150,9 @@ void setup() {
 
   pinMode(VIBRATION_PIN, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.
 
+  // Status indicator LED on the v1.4 GPStar Neutrona Wand Board.
+  pinModeFast(WAND_STATUS_LED_PIN, OUTPUT);
+
   // Make sure lights are off.
   wandLightsOff();
 
@@ -222,6 +225,7 @@ void loop() {
         wandSerialSend(W_SYNC_NOW);
         ms_packsync.start(i_sync_initial_delay); // Prepare for the next sync attempt.
         digitalWriteFast(TOP_LED_PIN, (digitalReadFast(TOP_LED_PIN) == LOW) ? HIGH : LOW); // Blink an LED.
+        digitalWriteFast(WAND_STATUS_LED_PIN, (digitalReadFast(WAND_STATUS_LED_PIN) == LOW) ? HIGH : LOW); // Blink the onboard LED on the Neutrona Wand board.
       }
 
       checkPack(); // Check for any response from the pack while still waiting.
@@ -243,7 +247,9 @@ void loop() {
 
       checkPack(); // Get the latest communications from the connected Proton Pack.
 
-      mainLoop(); // Continue on to the main loop.
+      if(b_pack_post_finish) {
+        mainLoop(); // Continue on to the main loop.
+      }
     break;
 
     case NC_BENCHTEST:
@@ -974,8 +980,13 @@ void startVentSequence() {
     ms_blink_sound_timer_2.start(i_blink_sound_timer * 4);
   }
   else {
+    uint8_t i_segment_adjust = 2;
+    if(BARGRAPH_TYPE == SEGMENTS_30) {
+      i_segment_adjust = 0;
+    }
+
     // Reset some bargraph levels before we ramp the bargraph down.
-    i_bargraph_status_alt = i_bargraph_segments; // For 28 segment bargraph
+    i_bargraph_status_alt = i_bargraph_segments - i_segment_adjust; // For 28 and 30 segment bargraph
     i_bargraph_status = i_bargraph_segments_5_led; // For Hasbro 5 LED bargraph.
 
     bargraphFull();
@@ -999,7 +1010,7 @@ void settingsBlinkingLights() {
      ms_settings_blinking.start(i_settings_blinking_delay);
   }
 
-    uint8_t i_segment_adjust = 3;
+    uint8_t i_segment_adjust = 2;
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       i_segment_adjust = 0;
     }
@@ -1048,7 +1059,7 @@ void settingsBlinkingLights() {
           b_bargraph_status[i] = true;
         }
 
-        if(BARGRAPH_TYPE == SEGMENTS_28) { 
+        if(BARGRAPH_TYPE == SEGMENTS_28) {
           ht_bargraph.clearLed(bargraphLookupTable(27));
           b_bargraph_status[27] = false;
         }
@@ -1112,7 +1123,7 @@ void settingsBlinkingLights() {
                   b_bargraph_status[i] = true;
                 break;
               }
-            }            
+            }
           }
           else {
             for(uint8_t i = 0; i < i_bargraph_segments - i_segment_adjust; i++) {
@@ -1220,7 +1231,7 @@ void settingsBlinkingLights() {
               }
             }
           }
-          else {          
+          else {
             for(uint8_t i = 0; i < 16; i++) {
               switch(i) {
                 case 3:
@@ -1273,7 +1284,7 @@ void settingsBlinkingLights() {
               }
             }
           }
-          else {          
+          else {
             for(uint8_t i = 0; i < 12; i++) {
               switch(i) {
                 case 3:
@@ -1326,7 +1337,7 @@ void settingsBlinkingLights() {
               }
             }
           }
-          else {          
+          else {
             for(uint8_t i = 0; i < 6; i++) {
               switch(i) {
                 case 3:
@@ -4032,6 +4043,14 @@ void wandHeatUp() {
         playEffect(S_MESON_IDLE_LOOP, true, 0, true, 1500);
       }
     break;
+
+    case HOLIDAY:
+      playEffect(S_FIRE_START_SPARK);
+
+      if(b_gpstar_benchtest) {
+        b_christmas ? playEffect(S_CHRISTMAS_MODE_VOICE) : playEffect(S_HALLOWEEN_MODE_VOICE);
+      }
+    break;
   }
 
   wandBarrelPreHeatUp();
@@ -6161,7 +6180,7 @@ void bargraphSuperHeroRampFiringAnimation() {
           ht_bargraph.sendLed(); // Commit the changes.
           wandTipOn();
         break;
-        
+
         case 14:
           vibrationWand(i_vibration_level + 115);
 
@@ -6216,7 +6235,7 @@ void bargraphSuperHeroRampFiringAnimation() {
           ht_bargraph.sendLed(); // Commit the changes.
           wandTipOn();
         break;
-      }      
+      }
     }
     else {
       switch(i_bargraph_status_alt) {
@@ -6746,7 +6765,7 @@ void bargraphModeOriginalRampFiringAnimation() {
       Power Level 1: none: 0 - 6    (6 segments)
     */
 
-    uint8_t i_segment_adjust = 3;
+    uint8_t i_segment_adjust = 2;
 
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       i_segment_adjust = 0;
@@ -7996,7 +8015,7 @@ void bargraphRedraw() {
       Power Level 2: 1/4: 5 - 11    (7 segments)
       Power Level 1: none: 0 - 4    (5 segments)
     */
-    
+
     /*
       // 30 Segment bargraph.
       Power Level 5: full: 25 - 30  (6 segments)
@@ -8006,7 +8025,7 @@ void bargraphRedraw() {
       Power Level 1: none: 0 - 6    (6 segments)
     */
 
-    uint8_t i_segment_adjust = 3;
+    uint8_t i_segment_adjust = 2;
 
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       i_segment_adjust = 0;
@@ -8022,7 +8041,7 @@ void bargraphRedraw() {
         ht_bargraph.sendLed(); // Commit the changes.
         i_bargraph_status_alt = i_bargraph_segments - i_segment_adjust;
       break;
-            
+
       case 4:
       case 3:
       case 2:
@@ -8093,7 +8112,7 @@ void bargraphPowerCheck() {
 
   if(BARGRAPH_TYPE != SEGMENTS_5) {
     if(ms_bargraph_alt.justFinished()) {
-      uint8_t i_segment_adjust = 3;
+      uint8_t i_segment_adjust = 2;
 
       if(BARGRAPH_TYPE == SEGMENTS_30) {
         i_segment_adjust = 0;
@@ -8117,7 +8136,7 @@ void bargraphPowerCheck() {
           case 5:
             if(i_bargraph_status_alt > i_bargraph_segments - i_segment_adjust) {
               b_bargraph_up = false;
-              
+
               i_bargraph_status_alt = i_bargraph_segments - i_segment_adjust;
 
               if(BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
@@ -8141,7 +8160,7 @@ void bargraphPowerCheck() {
           default:
             if(i_bargraph_status_alt > bargraphPowerLookupTable(i_power_level) - 1) {
               b_bargraph_up = false;
-              
+
               if(BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
                 // We stop when we reach our target.
                 ms_bargraph_alt.stop();
@@ -8241,7 +8260,7 @@ void bargraphPowerCheck() {
 // Fully lights up the bargraph.
 void bargraphFull() {
   if(BARGRAPH_TYPE != SEGMENTS_5) {
-    uint8_t i_segment_adjust = 3;
+    uint8_t i_segment_adjust = 2;
 
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       i_segment_adjust = 0;
@@ -8828,11 +8847,11 @@ void prepBargraphRampDown() {
     soundIdleStop();
     soundIdleLoopStop(true);
 
-    uint8_t i_segment_adjust = 3;
+    uint8_t i_segment_adjust = 2;
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       i_segment_adjust = 0;
     }
-    
+
     // Reset some bargraph levels before we ramp the bargraph down.
     i_bargraph_status_alt = i_bargraph_segments - i_segment_adjust; // For 28 and 30 segment bargraph
     i_bargraph_status = i_bargraph_segments_5_led; // For Hasbro 5 LED bargraph.
@@ -10310,15 +10329,13 @@ void wandExitMenu() {
 
   // In original mode, we need to re-initalise the 28 and 30 segment bargraph if some switches are already toggled on.
   if(SYSTEM_MODE == MODE_ORIGINAL) {
-    if(switch_vent.on() == true && switch_wand.on() == true) {
-      if(b_pack_ion_arm_switch_on == true && BARGRAPH_TYPE != SEGMENTS_5) {
-        if(b_extra_pack_sounds == true) {
-          wandSerialSend(W_MODE_ORIGINAL_HEATUP);
-        }
-
-        stopEffect(S_WAND_HEATUP_ALT);
-        playEffect(S_WAND_HEATUP_ALT);
+    if(switch_vent.on() && switch_wand.on() && b_pack_ion_arm_switch_on) {
+      if(b_extra_pack_sounds) {
+        wandSerialSend(W_MODE_ORIGINAL_HEATUP);
       }
+
+      stopEffect(S_WAND_HEATUP_ALT);
+      playEffect(S_WAND_HEATUP_ALT);
 
       if(BARGRAPH_TYPE != SEGMENTS_5) {
         bargraphPowerCheck2021Alt(false);
