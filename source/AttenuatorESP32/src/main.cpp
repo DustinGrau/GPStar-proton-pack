@@ -72,9 +72,9 @@ void setup() {
 
   // Return stored values if available, otherwise use a default value.
   b_invert_leds = preferences.getBool("invert_led", false);
-  b_enable_buzzer = preferences.getBool("buzzer_enabled", true);
-  b_enable_vibration = preferences.getBool("vibration_enabled", true);
-  b_overheat_feedback = preferences.getBool("overheat_feedback", true);
+  b_enable_buzzer = preferences.getBool("buzzer_enabled", false);
+  b_enable_vibration = preferences.getBool("vibration_enabled", false);
+  b_overheat_feedback = preferences.getBool("overheat_feedback", false);
   b_firing_feedback = preferences.getBool("firing_feedback", false);
 
   switch(preferences.getShort("radiation_idle", 0)) {
@@ -110,7 +110,7 @@ void setup() {
   setCpuFrequencyMhz(240);
   Serial.print(F("CPU Freq (MHz): "));
   Serial.println(getCpuFrequencyMhz());
- 
+
   if(!b_wait_for_pack) {
     // If not waiting for the pack set power level to 5.
     POWER_LEVEL = LEVEL_5;

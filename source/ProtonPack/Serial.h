@@ -979,7 +979,7 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
       else {
         i_volume_revert = i_volume_master;
 
-        // Set the master volume to silent.
+        // Set the master volume to minimum.
         i_volume_master = i_volume_abs_min;
 
         packSerialSend(P_MASTER_AUDIO_SILENT_MODE);
@@ -1048,9 +1048,7 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
           pauseMusic();
         }
         else {
-          if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
-            resumeMusic();
-          }
+          resumeMusic();
         }
       }
     break;
@@ -1807,7 +1805,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_PACK_SLIME_OPEN);
-        playEffect(S_PACK_SLIME_TANK_LOOP, true, 0, true, 700);
+        playEffect(S_PACK_SLIME_TANK_LOOP, true, i_volume_effects, true, 700);
 
         if((SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE)) {
           adjustGainEffect(S_AFTERLIFE_PACK_STARTUP, i_volume_effects - 30, true, 100);
@@ -1867,7 +1865,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_STASIS_OPEN);
-        playEffect(S_STASIS_IDLE_LOOP, true, 0, true, 2000);
+        playEffect(S_STASIS_IDLE_LOOP, true, i_volume_effects, true, 2000);
       }
 
       // Stasis mode.
@@ -1913,7 +1911,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_MESON_OPEN);
-        playEffect(S_MESON_IDLE_LOOP, true, 0, true, 1250);
+        playEffect(S_MESON_IDLE_LOOP, true, i_volume_effects, true, 1250);
       }
 
       // Meson mode.
