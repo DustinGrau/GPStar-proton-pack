@@ -4,8 +4,6 @@ Separate firmware files exist for the Arduino Nano vs. the ESP32 version of the 
 
 For the Arduino Nano you may use the same flashing utility as the other gpstar PCB devices as outlined in the [FLASHING](FLASHING.md) guide. For the ESP32 that will require a different process as outlined below. Since both the Arduino Nano and ESP development board have their own USB-Micro connection it will **not** be necessary to use a Serial to UART programming cable as you do for the Proton Pack and Neutrona Wand.
 
-
-
 ## For Arduino Nano
 
 Just as you used the gpstar flashing utility for Windows or MacOS to upload to your Proton Pack or Neutrona Wand, you will do the same for this device. Plug in your device using a standard USB cable and note the serial COM port used. Select the "Attenuator-Nano.hex" file from the `/binaries/attenuator` directory and upload to the attached device.
@@ -21,12 +19,12 @@ This device is capable of supporting Over-The-Air (OTA) updates for firmware, me
 
 ### ESP32: First-Time Upload
 
-**STOP, READ!** If you are looking for instructions for over-the-air (OTA) updates without a USB cable, AND your device has been flashed with the v6.x firmware, then you may skip to the "Standard Updates" section. Otherwise, you will need to upload the software using a USB cable via **either** of the 2 methods listed below.
+**STOP, READ!** If you are looking for instructions for over-the-air (OTA) updates without a USB cable, AND your device has been flashed with the v6.x firmware, then you may skip to the "Standard Updates" section. Otherwise, you will need to upload the software using a USB cable via **either** of the 2 methods listed below. This process is required to create a custom partition scheme on the device which provides the ability to use Over-the-Air (OTA) updates. **This scheme changed as of v6.0.0 to support a larger firmware file which is why the process is necessary for users who were previously on a firmware release in v5.x or earlier.**
 
-One more time, the following process is necessary if either of these situations applies to you:
+One more time, the following steps MUST be taken if either of these situations applies to you:
 
-- If you are using your own ESP32 controller or do not see a WiFi network for your Proton Pack when the device is powered up, then the microcontroller has likely not been flashed with the GPStar firmware to enable that feature.
-- Or, if you are performing the first update to the v6.x firmware you will need to perform the manual flashing process. We need to make room for larger firmware files and this can only be done by repartitioning the device's internal 4MB storage area.
+- If you are using your own ESP32 controller direct from Amazon or another supplier, then the microcontroller has not been flashed with the GPStar firmware to enable the OTA upload feature and the manual flashing process is required.
+- Or, if you are performing the first firmware update since the introduction of v6.x you will need to perform the manual flashing process. We need to make room for larger firmware files and this can only be done by repartitioning the device's internal 4MB storage area.
 
 **Troubleshooting:** When using a USB cable, if your ESP32 controller does not appear as a serial device it may be required to install a driver for the "CP210x USB to UART Bridge" onto your computer. A driver for Windows and macOS is available [via Silicon Labs](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads) and has proved useful.
 
@@ -36,14 +34,14 @@ One more time, the following process is necessary if either of these situations 
 
 This uses a 3rd-party website to upload using the Web Serial protocol which is only available on the Google Chrome, Microsoft Edge, and Opera desktop web browsers. Mobile browsers are NOT supported, and you will be prompted with a message if your web browser is not valid for use.
 
-1. Plug your device into a USB port on your computer and go to [https://esp.huhn.me](https://esp.huhn.me)
-1. Click on the **CONNECT** button and select your USB serial device from the list of options and click on "Connect".
+1. Plug your device into a USB port on your computer and go to [http://espwebtool.ghostbusters.engineering](http://espwebtool.ghostbusters.engineering) (which [redirects to https://esp.huhn.me](https://esp.huhn.me)).
 1. Locate the following files from the `/binaries/attenuator` directory.
-	* [extras/Attenuator-ESP32-bootloader.bin](binaries/attenuator/extras/Attenuator-ESP32-Bootloader.bin)
-	* [extras/Attenuator-ESP32-partitions.bin](binaries/attenuator/extras/Attenuator-ESP32-Partitions.bin)
-	* [extras/boot_app0.bin](binaries/attenuator/extras/boot_app0.bin)
-	* [Attenuator-ESP32.bin](binaries/attenuator/Attenuator-ESP32.bin)
-1. Once connected, select the above files for the following address spaces:
+	* [extras/Attenuator-ESP32-bootloader.bin](binaries/attenuator/extras/Attenuator-ESP32-Bootloader.bin) = This is the standard bootloader for the ESP itself.
+	* [extras/Attenuator-ESP32-partitions.bin](binaries/attenuator/extras/Attenuator-ESP32-Partitions.bin) = This specifies the partition scheme for the flash memory.
+	* [extras/boot_app0.bin](binaries/attenuator/extras/boot_app0.bin) = This is the software for selecting the OTA partition.
+	* [Attenuator-ESP32.bin](binaries/attenuator/Attenuator-ESP32.bin) = This is the custom software for the GPStar kit.
+1. Click on the **CONNECT** button and select your USB serial device from the list of options and click on "Connect".
+1. Once connected, select the files (noted above) for the following address spaces:
 	* 0x1000 &rarr; [Attenuator-ESP32-bootloader.bin](binaries/attenuator/extras/Attenuator-ESP32-Bootloader.bin)
 	* 0x8000 &rarr; [Attenuator-ESP32-partitions.bin](binaries/attenuator/extras/Attenuator-ESP32-Partitions.bin)
 	* 0xE000 &rarr; [boot_app0.bin](binaries/attenuator/extras/boot_app0.bin)
@@ -131,47 +129,6 @@ Once flashed, this will allow you to get back into the web UI at [http://192.168
 
 ## Software Development Requirements
 
-To build or edit the code for this device you must have an ArduinoIDE environment set up similar to what is needed for the pack/wand software. Download and install the Arduino IDE. This will be used to compile and upload the code to your Proton Pack and Neutrona Wand.
+As of the v6.0.0 release the development platform of choice for this device has been migrated from Arduino IDE to the [VSCode with PlatformIO](VSCODE.md). Please follow the linked guide for installing the core software and plugins required. The source code for the Attenuator has also been divided into separate projects for the Arduino Nano vs. the ESP32 which allows for the respective libraries to be downloaded automatically as necessary.
 
-[Arduino IDE](https://www.arduino.cc/en/software)
-
-The following libraries are required to be installed. All but the MillisDelay library can be found within the Arduino Library Manager with the app. Go to `Sketch -> Include Library -> Manage Libraries...` to access the Library Manager. Search for the libraries by name and install the latest version available.
-
-### Common Libraries (Nano+ESP32)
-
-- **ezButton** by ArduinoGetStarted.com (1.0.6+)
-- **FastLED** by Daniel Garcia (3.7.0+)
-- **SafeString** by Matthew Ford (4.1.33+)
-- **SerialTransfer** by PowerBroker2 (3.1.3+)
-- **Simple ht16k33 Library** by Ipaseen (1.0.2+)
-
-### Additional ESP32 Libraries
-
-- **ArduinoJSON** by Benoit Blanchon (7.1.0+)
-- **AsyncTCP** by dvarrel (1.1.4+)
-- **ESP Async WebServer** by Me-No-Dev (3.0.6+)
-- **ElegantOTA** by Ayush Sharma (3.1.2+) `See Below`
-
-
-You will also need this additional Boards library for ESP32 controllers:
-
-- **esp32** by Espressif Systems (3.0.2+)
-
-To build for the ESP32 hardware you will need to use the `Boards Manager` to install the `esp32 by Expressif Systems` package. When selecting a board for compilation and upload, simply use the board `ESP32 Dev Module` for satisfactory results. For reference, the FQBN for builds is "esp32:esp32:esp32".
-
-### ElegantOTA
-
-The ElegantOTA library must be enabled to utilize the Asynchronous Web Server.
-
-1. Go to your Arduino libraries directory, typically found at `~/Documents/Arduino/library`.
-1. Open the `ElegantOTA` folder and then open the `src` folder
-1. Locate the `ELEGANTOTA_USE_ASYNC_WEBSERVER` macro in the `ElegantOTA.h` file, and set it to 1:
-	`#define ELEGANTOTA_USE_ASYNC_WEBSERVER 1`
-1. Save the changes to the `ElegantOTA.h` file.
-
-**Alternative:**
-
-A fork of the `ElegantOTA` library can be downloaded from GitHub which contains the above modifications for use with the ESPAsyncWebServer package. Download the code as a zip use the `Sketch -> Add .ZIP Library` option to import the downloaded file.
-[https://github.com/DustinGrau/ElegantOTA.git](https://github.com/DustinGrau/ElegantOTA.git)
-
-No further configuration is needed for this library.
+Note: A fork of the `ElegantOTA` library will be downloaded from [GitHub](https://github.com/DustinGrau/ElegantOTA.git) which contains specific modifications for use with the ESPAsyncWebServer package.
