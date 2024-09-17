@@ -404,7 +404,6 @@ void switchLoops() {
   encoder_center.loop();
 }
 
-
 void mainLoop() {
   // Monitor for interactions by user.
   checkPack();
