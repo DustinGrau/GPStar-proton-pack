@@ -95,6 +95,7 @@ void setup() {
 
   // Feedback devices (piezo buzzer and vibration motor)
   pinMode(BUZZER_PIN, OUTPUT);
+  TCCR2B = (TCCR2B & B11111000) | B00000010; // Set pin 11 PWM frequency to 3921.16 Hz
   pinMode(VIBRATION_PIN, OUTPUT);
 
   // Turn off any user feedback.
@@ -109,6 +110,9 @@ void setup() {
 
   // Initialize critical timers.
   ms_fast_led.start(0);
+  if(b_wait_for_pack) {
+    ms_packsync.start(0);
+  }
 }
 
 void loop() {
@@ -128,15 +132,23 @@ void loop() {
   }
 
   if(b_wait_for_pack) {
-    // Wait and synchronise some settings with the pack.
+    if(ms_packsync.justFinished()) {
+      // Tell the pack we are trying to sync.
+      attenuatorSerialSend(A_SYNC_START);
+
+      #if defined(__XTENSA__)
+        // ESP - Turn off built-in LED.
+        digitalWrite(BUILT_IN_LED, LOW);
+      #endif
+
+      // Pause and try again in a moment.
+      ms_packsync.start(i_sync_initial_delay);
+    }
+
     checkPack();
 
     if(!b_wait_for_pack) {
       // Indicate that we are no longer waiting on the pack.
-    }
-    else {
-      // Pause and try again in a moment.
-      delay(10);
     }
   }
   else {

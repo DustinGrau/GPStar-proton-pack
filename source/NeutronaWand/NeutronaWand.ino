@@ -75,8 +75,8 @@ void setup() {
   // Setup the audio device for this controller.
   setupAudioDevice();
 
-  // Change PWM frequency of pin 3 and 11 for the vibration motor, we do not want it high pitched.
-  TCCR2B = (TCCR2B & B11111000) | (B00000110); // for PWM frequency of 122.55 Hz
+  // Change PWM frequency of pin 11 for the vibration motor, we do not want it high pitched.
+  TCCR1B = (TCCR1B & B11111000) | B00000110; // for PWM frequency of 122.55 Hz
 
   // Barrel LEDs - NOTE: These are GRB not RGB so note that all CRGB objects will have R/G swapped.
   FastLED.addLeds<NEOPIXEL, BARREL_LED_PIN>(barrel_leds, BARREL_LEDS_MAX);
@@ -101,8 +101,6 @@ void setup() {
   // Rotary encoder on the top of the wand.
   pinModeFast(ROTARY_ENCODER_A, INPUT_PULLUP);
   pinModeFast(ROTARY_ENCODER_B, INPUT_PULLUP);
-
-  delay(10);
 
   Wire.begin();
   Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
@@ -230,11 +228,6 @@ void loop() {
       }
 
       checkPack(); // Check for any response from the pack while still waiting.
-    break;
-
-    case SYNCHRONIZING:
-      // Currently unused.
-      checkPack(); // Keep checking for responses from the pack while synchronizing.
     break;
 
     case PACK_CONNECTED:
@@ -3105,20 +3098,10 @@ void modeFireStartSounds() {
 void modeFireStart() {
   i_fast_led_delay = FAST_LED_UPDATE_MS;
 
-  // Tell the Proton Pack that the Neutrona Wand is firing in Intensify mode.
-  if(b_firing_intensify == true) {
-    wandSerialSend(W_FIRING_INTENSIFY);
-  }
-
-  // Tell the Proton Pack that the Neutrona Wand is firing in Alt mode.
-  if(b_firing_alt == true) {
-    wandSerialSend(W_FIRING_ALT);
-  }
-
   modeFireStartSounds();
 
-  // Tell the pack the wand is firing.
-  wandSerialSend(W_FIRING);
+  // Tell the pack the wand is firing, and if in Intensify (1) or Alt (2) mode.
+  wandSerialSend(W_FIRING, b_firing_intensify ? 1 : 2);
 
   // Just in case a semi-auto was fired before we started firing a stream, stop its timer.
   ms_semi_automatic_firing.stop();

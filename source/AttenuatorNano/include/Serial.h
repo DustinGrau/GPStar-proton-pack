@@ -24,7 +24,6 @@
  * Pack Communication
  */
 SerialTransfer packComs;
-bool b_sync_start = false; // Denotes whether pack communications have begun (initial: false).
 
 // Types of packets to be sent.
 enum PACKET_TYPE : uint8_t {
@@ -148,13 +147,18 @@ struct __attribute__((packed)) AttenuatorSyncData {
   uint8_t streamMode;
   uint8_t wandPresent;
   uint8_t barrelExtended;
+  uint8_t wandFiring;
+  uint8_t overheatingNow;
+  uint8_t speedMultiplier;
   uint8_t spectralColour;
   uint8_t spectralSaturation;
+  uint8_t masterMuted;
   uint8_t masterVolume;
   uint8_t effectsVolume;
   uint8_t musicVolume;
   uint8_t musicPlaying;
   uint8_t musicPaused;
+  uint8_t trackLooped;
   uint16_t currentTrack;
   uint16_t musicCount;
 } attenuatorSyncData;
@@ -202,11 +206,16 @@ bool checkPack() {
     uint8_t i_packet_id = packComs.currentPacketID();
 
     if(i_packet_id > 0) {
+      if(ms_packsync.isRunning() && !b_wait_for_pack) {
+        // If the timer is still running and Pack is connected, consider any request as proof of life.
+        ms_packsync.restart();
+      }
+
       // Determine the type of packet which was sent by the serial1 device.
       switch(i_packet_id) {
         case PACKET_COMMAND:
           packComs.rxObj(recvCmd);
-          if(recvCmd.c > 0 && recvCmd.s == A_COM_START && recvCmd.e == A_COM_END) {
+          if(recvCmd.c > 0 && recvCmd.s == P_COM_START && recvCmd.e == P_COM_END) {
             return handleCommand(recvCmd.c, recvCmd.d1);
           }
           else {
@@ -216,7 +225,7 @@ bool checkPack() {
 
         case PACKET_DATA:
           packComs.rxObj(recvData);
-          if(recvData.m > 0 && recvData.s == A_COM_START && recvData.e == A_COM_END) {
+          if(recvData.m > 0 && recvData.s == P_COM_START && recvData.e == P_COM_END) {
             switch(recvData.m) {
               case A_VOLUME_SYNC:
                 // Only applies to ESP32 for the web UI.
@@ -251,14 +260,17 @@ bool checkPack() {
 
         case PACKET_PACK:
           // Only applies to ESP32 for the web UI.
+          return false;
         break;
 
         case PACKET_WAND:
           // Only applies to ESP32 for the web UI.
+          return false;
         break;
 
         case PACKET_SMOKE:
           // Only applies to ESP32 for the web UI.
+          return false;
         break;
 
         case PACKET_SYNC:
@@ -332,28 +344,13 @@ bool checkPack() {
             break;
           }
 
-          SYSTEM_MODE = attenuatorSyncData.systemMode == 1 ? MODE_SUPER_HERO : MODE_ORIGINAL;
-          RED_SWITCH_MODE = attenuatorSyncData.ionArmSwitch == 2 ? SWITCH_ON : SWITCH_OFF;
-          BARREL_STATE = attenuatorSyncData.barrelExtended == 1 ? BARREL_EXTENDED : BARREL_RETRACTED;
+          // Common actions to all hardware.
           b_pack_on = attenuatorSyncData.packOn == 1;
-          b_wand_present = attenuatorSyncData.wandPresent == 1;
-          b_cyclotron_lid_on = attenuatorSyncData.cyclotronLidState == 1;
+          b_firing = attenuatorSyncData.wandFiring == 1;
+          b_overheating = attenuatorSyncData.overheatingNow == 1;
+          i_speed_multiplier = attenuatorSyncData.speedMultiplier;
           i_spectral_custom_colour = attenuatorSyncData.spectralColour;
           i_spectral_custom_saturation = attenuatorSyncData.spectralSaturation;
-          i_volume_master_percentage = attenuatorSyncData.masterVolume;
-          i_volume_effects_percentage = attenuatorSyncData.effectsVolume;
-          i_volume_music_percentage = attenuatorSyncData.musicVolume;
-          i_music_track_current = attenuatorSyncData.currentTrack;
-          i_music_track_count = attenuatorSyncData.musicCount;
-          b_playing_music = attenuatorSyncData.musicPlaying == 1;
-          b_music_paused = attenuatorSyncData.musicPaused == 1;
-
-          if(i_music_track_count > 0) {
-            i_music_track_min = i_music_track_offset; // First music track possible (eg. 500)
-            i_music_track_max = i_music_track_offset + i_music_track_count - 1; // 500 + N - 1 to be inclusive of the offset value.
-          }
-
-          return true; // Indicates a status change.
         break;
       }
     }
@@ -366,15 +363,24 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
   bool b_state_changed = false; // Indicates when a crucial state change occurred.
 
   switch(i_command) {
+    case A_HANDSHAKE:
+      if(!b_wait_for_pack) {
+        // The pack is asking us if we are still here. Respond back.
+        attenuatorSerialSend(A_HANDSHAKE);
+      }
+      else {
+        // Who the heck is this pack!? Demand a sync!
+        attenuatorSerialSend(A_SYNC_START);
+      }
+    break;
+
     case A_SYNC_START:
-      i_speed_multiplier = 1;
-      b_sync_start = true;
     break;
 
     case A_SYNC_END:
       b_wait_for_pack = false;
-      b_sync_start = false;
       b_state_changed = true;
+      ms_packsync.start(i_sync_disconnect_delay);
 
       attenuatorSerialSend(A_SYNC_END); // Signal end of sync.
     break;
@@ -431,95 +437,39 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
       BARGRAPH_PATTERN = BG_RAMP_DOWN;
     break;
 
-    case A_MUSIC_IS_PLAYING:
-      b_playing_music = true;
+    case A_TOGGLE_MUTE:
+    break;
 
-      if(i_value > 0 && i_music_track_current != i_value) {
-        // Music track changed.
-        i_music_track_current = i_value;
-        b_state_changed = true;
-      }
+    case A_MUSIC_TRACK_LOOP_TOGGLE:
+    break;
+
+    case A_MUSIC_IS_PLAYING:
     break;
 
     case A_MUSIC_IS_NOT_PLAYING:
-      b_playing_music = false;
-
-      if(i_value > 0 && i_music_track_current != i_value) {
-        // Music track changed.
-        i_music_track_current = i_value;
-        b_state_changed = true;
-      }
     break;
 
     case A_MUSIC_IS_PAUSED:
-      if(!b_music_paused) {
-        b_music_paused = true;
-        b_state_changed = true;
-      }
     break;
 
     case A_MUSIC_IS_NOT_PAUSED:
-      if(b_music_paused) {
-        b_music_paused = false;
-        b_state_changed = true;
-      }
     break;
 
     case A_MUSIC_TRACK_COUNT_SYNC:
-      if(i_value > 0) {
-        i_music_track_count = i_value;
-      }
-
-      if(i_music_track_count > 0) {
-        i_music_track_min = i_music_track_offset; // First music track possible (eg. 500)
-        i_music_track_max = i_music_track_offset + i_music_track_count - 1; // 500 + N - 1 to be inclusive of the offset value.
-      }
-    break;
-
-    case A_PACK_CONNECTED:
-      // The Proton Pack is connected.
-      b_state_changed = true;
-    break;
-
-    case A_HANDSHAKE:
-      if(b_wait_for_pack && !b_sync_start) {
-        b_sync_start = true;
-        attenuatorSerialSend(A_SYNC_START);
-      }
-      else if(!b_sync_start) {
-        // The pack is asking us if we are still here. Respond back.
-        attenuatorSerialSend(A_HANDSHAKE);
-      }
     break;
 
     case A_MODE_SUPER_HERO:
-      if(SYSTEM_MODE != MODE_SUPER_HERO) {
-        SYSTEM_MODE = MODE_SUPER_HERO;
-        b_state_changed = true;
-      }
     break;
 
     case A_MODE_ORIGINAL:
-      if(SYSTEM_MODE != MODE_ORIGINAL) {
-        SYSTEM_MODE = MODE_ORIGINAL;
-        b_state_changed = true;
-      }
     break;
 
     case A_MODE_ORIGINAL_RED_SWITCH_ON:
       // The proton pack red switch is on and has power (cyclotron not powered up yet).
-      if(RED_SWITCH_MODE != SWITCH_ON) {
-        RED_SWITCH_MODE = SWITCH_ON;
-        b_state_changed = true;
-      }
     break;
 
     case A_MODE_ORIGINAL_RED_SWITCH_OFF:
       // The proton pack red switch is off. This will cause a total system shutdown.
-      if(RED_SWITCH_MODE != SWITCH_OFF) {
-        RED_SWITCH_MODE = SWITCH_OFF;
-        b_state_changed = true;
-      }
     break;
 
     case A_YEAR_1984:
@@ -715,11 +665,11 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case A_CYCLOTRON_LID_ON:
-      b_cyclotron_lid_on = true;
+      // Not used by Nano hardware.
     break;
 
     case A_CYCLOTRON_LID_OFF:
-      b_cyclotron_lid_on = false;
+      // Not used by Nano hardware.
     break;
 
     case A_CYCLOTRON_INCREASE_SPEED:
@@ -744,29 +694,19 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case A_BARREL_EXTENDED:
-      if(BARREL_STATE != BARREL_EXTENDED) {
-        BARREL_STATE = BARREL_EXTENDED;
-        b_state_changed = true;
-      }
+      // Not used by Nano hardware.
     break;
 
     case A_BARREL_RETRACTED:
-      if(BARREL_STATE != BARREL_RETRACTED) {
-        BARREL_STATE = BARREL_RETRACTED;
-        b_state_changed = true;
-      }
+      // Not used by Nano hardware.
     break;
 
     case A_BATTERY_VOLTAGE_PACK:
-      // Convert to a value X.NN based on expected 5VDC maximum.
-      f_batt_volts = (float) i_value / 100;
-      b_state_changed = true;
+      // Not used by Nano hardware.
     break;
 
     case A_WAND_POWER_AMPS:
-      // Convert to a value X.NN based on expected 1Amp maximum.
-      f_wand_amps = (float) i_value / 100;
-      b_state_changed = true;
+      // Not used by Nano hardware.
     break;
 
     default:

@@ -174,11 +174,11 @@ void setup() {
     ms_cleanup.start(i_websocketCleanup);
   }
 
-  // Delay to allow any other devices to start up first.
-  delay(100);
-
   // Initialize critical timers.
   ms_fast_led.start(0);
+  if(b_wait_for_pack) {
+    ms_packsync.start(0);
+  }
 }
 
 void loop() {
@@ -213,17 +213,25 @@ void loop() {
   i_ap_client_count = WiFi.softAPgetStationNum();
 
   if(b_wait_for_pack) {
-    // Wait and synchronise some settings with the pack.
+    if(ms_packsync.justFinished()) {
+      // Tell the pack we are trying to sync.
+      attenuatorSerialSend(A_SYNC_START);
+
+      #if defined(__XTENSA__)
+        // ESP - Turn off built-in LED.
+        digitalWrite(BUILT_IN_LED, LOW);
+      #endif
+
+      // Pause and try again in a moment.
+      ms_packsync.start(i_sync_initial_delay);
+    }
+
     checkPack();
 
     if(!b_wait_for_pack) {
       // Indicate that we are no longer waiting on the pack.
       // ESP - Illuminate built-in LED.
       digitalWrite(BUILT_IN_LED, HIGH);
-    }
-    else {
-      // Pause and try again in a moment.
-      delay(10);
     }
   }
   else {

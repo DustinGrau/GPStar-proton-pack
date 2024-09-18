@@ -49,22 +49,12 @@ const uint8_t i_fast_led_delay = 3;
 /*
  * LED Animation Options
  */
-enum LED_ANIMATION : uint16_t {
+enum LED_ANIMATION : uint8_t {
   AMBER_PULSE = 0,
   ORANGE_FADE = 1,
   RED_FADE = 2
 };
 enum LED_ANIMATION RAD_LENS_IDLE;
-
-/*
- * UI Status Display Type
- */
-enum DISPLAY_TYPES : uint16_t {
-  STATUS_TEXT = 0,
-  STATUS_GRAPHIC = 1,
-  STATUS_BOTH = 2
-};
-enum DISPLAY_TYPES DISPLAY_TYPE;
 
 /*
  * Manage the colour and blink pattern for the top LED.
@@ -164,11 +154,11 @@ enum SYSTEM_YEARS SYSTEM_YEAR;
  */
 enum BARREL_STATES { BARREL_RETRACTED, BARREL_EXTENDED };
 enum BARREL_STATES BARREL_STATE;
-enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, SETTINGS };
-enum STREAM_MODES STREAM_MODE;
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
 enum POWER_LEVELS POWER_LEVEL;
 enum POWER_LEVELS POWER_LEVEL_PREV;
+enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, SETTINGS };
+enum STREAM_MODES STREAM_MODE;
 bool b_christmas = false; // Used in HOLIDAY mode to change from orange/purple to red/green.
 
 /*
@@ -204,7 +194,6 @@ bool b_center_pressed = false;
 bool b_center_lockout = false;
 const uint16_t i_center_double_tap_delay = 300; // When to consider the center dial has a "double tap".
 const uint16_t i_center_long_press_delay = 600; // When to consider the center dial has a "long" press.
-uint8_t i_press_count = 0;
 uint8_t i_rotary_count = 0;
 int i_encoder_pos = 0;
 int i_val_rotary;
@@ -219,21 +208,6 @@ enum MENU_LEVELS { MENU_1, MENU_2 };
 enum MENU_LEVELS MENU_LEVEL;
 
 /*
-* Music Track Info and Playback States
-*/
-const uint16_t i_music_track_offset = 500; // Music tracks always start at index 500.
-uint16_t i_music_track_count = 0; // Count of tracks as returned by the pack.
-uint16_t i_music_track_current = 0;
-uint16_t i_music_track_min = 0; // Min value for music track index (0 = unset).
-uint16_t i_music_track_max = 0; // Max value for music track index (0 = unset).
-uint8_t i_volume_master_percentage = 100; // Master overall volume
-uint8_t i_volume_effects_percentage = 100; // Sound effects
-uint8_t i_volume_music_percentage = 100; // Music volume
-bool b_playing_music = false;
-bool b_music_paused = false;
-String s_track_listing = "";
-
-/*
  * Some pack flags which get transmitted to the attenuator depending on the pack status.
  */
 bool b_pack_on = false;
@@ -243,14 +217,12 @@ bool b_pack_alarm = false;
 bool b_firing = false;
 bool b_overheating = false;
 
+// Flags relating to the synchronization process.
+millisDelay ms_packsync;
+const uint16_t i_sync_initial_delay = 750; // Delay to re-try the initial handshake with a proton pack.
+const uint16_t i_sync_disconnect_delay = 8000; // Delay before we consider the pack missing.
+
 // Flags for denoting when requested data was received.
 bool b_received_prefs_pack = false;
 bool b_received_prefs_wand = false;
 bool b_received_prefs_smoke = false;
-
-// Pack Battery (V) and Wand Power (A) Values
-float f_batt_volts = 0;
-float f_wand_amps = 0;
-
-// Forward declarations.
-void debug(String message);
