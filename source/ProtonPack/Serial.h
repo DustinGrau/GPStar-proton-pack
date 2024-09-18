@@ -104,6 +104,7 @@ struct __attribute__((packed)) WandPrefs {
   uint8_t wandBootError;
   uint8_t defaultYearModeWand;
   uint8_t defaultYearModeCTS;
+  uint8_t numBargraphSegments;
   uint8_t invertWandBargraph;
   uint8_t bargraphOverheatBlink;
   uint8_t bargraphIdleAnimation;
@@ -175,6 +176,7 @@ struct __attribute__((packed)) AttenuatorSyncData {
   uint8_t trackLooped;
   uint16_t currentTrack;
   uint16_t musicCount;
+  uint16_t packVoltage;
 } attenuatorSyncData;
 
 // Adjusts which year mode the Proton Pack and Neutrona Wand are in, as switched by the Neutrona Wand.
@@ -869,6 +871,7 @@ void doSerial1Sync() {
   // Pack status.
   attenuatorSyncData.packOn = PACK_STATE != MODE_OFF ? 1 : 0;
   attenuatorSyncData.powerLevel = i_wand_power_level;
+  attenuatorSyncData.packVoltage = packReading.BusVoltage;
 
   // Synchronise the firing modes.
   switch(STREAM_MODE) {
@@ -4204,6 +4207,20 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         playEffect(S_VOICE_POWERCELL_INVERTED);
         packSerialSend(P_POWERCELL_INVERTED);
       }
+    break;
+
+    case W_BARGRAPH_28_SEGMENTS:
+      stopEffect(S_BARGRAPH_28_SEGMENTS);
+      stopEffect(S_BARGRAPH_30_SEGMENTS);
+
+      playEffect(S_BARGRAPH_28_SEGMENTS);
+    break;
+
+    case W_BARGRAPH_30_SEGMENTS:
+      stopEffect(S_BARGRAPH_28_SEGMENTS);
+      stopEffect(S_BARGRAPH_30_SEGMENTS);
+
+      playEffect(S_BARGRAPH_30_SEGMENTS);
     break;
 
     case W_BARGRAPH_INVERTED:

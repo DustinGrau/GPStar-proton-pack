@@ -105,6 +105,7 @@ struct __attribute__((packed)) WandPrefs {
   uint8_t wandBootError;
   uint8_t defaultYearModeWand;
   uint8_t defaultYearModeCTS;
+  uint8_t numBargraphSegments;
   uint8_t invertWandBargraph;
   uint8_t bargraphOverheatBlink;
   uint8_t bargraphIdleAnimation;
@@ -161,6 +162,7 @@ struct __attribute__((packed)) AttenuatorSyncData {
   uint8_t trackLooped;
   uint16_t currentTrack;
   uint16_t musicCount;
+  uint16_t packVoltage;
 } attenuatorSyncData;
 
 /*
@@ -224,6 +226,11 @@ bool checkPack() {
         break;
 
         case PACKET_DATA:
+          if(b_wait_for_pack) {
+            // Can't proceed if the Pack isn't connected; prevents phantom actions from occurring.
+            return false;
+          }
+
           packComs.rxObj(recvData);
           if(recvData.m > 0 && recvData.s == P_COM_START && recvData.e == P_COM_END) {
             switch(recvData.m) {
