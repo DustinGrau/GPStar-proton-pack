@@ -136,14 +136,6 @@ bool b_cyclotron_lid_on = true;
 #endif
 
 /*
- * System Mode
- */
-enum SYSTEM_MODES { MODE_SUPER_HERO, MODE_ORIGINAL };
-enum SYSTEM_MODES SYSTEM_MODE;
-enum RED_SWITCH_MODES { SWITCH_ON, SWITCH_OFF };
-enum RED_SWITCH_MODES RED_SWITCH_MODE;
-
-/*
  * Year Theme
  */
 enum SYSTEM_YEARS { SYSTEM_EMPTY, SYSTEM_TOGGLE_SWITCH, SYSTEM_1984, SYSTEM_1989, SYSTEM_AFTERLIFE, SYSTEM_FROZEN_EMPIRE };
@@ -152,8 +144,6 @@ enum SYSTEM_YEARS SYSTEM_YEAR;
 /*
  * Wand Firing Modes + Settings
  */
-enum BARREL_STATES { BARREL_RETRACTED, BARREL_EXTENDED };
-enum BARREL_STATES BARREL_STATE;
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
 enum POWER_LEVELS POWER_LEVEL;
 enum POWER_LEVELS POWER_LEVEL_PREV;
@@ -169,7 +159,6 @@ bool b_christmas = false; // Used in HOLIDAY mode to change from orange/purple t
 #define RIGHT_TOGGLE_PIN 6
 ezButton switch_left(LEFT_TOGGLE_PIN, INTERNAL_PULLUP);
 ezButton switch_right(RIGHT_TOGGLE_PIN, INTERNAL_PULLUP);
-
 bool b_left_toggle_on = false;
 bool b_right_toggle_on = false;
 bool b_right_toggle_center_start = false;

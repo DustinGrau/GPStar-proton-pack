@@ -444,33 +444,6 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
       BARGRAPH_PATTERN = BG_RAMP_DOWN;
     break;
 
-    case A_TOGGLE_MUTE:
-    break;
-
-    case A_MUSIC_TRACK_LOOP_TOGGLE:
-    break;
-
-    case A_MUSIC_IS_PLAYING:
-    break;
-
-    case A_MUSIC_IS_NOT_PLAYING:
-    break;
-
-    case A_MUSIC_IS_PAUSED:
-    break;
-
-    case A_MUSIC_IS_NOT_PAUSED:
-    break;
-
-    case A_MUSIC_TRACK_COUNT_SYNC:
-    break;
-
-    case A_MODE_SUPER_HERO:
-    break;
-
-    case A_MODE_ORIGINAL:
-    break;
-
     case A_MODE_ORIGINAL_RED_SWITCH_ON:
       // The proton pack red switch is on and has power (cyclotron not powered up yet).
     break;
@@ -671,14 +644,6 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
       }
     break;
 
-    case A_CYCLOTRON_LID_ON:
-      // Not used by Nano hardware.
-    break;
-
-    case A_CYCLOTRON_LID_OFF:
-      // Not used by Nano hardware.
-    break;
-
     case A_CYCLOTRON_INCREASE_SPEED:
       i_speed_multiplier++;
       b_state_changed = true;
@@ -698,22 +663,6 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
         bargraphClear();
         BARGRAPH_PATTERN = BG_POWER_RAMP;
       }
-    break;
-
-    case A_BARREL_EXTENDED:
-      // Not used by Nano hardware.
-    break;
-
-    case A_BARREL_RETRACTED:
-      // Not used by Nano hardware.
-    break;
-
-    case A_BATTERY_VOLTAGE_PACK:
-      // Not used by Nano hardware.
-    break;
-
-    case A_WAND_POWER_AMPS:
-      // Not used by Nano hardware.
     break;
 
     default:

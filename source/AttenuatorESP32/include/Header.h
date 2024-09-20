@@ -218,8 +218,8 @@ enum MENU_LEVELS { MENU_1, MENU_2 };
 enum MENU_LEVELS MENU_LEVEL;
 
 /*
-* Music Track Info and Playback States
-*/
+ * Music Track Info and Playback States
+ */
 const uint16_t i_music_track_offset = 500; // Music tracks always start at index 500.
 uint16_t i_music_track_count = 0; // Count of tracks as returned by the pack.
 uint16_t i_music_track_current = 0;

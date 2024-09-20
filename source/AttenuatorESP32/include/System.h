@@ -421,6 +421,9 @@ void switchLoops() {
   encoder_center.loop();
 }
 
+/*
+ * Monitor for interactions by user or serial comms.
+ */
 void mainLoop() {
   // Monitor for interactions by user.
   bool b_notify = checkPack();

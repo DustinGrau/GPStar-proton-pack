@@ -400,8 +400,10 @@ void switchLoops() {
   encoder_center.loop();
 }
 
+/*
+ * Monitor for interactions by user or serial comms.
+ */
 void mainLoop() {
-  // Monitor for interactions by user.
   checkPack();
   switchLoops();
   checkRotaryPress();
@@ -541,5 +543,11 @@ void mainLoop() {
   if(ms_fast_led.justFinished()) {
     FastLED.show();
     ms_fast_led.start(i_fast_led_delay);
+  }
+
+  if(ms_packsync.justFinished()) {
+    // The pack just went missing, so treat as disconnected.
+    b_wait_for_pack = true;
+    ms_packsync.start(i_sync_initial_delay);
   }
 }
