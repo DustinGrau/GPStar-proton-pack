@@ -131,4 +131,4 @@ Please follow the standard [FLASHING guide](FLASHING.md) using the `binaries/bla
 
 ## Software Development Requirements
 
-As of the v6.0.0 release the development platform of choice for this device has been migrated from Arduino IDE to the [VSCode with PlatformIO](VSCODE.md). Please follow the linked guide for installing the core software and plugins required. All libraries required by the project will be downloaded automatically.
+As of the v5.4.0 release the development platform of choice for this device has been migrated from Arduino IDE to the [VSCode with PlatformIO](VSCODE.md). Please follow the linked guide for installing the core software and plugins required. All libraries required by the project will be downloaded automatically.
