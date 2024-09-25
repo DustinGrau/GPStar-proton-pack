@@ -21,11 +21,11 @@ This device is capable of supporting Over-The-Air (OTA) updates for firmware, me
 
 &#128721; **STOP, PLEASE READ!**
 
-**The partition scheme for the ESP32-based controllers has changed as of v6.0.0 to support a larger firmware file. This requires an update via USB cable for any users who were previously on a firmware release in v5.x or earlier.** You will need to follow the "First-Time Upload" process to use a new, custom partition scheme on the device which provides a larger storage areas for Over-the-Air (OTA) updates. The standard flash memory of the ESP-WROOM-32 modules we use is limited to 4MB and must provide space to upload new firmware. For context, the default partition prioritized a "SPIFFS" area which was intended for file storage but is not used for our purposes. By removing that storage area we can allocate more space for larger firmware images (app0/app1), and increases the area for non-volatile storage (NVS).
+**The partition scheme for the ESP32-based controllers has changed as of v6.0.0 to support a larger firmware file. This requires an update via USB cable for any users who were previously on a firmware release in v5.x or earlier.** You will need to follow the "First-Time Upload" process to use a new, custom partition scheme on the device which provides a larger storage areas for Over-the-Air (OTA) updates. The standard flash memory of the ESP-WROOM-32 modules we use is limited to 4MB and must provide space to upload new firmware. For context, the default partition prioritized a "SPIFFS" area which was intended for file storage but is not used for our purposes. By removing that storage area we can allocate more space for larger firmware images (app0/app1), and adds an additional area for non-volatile storage (NVS).
 
 **Old Scheme:**
 
-- NVS: 20kb
+- nvs: 20kb
 - otadata: 8kb
 - app0: 1280kb (ota_0)
 - app1: 1280kb (ota_1)
@@ -34,10 +34,11 @@ This device is capable of supporting Over-The-Air (OTA) updates for firmware, me
 
 **New Scheme:**
 
-- NVS: 148kb
+- nvs: 20kb
 - otadata: 8kb
 - app0: 1920kb (ota_0)
 - app1: 1920kb (ota_1)
+- nvs2: 128kb
 - coredump: 64kb
 
 Once you have updated to a firmware from v6.x or later using the USB process, then then you may proceed to using the instructions for over-the-air (OTA/WiFi) updates **without** a USB cable as described in the **"Standard Updates"** section.  
