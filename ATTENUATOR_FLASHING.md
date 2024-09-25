@@ -21,7 +21,7 @@ This device is capable of supporting Over-The-Air (OTA) updates for firmware, me
 
 &#128721; **STOP, PLEASE READ!**
 
-**The partition scheme for the ESP32-based controllers has changed as of v6.0.0 to support a larger firmware file. This requires an update via USB cable for any users who were previously on a firmware release in v5.x or earlier.** You will need to follow the "First-Time Upload" process to use a new, custom partition scheme on the device which provides a larger storage areas for Over-the-Air (OTA) updates. The standard flash memory of the ESP-WROOM-32 modules we use is limited to 4MB and must provide space to upload new firmware. The default partition size prioritized a "SPIFFS" area which is reserved for file storage but is not used for our purposes. By reducing that storage area we can provide space for larger firmware images (app0/app1), and increase the area for non-volatile storage (NVS).
+**The partition scheme for the ESP32-based controllers has changed as of v6.0.0 to support a larger firmware file. This requires an update via USB cable for any users who were previously on a firmware release in v5.x or earlier.** You will need to follow the "First-Time Upload" process to use a new, custom partition scheme on the device which provides a larger storage areas for Over-the-Air (OTA) updates. The standard flash memory of the ESP-WROOM-32 modules we use is limited to 4MB and must provide space to upload new firmware. For context, the default partition prioritized a "SPIFFS" area which was intended for file storage but is not used for our purposes. By removing that storage area we can allocate more space for larger firmware images (app0/app1), and increases the area for non-volatile storage (NVS).
 
 **Old Scheme:**
 
@@ -61,7 +61,7 @@ This uses a 3rd-party website to upload using the Web Serial protocol which is o
 1. Locate the following files from the `/binaries/attenuator` directory.
 	* [extras/Attenuator-ESP32-bootloader.bin](binaries/attenuator/extras/Attenuator-ESP32-Bootloader.bin) = This is the standard bootloader for the ESP itself.
 	* [extras/Attenuator-ESP32-partitions.bin](binaries/attenuator/extras/Attenuator-ESP32-Partitions.bin) = This specifies the partition scheme for the flash memory.
-	* [extras/boot_app0.bin](binaries/attenuator/extras/boot_app0.bin) = This is the software for selecting the OTA partition.
+	* [extras/boot_app0.bin](binaries/attenuator/extras/boot_app0.bin) = This is the software for selecting the available/next OTA partition.
 	* [Attenuator-ESP32.bin](binaries/attenuator/Attenuator-ESP32.bin) = This is the custom software for the GPStar kit.
 1. Click on the **CONNECT** button and select your USB serial device from the list of options and click on "Connect".
 1. Once connected, select the files (noted above) for the following address spaces:
