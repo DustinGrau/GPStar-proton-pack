@@ -260,8 +260,21 @@ void updateWandPowerState() {
       wandReading.StateChanged = 0;
     }
 
-    // Stop firing and turn off the pack if current is below the base threshold.
-    if(f_avg_power <= f_wand_power_on_threshold) {
+    // Every X updates send the averaged, stable value which would determine a state change.
+    // This is called whenever the power meter is available--for wand hot-swapping purposes.
+    // Data is sent as integer so this is sent multiplied by 100 to get 2 decimal precision.
+    if(si_update == 0) {
+      serial1Send(A_WAND_POWER_AMPS, f_avg_power * 100);
+    }
+
+    // If the pack is currently off, or the wand has not been directly powered on, just leave immediately.
+    if(PACK_STATE == MODE_OFF || !b_wand_on) {
+        b_pack_started_by_meter = false; // Make sure this is kept as false since the wand is not powered.
+        return;
+    }
+
+    // If the wand was powered on via the power meter, then stop firing and turn off the pack if below the power threshold.
+    if(b_pack_started_by_meter && f_avg_power <= f_wand_power_on_threshold) {
       if(b_wand_firing) {
         // Stop firing sequence if previously firing.
         wandStoppedFiring();
@@ -282,13 +295,6 @@ void updateWandPowerState() {
       // Reset the state change timer and last average due to this significant event.
       wandReading.StateChanged = 0;
       wandReading.LastAverage = f_avg_power;
-    }
-
-    // Every X updates send the averaged, stable value which would determine a state change.
-    // This is called whenever the power meter is available--for wand hot-swapping purposes.
-    // Data is sent as integer so this is sent multiplied by 100 to get 2 decimal precision.
-    if(si_update == 0) {
-      serial1Send(A_WAND_POWER_AMPS, f_avg_power * 100);
     }
   }
   else {
@@ -312,7 +318,7 @@ void updateWandPowerState() {
 // Send latest voltage value to the serial1 device, if connected.
 void updatePackPowerState() {
   if(b_serial1_connected) {
-    // Data is sent as integer so this is already multiplied by 100 to get 2 decimal precision.
+    // Data is sent as uint16_t so this is already multiplied by 100 to get 2 decimal precision.
     serial1Send(A_BATTERY_VOLTAGE_PACK, packReading.BusVoltage);
   }
 }
