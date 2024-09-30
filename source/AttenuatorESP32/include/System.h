@@ -453,24 +453,26 @@ void mainLoop() {
   // Turns the pack on or off (when paired) via left toggle.
   if(switch_left.isPressed() || switch_left.isReleased()) {
     if(switch_left.getState() == LOW) {
+      b_left_toggle_on = true;
+
       if(!b_pack_on) {
         attenuatorSerialSend(A_TURN_PACK_ON);
 
         if(!b_notify && !b_wait_for_pack && !ms_packsync.isRunning()) {
           // Only force the pack bool to true if in standalone mode.
           b_pack_on = true;
-          b_left_toggle_on = true;
         }
       }
     }
     else {
+      b_left_toggle_on = false;
+
       if(b_pack_on) {
         attenuatorSerialSend(A_TURN_PACK_OFF);
 
         if(!b_notify && !b_wait_for_pack && !ms_packsync.isRunning()) {
           // Only force the pack bool to false if in standalone mode.
           b_pack_on = false;
-          b_left_toggle_on = false;
         }
       }
     }
