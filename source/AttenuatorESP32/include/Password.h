@@ -58,6 +58,26 @@ const char PASSWORD_page[] PROGMEM = R"=====(
   </div>
 
   <script type="application/javascript">
+    function isJsonString(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    function handleStatus(response) {
+      if (isJsonString(response || "")) {
+        var jObj = JSON.parse(response || "");
+        if (jObj.status && jObj.status != "success") {
+          alert(jObj.status); // Report non-success status.
+        }
+      } else {
+        alert(response); // Display plain text message.
+      }
+    }
+
     function updatePassword() {
       var newPass = (document.getElementById("password").value || "").trim();
       var confPW = (document.getElementById("password2").value || "").trim();
@@ -75,8 +95,7 @@ const char PASSWORD_page[] PROGMEM = R"=====(
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          var jObj = JSON.parse(this.responseText);
-          alert(jObj.status); // Always display status returned.
+          handleStatus(this.responseText);
         }
       };
       xhttp.open("PUT", "/password/update", true);
