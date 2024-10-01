@@ -94,13 +94,37 @@ const char PASSWORD_page[] PROGMEM = R"=====(
 
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          handleStatus(this.responseText);
+        if (this.readyState == 4) {
+          if (this.status == 200) {
+            handleStatus(this.responseText);
+          }
+
+          if (this.status == 205) {
+            handleStatus(this.responseText);
+
+            if (confirm("Restart device now?")) {
+              doRestart();
+            }
+          }
         }
       };
       xhttp.open("PUT", "/password/update", true);
       xhttp.setRequestHeader("Content-Type", "application/json");
       xhttp.send(body);
+    }
+
+    function doRestart() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 204) {
+          // Reload the page after 2 seconds.
+          setTimeout(function() {
+            window.location.reload();
+          }, 2000);
+        }
+      };
+      xhttp.open("DELETE", "/restart", true);
+      xhttp.send();
     }
   </script>
 </body>
