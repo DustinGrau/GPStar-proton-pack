@@ -353,13 +353,6 @@ String getAttenuatorConfig() {
   jsonBody["extAddr"] = wifi_address;
   jsonBody["extMask"] = wifi_subnet;
 
-  #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.print(F("wifiName: "));
-    Serial.println(jsonBody["wifiName"].as<String>());
-    Serial.print(F("songList: "));
-    Serial.println(jsonBody["songList"].as<String>());
-  #endif
-
   // Serialize JSON object to string.
   serializeJson(jsonBody, equipSettings);
   return equipSettings;
@@ -805,15 +798,14 @@ AsyncCallbackJsonWebHandler *handleSaveAttenuatorConfig = new AsyncCallbackJsonW
     String newSSID = jsonBody["wifiName"].as<String>();
     bool b_ssid_changed = false;
 
-    #if defined(DEBUG_SEND_TO_CONSOLE)
-      Serial.print(F("newSSID: "));
-      Serial.println(newSSID);
-    #endif
-
     // Update the private network name ONLY if the new value differs from the current SSID.
     if(newSSID != ap_ssid){
-      if(newSSID.length() > 8 && newSSID.length() <= 32) {
+      if(newSSID.length() >= 8 && newSSID.length() <= 32) {
         preferences.begin("credentials", false, "nvs"); // Access namespace in read/write mode.
+        #if defined(DEBUG_SEND_TO_CONSOLE)
+          Serial.print(F("New Private SSID: "));
+          Serial.println(newSSID);
+        #endif
         preferences.putString("ssid", newSSID); // Store SSID in case this was altered.
         preferences.end();
 
@@ -831,24 +823,29 @@ AsyncCallbackJsonWebHandler *handleSaveAttenuatorConfig = new AsyncCallbackJsonW
     // General Options - Returned as unsigned integers
     if(jsonBody["invertLEDs"].is<unsigned short>()) {
       // Inverts the order of the LEDs as seen by the device.
-      b_invert_leds = jsonBody["invertLEDs"].as<boolean>();
+      b_invert_leds = jsonBody["invertLEDs"].as<bool>();
     }
+
     if(jsonBody["buzzer"].is<unsigned short>()) {
       // Enable/disable the buzzer completely.
-      b_enable_buzzer = jsonBody["buzzer"].as<boolean>();
+      b_enable_buzzer = jsonBody["buzzer"].as<bool>();
     }
+
     if(jsonBody["vibration"].is<unsigned short>()) {
       // Enable/disable vibration completely.
-      b_enable_vibration = jsonBody["vibration"].as<boolean>();
+      b_enable_vibration = jsonBody["vibration"].as<bool>();
     }
+
     if(jsonBody["overheat"].is<unsigned short>()) {
       // Enable/disable all buzzer/vibration feedback during overheat/alarm.
-      b_overheat_feedback = jsonBody["overheat"].as<boolean>();
+      b_overheat_feedback = jsonBody["overheat"].as<bool>();
     }
+
     if(jsonBody["firing"].is<unsigned short>()) {
       // Enable/disable vibration when throwing a stream.
-      b_firing_feedback = jsonBody["firing"].as<boolean>();
+      b_firing_feedback = jsonBody["firing"].as<bool>();
     }
+
     if(jsonBody["radLensIdle"].is<unsigned short>()) {
       switch(jsonBody["radLensIdle"].as<unsigned short>()) {
         case 0:
