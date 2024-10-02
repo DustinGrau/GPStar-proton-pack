@@ -12,12 +12,12 @@ If you are using an Arduino Nano as part of a standalone Attenuator (meaning, a 
 
 ## For ESP32
 
-This device is capable of supporting Over-The-Air (OTA) updates for firmware, meaning you will need to utilize a desktop web browser from a computer (ideally not a mobile device or tablet) and the built-in WiFi access point provided by the controller (prefix: "ProtonPack_"). **However, please note the following special conditions!**
+This device is capable of supporting Over-The-Air (OTA) updates for firmware, meaning you will need to utilize a desktop web browser from a computer (not a mobile device or tablet) and the built-in WiFi access point provided by the controller (prefix: "ProtonPack_"). **However, please note the following special conditions!**
 
 1. If you used an off-the-shelf ESP32 device, then the software which enables the WiFi access point is **not yet loaded** so you will need to follow the "First-Time Upload" for the initial upload of firmware to your device.
 1. If you are performing your first upgrade to the version v6.x firmware, you will need to perform the exact same process as the "First-Time Upload" to re-partition your device to accept the larger firmware files.
 
-### Important Partition Upgrades: V5.x &rarr; V6.x 
+### Important Partition Upgrades: V5.x &rarr; V6.x
 
 &#128721; **STOP, PLEASE READ!**
 
@@ -41,7 +41,7 @@ This device is capable of supporting Over-The-Air (OTA) updates for firmware, me
 - nvs2: 128kb
 - coredump: 64kb
 
-Once you have updated to a firmware from v6.x or later using the USB process, then then you may proceed to using the instructions for over-the-air (OTA/WiFi) updates **without** a USB cable as described in the **"Standard Updates"** section.  
+Once you have updated to a firmware from v6.x or later using the USB process, then then you may proceed to using the instructions for over-the-air (OTA/WiFi) updates **without** a USB cable as described in the **"Standard Updates"** section.
 
 ### ESP32: First-Time Upload (via USB)
 
@@ -153,6 +153,6 @@ Once flashed, this will allow you to get back into the web UI at [http://192.168
 
 ## Software Development Requirements
 
-As of the v6.0.0 release the development platform of choice for this device has been migrated from Arduino IDE to the [VSCode with PlatformIO](VSCODE.md). Please follow the linked guide for installing the core software and plugins required. The source code for the Attenuator has also been divided into separate projects for the Arduino Nano vs. the ESP32 which allows for the respective libraries to be downloaded automatically as necessary.
+As of the v5.4.0 release the development platform of choice for this device has been migrated from Arduino IDE to the [VSCode with PlatformIO](VSCODE.md). Please follow the linked guide for installing the core software and plugins required. The source code for the Attenuator has also been divided into separate projects for the Arduino Nano vs. the ESP32 which allows for the respective libraries to be downloaded automatically as necessary.
 
 Note: A fork of the `ElegantOTA` library will be downloaded from [GitHub](https://github.com/DustinGrau/ElegantOTA.git) which contains specific modifications for use with the ESPAsyncWebServer package.
