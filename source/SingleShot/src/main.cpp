@@ -87,7 +87,7 @@ Task animateTask(16, TASK_FOREVER, &animateTaskCallback);
 
 // Create a task to check for user inputs via switches/encoders.
 // Average visual reaction time to changes is 13-20ms.
-Task inputsTask(15, TASK_FOREVER, &inputTaskCallback);
+Task inputsTask(14, TASK_FOREVER, &inputTaskCallback);
 
 void setup() {
   Serial.begin(9600); // Standard serial (USB) console.
@@ -169,11 +169,6 @@ void setup() {
   inputsTask.enable();
 }
 
-void loop() {
-  // Task execution via the scheduler.
-  schedule.execute();
-}
-
 // Task callback for handling animations.
 void animateTaskCallback() {
   // Update bargraph with latest state and pattern changes.
@@ -210,4 +205,9 @@ void inputTaskCallback() {
 
   // Perform updates/actions based on timer events.
   checkGeneralTimers();
+}
+
+void loop() {
+  // Task execution via the scheduler.
+  schedule.execute();
 }
