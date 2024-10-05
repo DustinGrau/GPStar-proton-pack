@@ -21,7 +21,7 @@
 // Required for PlatformIO
 #include <Arduino.h>
 
-// ESP - Suppress warning about SPI hardware pins
+// Suppress warning about SPI hardware pins
 // Define this before including <FastLED.h>
 #define FASTLED_INTERNAL
 
@@ -48,9 +48,14 @@
 #include "Wireless.h"
 #include "System.h"
 
+// Define handle for multi-core tasks.
+TaskHandle_t WebMgmt;
+
+// Forward declaration for task functions.
+void taskWebMgmt(void * pvParameters);
+
 void setup() {
   // Enable Serial connection(s) and communication with GPStar Proton Pack PCB.
-  // ESP - Serial Console for messages and Device Comms via Serial2
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   packComs.begin(Serial2, false);
@@ -67,7 +72,7 @@ void setup() {
   // Set a default animation for the radiation indicator.
   RAD_LENS_IDLE = AMBER_PULSE;
 
-  // ESP - Get Special Device Preferences
+  // Get Special Device Preferences
   preferences.begin("device", true, "nvs"); // Access namespace in read-only mode.
 
   // Return stored values if available, otherwise use a default value.
@@ -162,7 +167,7 @@ void setup() {
   // Delay before configuring WiFi and web access.
   delay(100);
 
-  // ESP - Setup WiFi and WebServer
+  // Setup WiFi and WebServer
   if(startWiFi()) {
     // Start the local web server.
     startWebServer();
@@ -176,8 +181,37 @@ void setup() {
   if(b_wait_for_pack) {
     ms_packsync.start(0);
   }
+
+  xTaskCreatePinnedToCore(
+    taskWebMgmt, // Function to implement the task
+    "WebMgmt",   // Name of the task
+    10000,       // Stack size in words
+    NULL,        // Task input parameter
+    0,           // Priority of the task
+    &WebMgmt,    // Task handle
+    0);          // Run task on core 0
 }
 
+void taskWebMgmt(void * parameter) {
+  for(;;) {
+    // Manage cleanup for old WebSocket clients.
+    if(ms_cleanup.remaining() < 1) {
+      // Clean up oldest WebSocket connections.
+      ws.cleanupClients();
+
+      // Restart timer for next cleanup action.
+      ms_cleanup.start(i_websocketCleanup);
+    }
+
+    // Update the current count of AP clients.
+    i_ap_client_count = WiFi.softAPgetStationNum();
+
+    // Handles device reboot after an OTA update.
+    ElegantOTA.loop();
+  }
+}
+
+// By default the loop() method runs on core 1
 void loop() {
   // Call this on each loop in case the user changed their preference.
   if(b_invert_leds) {
@@ -193,21 +227,6 @@ void loop() {
     i_device_led[1] = 1; // Upper
     i_device_led[2] = 2; // Lower
   }
-
-  // ESP - Manage cleanup for old WebSocket clients.
-  if(ms_cleanup.remaining() < 1) {
-    // Clean up oldest WebSocket connections.
-    ws.cleanupClients();
-
-    // Restart timer for next cleanup action.
-    ms_cleanup.start(i_websocketCleanup);
-  }
-
-  // Handle device reboot after an OTA update.
-  ElegantOTA.loop();
-
-  // Update the current count of AP clients.
-  i_ap_client_count = WiFi.softAPgetStationNum();
 
   if(b_wait_for_pack) {
     if(ms_packsync.justFinished()) {
