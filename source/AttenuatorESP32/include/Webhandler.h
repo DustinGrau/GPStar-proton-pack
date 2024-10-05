@@ -628,13 +628,13 @@ void handleRestart(AsyncWebServerRequest *request) {
 }
 
 void handlePackOn(AsyncWebServerRequest *request) {
-  debug("Turn Pack On");
+  debug("Web: Turn Pack On");
   attenuatorSerialSend(A_TURN_PACK_ON);
   request->send(200, "application/json", status);
 }
 
 void handlePackOff(AsyncWebServerRequest *request) {
-  debug("Turn Pack Off");
+  debug("Web: Turn Pack Off");
   attenuatorSerialSend(A_TURN_PACK_OFF);
   request->send(200, "application/json", status);
 }
@@ -642,7 +642,7 @@ void handlePackOff(AsyncWebServerRequest *request) {
 void handleAttenuatePack(AsyncWebServerRequest *request) {
   if(i_speed_multiplier > 2) {
     // Only send command to pack if cyclotron is not "normal".
-    debug("Cancel Overheat Warning");
+    debug("Web: Cancel Overheat Warning");
     attenuatorSerialSend(A_WARNING_CANCELLED);
     request->send(200, "application/json", status);
   } else {

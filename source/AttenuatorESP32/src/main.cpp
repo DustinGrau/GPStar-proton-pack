@@ -174,6 +174,8 @@ void setup() {
 
     // Begin timer for remote client events.
     ms_cleanup.start(i_websocketCleanup);
+    ms_apclient.start(i_apClientCount);
+    ms_otacheck.start(i_otaCheck);
   }
 
   // Initialize critical timers.
@@ -188,8 +190,8 @@ void setup() {
     2048,        // Stack size in bytes
     NULL,        // Task input parameter
     1,           // Priority of the task
-    &WebMgmt,    // Task handle
-    0);          // Run task on core 0
+    &WebMgmt,    // Task handle variable
+    1);          // Run task on core [0|1]
 }
 
 /**
@@ -202,9 +204,6 @@ void setup() {
 
 // Offload certain web management behaviors to a separate task.
 void taskWebMgmt(void * parameter) {
-  // Create a delay to block for 100ms.
-  const TickType_t xDelay = 100 / portTICK_PERIOD_MS;
-
   // Define an endless loop for this task with built-in delay between iterations.
   while(1) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
@@ -227,14 +226,22 @@ void taskWebMgmt(void * parameter) {
         ms_cleanup.start(i_websocketCleanup);
       }
 
-      // Update the current count of AP clients.
-      i_ap_client_count = WiFi.softAPgetStationNum();
+      if(ms_cleanup.remaining() < 1) {
+        // Update the current count of AP clients.
+        i_ap_client_count = WiFi.softAPgetStationNum();
 
-      // Handles device reboot after an OTA update.
-      ElegantOTA.loop();
+        // Restart timer for next count.
+        ms_apclient.start(i_apClientCount);
+      }
+
+      if(ms_cleanup.remaining() < 1) {
+        // Handles device reboot after an OTA update.
+        ElegantOTA.loop();
+
+        // Restart timer for next check.
+        ms_otacheck.start(i_otaCheck);
+      }
     }
-
-    vTaskDelay(xDelay); // Delay task for X milliseconds.
   }
 }
 

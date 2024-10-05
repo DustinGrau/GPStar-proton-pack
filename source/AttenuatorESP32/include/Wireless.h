@@ -85,6 +85,14 @@ unsigned long i_progress_millis = 0;
 millisDelay ms_cleanup;
 const uint16_t i_websocketCleanup = 5000;
 
+// Create timer for checking connections.
+millisDelay ms_apclient;
+const uint16_t i_apClientCount = 200;
+
+// Create timer for OTA updates.
+millisDelay ms_otacheck;
+const uint16_t i_otaCheck = 100;
+
 IPAddress convertToIP(String ipAddressString) {
   uint16_t quads[4]; // Array to store 4 quads for the IP.
   uint8_t quadStartIndex = 0;
