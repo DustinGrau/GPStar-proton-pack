@@ -217,7 +217,6 @@ void taskWebMgmt(void * parameter) {
 
     // Proceed with management if the AP and web server are started.
     if(b_ap_started && b_ws_started) {
-      // Manage cleanup for old WebSocket clients.
       if(ms_cleanup.remaining() < 1) {
         // Clean up oldest WebSocket connections.
         ws.cleanupClients();
