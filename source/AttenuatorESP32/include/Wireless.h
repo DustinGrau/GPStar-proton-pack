@@ -55,6 +55,7 @@ const String ap_ssid_prefix = "ProtonPack"; // This will be the base of the SSID
 String ap_default_passwd = "555-2368"; // This will be the default password for the AP.
 String ap_ssid; // Reserved for holding the full, private AP name for this device.
 bool b_ap_started = false; // Denotes the softAP network has been started.
+bool b_ws_started = false; // Denotes the web server has been started.
 
 // Local variables for connecting to a preferred WiFi network (when available).
 bool b_wifi_enabled = false; // Denotes user wishes to join/use external WiFi.

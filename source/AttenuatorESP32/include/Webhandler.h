@@ -253,7 +253,13 @@ void startWebServer() {
 
   // Start the web server.
   httpServer.begin();
-  //Serial.println("Async HTTP Server Started");
+
+  // Denote that the web server should be started.
+  b_ws_started = true;
+
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    Serial.println(F("Async HTTP Server Started"));
+  #endif
 }
 
 void handleRoot(AsyncWebServerRequest *request) {

@@ -185,29 +185,56 @@ void setup() {
   xTaskCreatePinnedToCore(
     taskWebMgmt, // Function to implement the task
     "WebMgmt",   // Name of the task
-    10000,       // Stack size in words
+    2048,        // Stack size in bytes
     NULL,        // Task input parameter
-    0,           // Priority of the task
+    1,           // Priority of the task
     &WebMgmt,    // Task handle
     0);          // Run task on core 0
 }
 
-void taskWebMgmt(void * parameter) {
-  for(;;) {
-    // Manage cleanup for old WebSocket clients.
-    if(ms_cleanup.remaining() < 1) {
-      // Clean up oldest WebSocket connections.
-      ws.cleanupClients();
+/**
+ * By default the WiFi will run on core0, while the standard loop() runs on core1.
+ * We can make efficient use of the available cores by "pinning" a task to a core.
+ * The ESP32 platform comes with FreeRTOS implemented internally and exposed even
+ * to the Arduino platform (meaning: no need for using the ESP-IDF exclusively).
+ * In theory this allows for improved parallel processing, if architected well.
+ */
 
-      // Restart timer for next cleanup action.
-      ms_cleanup.start(i_websocketCleanup);
+// Offload certain web management behaviors to a separate task.
+void taskWebMgmt(void * parameter) {
+  // Create a delay to block for 100ms.
+  const TickType_t xDelay = 100 / portTICK_PERIOD_MS;
+
+  // Define an endless loop for this task with built-in delay between iterations.
+  while(1) {
+    #if defined(DEBUG_SEND_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing taskWebMgmt in core"));
+      Serial.println(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F("Task Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    // Proceed with management if the AP and web server are started.
+    if(b_ap_started && b_ws_started) {
+      // Manage cleanup for old WebSocket clients.
+      if(ms_cleanup.remaining() < 1) {
+        // Clean up oldest WebSocket connections.
+        ws.cleanupClients();
+
+        // Restart timer for next cleanup action.
+        ms_cleanup.start(i_websocketCleanup);
+      }
+
+      // Update the current count of AP clients.
+      i_ap_client_count = WiFi.softAPgetStationNum();
+
+      // Handles device reboot after an OTA update.
+      ElegantOTA.loop();
     }
 
-    // Update the current count of AP clients.
-    i_ap_client_count = WiFi.softAPgetStationNum();
-
-    // Handles device reboot after an OTA update.
-    ElegantOTA.loop();
+    vTaskDelay(xDelay); // Delay task for X milliseconds.
   }
 }
 
