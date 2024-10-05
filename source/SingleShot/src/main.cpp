@@ -26,6 +26,7 @@
 #define _TASK_SCHEDULING_OPTIONS
 #define _TASK_SLEEP_ON_IDLE_RUN
 #define _TASK_TIMECRITICAL
+
 // See: https://github.com/arkhipenko/TaskScheduler/wiki/API-Documentation
 #include <TaskScheduler.h>
 
