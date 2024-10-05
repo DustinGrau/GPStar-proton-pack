@@ -207,7 +207,7 @@ void taskWebMgmt(void * parameter) {
 
   // Define an endless loop for this task with built-in delay between iterations.
   while(1) {
-    #if defined(DEBUG_SEND_TO_CONSOLE)
+    #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
       Serial.print(F("Executing taskWebMgmt in core"));
       Serial.println(xPortGetCoreID());
