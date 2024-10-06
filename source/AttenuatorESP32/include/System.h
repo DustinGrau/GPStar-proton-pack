@@ -582,7 +582,7 @@ void mainLoop() {
   }
 
   /**
-   * ESP - Alert any WebSocket clients after an API call was received.
+   * Alert any WebSocket clients after an API call was received.
    *
    * Note: We only perform this action if we have data from the pack
    * which resulted in a significant state change--this prevents the
