@@ -21,7 +21,6 @@
 #pragma once
 
 /*
- * Debugging options for ESP32 only.
  * Control debug messages for various actions during normal operation.
  * Uncomment the desired line(s) to output messages when and where you
  * expect to see them. Using the console should be reserved for active
@@ -32,7 +31,7 @@
 //#define DEBUG_SERIAL_COMMS     // Output debugs related to the serial communications.
 //#define DEBUG_SEND_TO_CONSOLE  // Send any general messages to the serial (USB) console.
 //#define DEBUG_TASK_TO_CONSOLE  // Send any task messages to the serial (USB) console.
-#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
+//#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
 
 /*
  * Force the use of default SSID and password for wireless capabilities.
@@ -45,7 +44,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "20241005122210";
+String build_date = "20241005212500";
 
 /*
  * Preferred WiFi Network Defaults

@@ -49,9 +49,13 @@
 #include "System.h"
 
 // Define handle for multi-core tasks.
+TaskHandle_t Animate;
+TaskHandle_t MainLoop;
 TaskHandle_t WebMgmt;
 
 // Forward declaration for task functions.
+void taskAnimate(void * pvParameters);
+void taskMainLoop(void * pvParameters);
 void taskWebMgmt(void * pvParameters);
 
 void setup() {
@@ -179,10 +183,27 @@ void setup() {
   }
 
   // Initialize critical timers.
-  ms_fast_led.start(0);
   if(b_wait_for_pack) {
     ms_packsync.start(0);
   }
+
+  xTaskCreatePinnedToCore(
+    taskAnimate, // Function to implement the task
+    "Animate",   // Name of the task
+    2048,        // Stack size in bytes
+    NULL,        // Task input parameter
+    3,           // Priority of the task
+    &Animate,    // Task handle variable
+    1);          // Run task on core [0|1]
+
+  xTaskCreatePinnedToCore(
+    taskMainLoop, // Function to implement the task
+    "MainLoop",   // Name of the task
+    4096,         // Stack size in bytes
+    NULL,         // Task input parameter
+    2,            // Priority of the task
+    &MainLoop,    // Task handle variable
+    1);           // Run task on core [0|1]
 
   xTaskCreatePinnedToCore(
     taskWebMgmt, // Function to implement the task
@@ -202,7 +223,86 @@ void setup() {
  * In theory this allows for improved parallel processing, if architected well.
  */
 
-// Offload certain web management behaviors to a separate task.
+// Perform all animations in a dedicated task set with an 8ms interval.
+void taskAnimate(void * parameter) {
+  // Define an endless loop for this task with built-in delay between iterations.
+  while(1) {
+    #if defined(DEBUG_TASK_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing taskAnimate in core"));
+      Serial.println(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F("Task Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    // Update bargraph elements, leveraging cyclotron speed modifier.
+    // In reality this multiplier is a divisor to the standard delay.
+    bargraphUpdate(i_speed_multiplier);
+
+    // Update the device LEDs and restart the timer.
+    FastLED.show();
+
+    vTaskDelay(pdMS_TO_TICKS(8)); // Delay for 8 milliseconds
+  }
+}
+
+// Perform all evaluations of user input and serial comms.
+void taskMainLoop(void * parameter) {
+  // Define an endless loop for this task with built-in delay between iterations.
+  while(1) {
+    #if defined(DEBUG_TASK_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing taskMainLoop in core"));
+      Serial.println(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F("Task Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    // Call this on each loop in case the user changed their preference.
+    if(b_invert_leds) {
+      // Flip the identification of the LEDs.
+      i_device_led[0] = 2; // Top
+      i_device_led[1] = 1; // Upper
+      i_device_led[2] = 0; // Lower
+    }
+    else {
+      // Use the expected order for the LEDs.
+      // aka. Defaults for the Arduino Nano and ESP32.
+      i_device_led[0] = 0; // Top
+      i_device_led[1] = 1; // Upper
+      i_device_led[2] = 2; // Lower
+    }
+
+    if(b_wait_for_pack) {
+      if(ms_packsync.justFinished()) {
+        // Tell the pack we are trying to sync.
+        attenuatorSerialSend(A_SYNC_START);
+
+        digitalWrite(BUILT_IN_LED, LOW);
+
+        // Pause and try again in a moment.
+        ms_packsync.start(i_sync_initial_delay);
+      }
+
+      checkPack();
+
+      if(!b_wait_for_pack) {
+        // Indicate that we are no longer waiting on the pack.
+        digitalWrite(BUILT_IN_LED, HIGH);
+      }
+    }
+    else {
+      // When not waiting for the pack go directly to the main loop.
+      mainLoop();
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 10 milliseconds
+  }
+}
+
+// Perform regular web management behaviors in a dedicated task.
 void taskWebMgmt(void * parameter) {
   // Define an endless loop for this task with built-in delay between iterations.
   while(1) {
@@ -241,46 +341,11 @@ void taskWebMgmt(void * parameter) {
         ms_otacheck.start(i_otaCheck);
       }
     }
+
+    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds
   }
 }
 
-// By default the loop() method runs on core 1
 void loop() {
-  // Call this on each loop in case the user changed their preference.
-  if(b_invert_leds) {
-    // Flip the identification of the LEDs.
-    i_device_led[0] = 2; // Top
-    i_device_led[1] = 1; // Upper
-    i_device_led[2] = 0; // Lower
-  }
-  else {
-    // Use the expected order for the LEDs.
-    // aka. Defaults for the Arduino Nano and ESP32.
-    i_device_led[0] = 0; // Top
-    i_device_led[1] = 1; // Upper
-    i_device_led[2] = 2; // Lower
-  }
-
-  if(b_wait_for_pack) {
-    if(ms_packsync.justFinished()) {
-      // Tell the pack we are trying to sync.
-      attenuatorSerialSend(A_SYNC_START);
-
-      digitalWrite(BUILT_IN_LED, LOW);
-
-      // Pause and try again in a moment.
-      ms_packsync.start(i_sync_initial_delay);
-    }
-
-    checkPack();
-
-    if(!b_wait_for_pack) {
-      // Indicate that we are no longer waiting on the pack.
-      digitalWrite(BUILT_IN_LED, HIGH);
-    }
-  }
-  else {
-    // When not waiting for the pack go directly to the main loop.
-    mainLoop();
-  }
+  // No work done here, only in the tasks!
 }
