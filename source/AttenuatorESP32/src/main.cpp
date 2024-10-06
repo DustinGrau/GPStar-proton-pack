@@ -55,7 +55,7 @@ TaskHandle_t AnimationTaskHandle = NULL;
 TaskHandle_t WiFiManagementTaskHandle = NULL;
 TaskHandle_t WiFiSetupTaskHandle = NULL;
 
-// Serial Comms task - runs every 10ms
+// Serial Comms Task (Loop)
 void SerialCommsTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
@@ -113,11 +113,11 @@ void SerialCommsTask(void *parameter) {
       }
     }
     
-    vTaskDelay(10 / portTICK_PERIOD_MS); // 10ms delay
+    vTaskDelay(2 / portTICK_PERIOD_MS); // 2ms delay
   }
 }
 
-// User Input task - runs every 15ms
+// User Input Task (Loop)
 void UserInputTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
@@ -134,11 +134,11 @@ void UserInputTask(void *parameter) {
       checkUserInputs();
     }
     
-    vTaskDelay(15 / portTICK_PERIOD_MS); // 15ms delay
+    vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
   }
 }
 
-// Animation task - runs every 8ms
+// Animation Task (Loop)
 void AnimationTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
@@ -179,7 +179,7 @@ void AnimationTask(void *parameter) {
   }
 }
 
-// WiFi Management task - runs every 10ms
+// WiFi Management Task (Loop)
 void WiFiManagementTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
@@ -218,20 +218,17 @@ void WiFiManagementTask(void *parameter) {
       }
     }
       
-    vTaskDelay(10 / portTICK_PERIOD_MS); // 10ms delay
+    vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
   }
 }
 
-// WiFi Setup task - runs once at boot
+// WiFi Setup Task (Single-Run)
 void WiFiSetupTask(void *parameter) {
-  //#if defined(DEBUG_TASK_TO_CONSOLE)
+  #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
     Serial.print(F("Executing WiFiSetupTask in core"));
-    Serial.print(xPortGetCoreID());
-    // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F(" | Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
-  //#endif
+    Serial.println(xPortGetCoreID());
+  #endif
 
   // Begin by setting up WiFi as a prerequisite to all else.
   if(startWiFi()) {
@@ -243,6 +240,12 @@ void WiFiSetupTask(void *parameter) {
     ms_apclient.start(i_apClientCount);
     ms_otacheck.start(i_otaCheck);
   }
+
+  #if defined(DEBUG_TASK_TO_CONSOLE)
+    // Get the stack high water mark for optimizing bytes allocated.
+    Serial.print(F("WiFiSetupTask Stack HWM: "));
+    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+  #endif
 
   // Task ends after setup is complete and MUST be removed from scheduling.
   // Failure to do this can cause an error within the watchdog timer!
@@ -392,13 +395,13 @@ void setup() {
    */
 
   // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
-  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 2048, NULL, 5, &WiFiSetupTaskHandle, 1);
+  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 4096, NULL, 5, &WiFiSetupTaskHandle, 1);
  
   // Delay all lower priority tasks until WiFi and WebServer setup is done.
   vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.
 
   // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
-  xTaskCreatePinnedToCore(SerialCommsTask, "SerialCommsTask", 2048, NULL, 4, &SerialCommsTaskHandle, 1);
+  xTaskCreatePinnedToCore(SerialCommsTask, "SerialCommsTask", 4096, NULL, 4, &SerialCommsTaskHandle, 1);
   xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
   xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
   xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 2048, NULL, 1, &WiFiManagementTaskHandle, 1);
