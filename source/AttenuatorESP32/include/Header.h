@@ -21,6 +21,11 @@
 #pragma once
 
 /*
+ * Flag to indicate serial comms have been established after bootup.
+ */
+bool b_comms_open = false;
+
+/*
  * Pin for Addressable LEDs.
  */
 #define DEVICE_LED_PIN 23

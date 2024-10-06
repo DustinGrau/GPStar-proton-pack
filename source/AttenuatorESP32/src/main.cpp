@@ -48,22 +48,222 @@
 #include "Wireless.h"
 #include "System.h"
 
-// Define handle for multi-core tasks.
-TaskHandle_t Animate;
-TaskHandle_t MainLoop;
-TaskHandle_t WebMgmt;
+// Task Handles
+TaskHandle_t SerialCommsTaskHandle = NULL;
+TaskHandle_t UserInputTaskHandle = NULL;
+TaskHandle_t AnimationTaskHandle = NULL;
+TaskHandle_t WiFiManagementTaskHandle = NULL;
+TaskHandle_t WiFiSetupTaskHandle = NULL;
 
-// Forward declaration for task functions.
-void taskAnimate(void * pvParameters);
-void taskMainLoop(void * pvParameters);
-void taskWebMgmt(void * pvParameters);
+// Serial Comms task - runs every 10ms
+void SerialCommsTask(void *parameter) {
+  #if defined(DEBUG_TASK_TO_CONSOLE)
+    // Confirm the core in use for this task, and when it runs.
+    Serial.print(F("Executing SerialCommsTask in core"));
+    Serial.print(xPortGetCoreID());
+    // Get the stack high water mark for optimizing bytes allocated.
+    Serial.print(F(" | Stack HWM: "));
+    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+  #endif
+
+  while(true) {
+    if(b_wait_for_pack) {
+      if(ms_packsync.justFinished()) {
+        // Tell the pack we are trying to sync.
+        attenuatorSerialSend(A_SYNC_START);
+
+        // Keep the on-board LED dark until sync'd.
+        digitalWrite(BUILT_IN_LED, LOW);
+
+        // Pause and try again in a moment.
+        ms_packsync.start(i_sync_initial_delay);
+      }
+
+      checkPack();
+
+      if(!b_wait_for_pack) {
+        // Indicate that we are no longer waiting on the pack.
+        digitalWrite(BUILT_IN_LED, HIGH);
+      }
+    }
+    else {
+      bool b_notify = checkPack(); // Always updates on pack check.
+
+      // If at any point this flag is true, we have comms open to the pack.
+      // This gets reset upon every bootup (read: re-connection to a pack).
+      if(b_notify) {
+        b_comms_open = true;
+      }
+
+      if(ms_packsync.justFinished()) {
+        // The pack just went missing, so treat as disconnected.
+        b_wait_for_pack = true;
+        ms_packsync.start(i_sync_initial_delay);
+      }
+
+      /**
+       * Alert any WebSocket clients after an API call was received.
+       *
+       * Note: We only perform this action if we have data from the pack
+       * which resulted in a significant state change--this prevents the
+       * device from spamming any downstream clients with unchanged data.
+       */
+      if(b_notify) {
+        notifyWSClients(); // Send latest status to the WebSocket.
+      }
+    }
+    
+    vTaskDelay(10 / portTICK_PERIOD_MS); // 10ms delay
+  }
+}
+
+// User Input task - runs every 15ms
+void UserInputTask(void *parameter) {
+  while(true) {
+    #if defined(DEBUG_TASK_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing UserInputTask in core"));
+      Serial.print(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F(" | Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    if(!b_wait_for_pack) {
+      // When not waiting for the pack go directly to checking user inputs.
+      checkUserInputs();
+    }
+    
+    vTaskDelay(15 / portTICK_PERIOD_MS); // 15ms delay
+  }
+}
+
+// Animation task - runs every 8ms
+void AnimationTask(void *parameter) {
+  while(true) {
+    #if defined(DEBUG_TASK_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing AnimationTask in core"));
+      Serial.print(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F(" | Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    // Call this on each loop in case the user changed their preference.
+    if(b_invert_leds) {
+      // Flip the identification of the LEDs.
+      i_device_led[0] = 2; // Top
+      i_device_led[1] = 1; // Upper
+      i_device_led[2] = 0; // Lower
+    }
+    else {
+      // Use the expected order for the LEDs.
+      // aka. Defaults for the Arduino Nano and ESP32.
+      i_device_led[0] = 0; // Top
+      i_device_led[1] = 1; // Upper
+      i_device_led[2] = 2; // Lower
+    }
+
+    // Update LEDs using appropriate colour scheme and environment vars.
+    updateLEDs();
+
+    // Update bargraph elements, leveraging cyclotron speed modifier.
+    // In reality this multiplier is a divisor to the standard delay.
+    bargraphUpdate(i_speed_multiplier);
+
+    // Update the device LEDs and restart the timer.
+    FastLED.show();
+      
+    vTaskDelay(8 / portTICK_PERIOD_MS); // 8ms delay
+  }
+}
+
+// WiFi Management task - runs every 10ms
+void WiFiManagementTask(void *parameter) {
+  while(true) {
+    #if defined(DEBUG_TASK_TO_CONSOLE)
+      // Confirm the core in use for this task, and when it runs.
+      Serial.print(F("Executing WiFiManagementTask in core"));
+      Serial.print(xPortGetCoreID());
+      // Get the stack high water mark for optimizing bytes allocated.
+      Serial.print(F(" | Stack HWM: "));
+      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    #endif
+
+    // Proceed with management if the AP and web server are started.
+    if(b_ap_started && b_ws_started) {
+      if(ms_cleanup.remaining() < 1) {
+        // Clean up oldest WebSocket connections.
+        ws.cleanupClients();
+
+        // Restart timer for next cleanup action.
+        ms_cleanup.start(i_websocketCleanup);
+      }
+
+      if(ms_cleanup.remaining() < 1) {
+        // Update the current count of AP clients.
+        i_ap_client_count = WiFi.softAPgetStationNum();
+
+        // Restart timer for next count.
+        ms_apclient.start(i_apClientCount);
+      }
+
+      if(ms_cleanup.remaining() < 1) {
+        // Handles device reboot after an OTA update.
+        ElegantOTA.loop();
+
+        // Restart timer for next check.
+        ms_otacheck.start(i_otaCheck);
+      }
+    }
+      
+    vTaskDelay(10 / portTICK_PERIOD_MS); // 10ms delay
+  }
+}
+
+// WiFi Setup task - runs once at boot
+void WiFiSetupTask(void *parameter) {
+  //#if defined(DEBUG_TASK_TO_CONSOLE)
+    // Confirm the core in use for this task, and when it runs.
+    Serial.print(F("Executing WiFiSetupTask in core"));
+    Serial.print(xPortGetCoreID());
+    // Get the stack high water mark for optimizing bytes allocated.
+    Serial.print(F(" | Stack HWM: "));
+    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+  //#endif
+
+  // Begin by setting up WiFi as a prerequisite to all else.
+  if(startWiFi()) {
+    // Start the local web server.
+    startWebServer();
+
+    // Begin timer for remote client events.
+    ms_cleanup.start(i_websocketCleanup);
+    ms_apclient.start(i_apClientCount);
+    ms_otacheck.start(i_otaCheck);
+  }
+
+  // Task ends after setup is complete and MUST be removed from scheduling.
+  // Failure to do this can cause an error within the watchdog timer!
+  vTaskDelete(NULL);
+}
 
 void setup() {
-  // Enable Serial connection(s) and communication with GPStar Proton Pack PCB.
-  Serial.begin(115200);
+  Serial.begin(115200); // Serial monitor via USB connection.
+
+  // Expect a Serial2 connection with communication to a GPStar Proton Pack PCB.
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   packComs.begin(Serial2, false);
+
+  // Prepare the on-board (non-power) LED to be used as an output pin for indication.
   pinMode(BUILT_IN_LED, OUTPUT);
+
+  // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
+  // Lower frequency means less power consumption, but slower performance (obviously).
+  setCpuFrequencyMhz(240);
+  Serial.print(F("CPU Freq (MHz): "));
+  Serial.println(getCpuFrequencyMhz());
 
   // Assume the Super Hero arming mode with Afterlife (default for Haslab).
   SYSTEM_MODE = MODE_SUPER_HERO;
@@ -76,49 +276,47 @@ void setup() {
   // Set a default animation for the radiation indicator.
   RAD_LENS_IDLE = AMBER_PULSE;
 
-  // Get Special Device Preferences
-  preferences.begin("device", true, "nvs"); // Access namespace in read-only mode.
+  /*
+   * Get Local Device Preferences
+   * Accesses the "device" namespace in read-only mode under the "nvs" partition.
+   */
+  bool b_namespace_opened = preferences.begin("device", true, "nvs");
+  if(b_namespace_opened) {
+    // Return stored values if available, otherwise use a default value.
+    b_invert_leds = preferences.getBool("invert_led", false);
+    b_enable_buzzer = preferences.getBool("use_buzzer", true);
+    b_enable_vibration = preferences.getBool("use_vibration", true);
+    b_overheat_feedback = preferences.getBool("use_overheat", true);
+    b_firing_feedback = preferences.getBool("fire_feedback", false);
 
-  // Return stored values if available, otherwise use a default value.
-  b_invert_leds = preferences.getBool("invert_led", false);
-  b_enable_buzzer = preferences.getBool("use_buzzer", true);
-  b_enable_vibration = preferences.getBool("use_vibration", true);
-  b_overheat_feedback = preferences.getBool("use_overheat", true);
-  b_firing_feedback = preferences.getBool("fire_feedback", false);
+    switch(preferences.getShort("radiation_idle", 0)) {
+      case 0:
+        RAD_LENS_IDLE = AMBER_PULSE;
+      break;
+      case 1:
+        RAD_LENS_IDLE = ORANGE_FADE;
+      break;
+      case 2:
+        RAD_LENS_IDLE = RED_FADE;
+      break;
+    }
 
-  switch(preferences.getShort("radiation_idle", 0)) {
-    case 0:
-      RAD_LENS_IDLE = AMBER_PULSE;
-    break;
-    case 1:
-      RAD_LENS_IDLE = ORANGE_FADE;
-    break;
-    case 2:
-      RAD_LENS_IDLE = RED_FADE;
-    break;
+    switch(preferences.getShort("display_type", 0)) {
+      case 0:
+        DISPLAY_TYPE = STATUS_TEXT;
+      break;
+      case 1:
+        DISPLAY_TYPE = STATUS_GRAPHIC;
+      break;
+      case 2:
+      default:
+        DISPLAY_TYPE = STATUS_BOTH;
+      break;
+    }
+
+    s_track_listing = preferences.getString("track_list", "");
+    preferences.end();
   }
-
-  switch(preferences.getShort("display_type", 0)) {
-    case 0:
-      DISPLAY_TYPE = STATUS_TEXT;
-    break;
-    case 1:
-      DISPLAY_TYPE = STATUS_GRAPHIC;
-    break;
-    case 2:
-    default:
-      DISPLAY_TYPE = STATUS_BOTH;
-    break;
-  }
-
-  s_track_listing = preferences.getString("track_list", "");
-  preferences.end();
-
-  // CPU Frequency MHz: 80, 160, 240 [Default]
-  // Lower frequency means less power consumption.
-  setCpuFrequencyMhz(240);
-  Serial.print(F("CPU Freq (MHz): "));
-  Serial.println(getCpuFrequencyMhz());
 
   if(!b_wait_for_pack) {
     // If not waiting for the pack set power level to 5.
@@ -168,182 +366,42 @@ void setup() {
   // Get initial switch/button states.
   switchLoops();
 
-  // Delay before configuring WiFi and web access.
+  // Delay before configuring and running tasks.
   delay(100);
 
-  // Setup WiFi and WebServer
-  if(startWiFi()) {
-    // Start the local web server.
-    startWebServer();
-
-    // Begin timer for remote client events.
-    ms_cleanup.start(i_websocketCleanup);
-    ms_apclient.start(i_apClientCount);
-    ms_otacheck.start(i_otaCheck);
-  }
-
-  // Initialize critical timers.
+  // Initialize a critical timer for serial comms.
   if(b_wait_for_pack) {
     ms_packsync.start(0);
   }
 
-  xTaskCreatePinnedToCore(
-    taskAnimate, // Function to implement the task
-    "Animate",   // Name of the task
-    2048,        // Stack size in bytes
-    NULL,        // Task input parameter
-    3,           // Priority of the task
-    &Animate,    // Task handle variable
-    1);          // Run task on core [0|1]
+  /**
+   * By default the WiFi will run on core0, while the standard loop() runs on core1.
+   * We can make efficient use of the available cores by "pinning" a task to a core.
+   * The ESP32 platform comes with FreeRTOS implemented internally and exposed even
+   * to the Arduino platform (meaning: no need for using the ESP-IDF exclusively).
+   * In theory this allows for improved parallel processing with prioritization.
+   * 
+   * Parameters:
+   *  Task Function,
+   *  Task Name,
+   *  Stack Size,
+   *  Input Parameter,
+   *  Priority,
+   *  Task Handle,
+   *  Pinned Core
+   */
 
-  xTaskCreatePinnedToCore(
-    taskMainLoop, // Function to implement the task
-    "MainLoop",   // Name of the task
-    4096,         // Stack size in bytes
-    NULL,         // Task input parameter
-    2,            // Priority of the task
-    &MainLoop,    // Task handle variable
-    1);           // Run task on core [0|1]
+  // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
+  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 2048, NULL, 5, &WiFiSetupTaskHandle, 1);
+ 
+  // Delay all lower priority tasks until WiFi and WebServer setup is done.
+  vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.
 
-  xTaskCreatePinnedToCore(
-    taskWebMgmt, // Function to implement the task
-    "WebMgmt",   // Name of the task
-    2048,        // Stack size in bytes
-    NULL,        // Task input parameter
-    1,           // Priority of the task
-    &WebMgmt,    // Task handle variable
-    1);          // Run task on core [0|1]
-}
-
-/**
- * By default the WiFi will run on core0, while the standard loop() runs on core1.
- * We can make efficient use of the available cores by "pinning" a task to a core.
- * The ESP32 platform comes with FreeRTOS implemented internally and exposed even
- * to the Arduino platform (meaning: no need for using the ESP-IDF exclusively).
- * In theory this allows for improved parallel processing, if architected well.
- */
-
-// Perform all animations in a dedicated task set with an 8ms interval.
-void taskAnimate(void * parameter) {
-  // Define an endless loop for this task with built-in delay between iterations.
-  while(1) {
-    #if defined(DEBUG_TASK_TO_CONSOLE)
-      // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing taskAnimate in core"));
-      Serial.println(xPortGetCoreID());
-      // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F("Task Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    #endif
-
-    // Update bargraph elements, leveraging cyclotron speed modifier.
-    // In reality this multiplier is a divisor to the standard delay.
-    bargraphUpdate(i_speed_multiplier);
-
-    // Update the device LEDs and restart the timer.
-    FastLED.show();
-
-    vTaskDelay(pdMS_TO_TICKS(8)); // Delay for 8 milliseconds
-  }
-}
-
-// Perform all evaluations of user input and serial comms.
-void taskMainLoop(void * parameter) {
-  // Define an endless loop for this task with built-in delay between iterations.
-  while(1) {
-    #if defined(DEBUG_TASK_TO_CONSOLE)
-      // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing taskMainLoop in core"));
-      Serial.println(xPortGetCoreID());
-      // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F("Task Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    #endif
-
-    // Call this on each loop in case the user changed their preference.
-    if(b_invert_leds) {
-      // Flip the identification of the LEDs.
-      i_device_led[0] = 2; // Top
-      i_device_led[1] = 1; // Upper
-      i_device_led[2] = 0; // Lower
-    }
-    else {
-      // Use the expected order for the LEDs.
-      // aka. Defaults for the Arduino Nano and ESP32.
-      i_device_led[0] = 0; // Top
-      i_device_led[1] = 1; // Upper
-      i_device_led[2] = 2; // Lower
-    }
-
-    if(b_wait_for_pack) {
-      if(ms_packsync.justFinished()) {
-        // Tell the pack we are trying to sync.
-        attenuatorSerialSend(A_SYNC_START);
-
-        digitalWrite(BUILT_IN_LED, LOW);
-
-        // Pause and try again in a moment.
-        ms_packsync.start(i_sync_initial_delay);
-      }
-
-      checkPack();
-
-      if(!b_wait_for_pack) {
-        // Indicate that we are no longer waiting on the pack.
-        digitalWrite(BUILT_IN_LED, HIGH);
-      }
-    }
-    else {
-      // When not waiting for the pack go directly to the main loop.
-      mainLoop();
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 10 milliseconds
-  }
-}
-
-// Perform regular web management behaviors in a dedicated task.
-void taskWebMgmt(void * parameter) {
-  // Define an endless loop for this task with built-in delay between iterations.
-  while(1) {
-    #if defined(DEBUG_TASK_TO_CONSOLE)
-      // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing taskWebMgmt in core"));
-      Serial.println(xPortGetCoreID());
-      // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F("Task Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    #endif
-
-    // Proceed with management if the AP and web server are started.
-    if(b_ap_started && b_ws_started) {
-      if(ms_cleanup.remaining() < 1) {
-        // Clean up oldest WebSocket connections.
-        ws.cleanupClients();
-
-        // Restart timer for next cleanup action.
-        ms_cleanup.start(i_websocketCleanup);
-      }
-
-      if(ms_cleanup.remaining() < 1) {
-        // Update the current count of AP clients.
-        i_ap_client_count = WiFi.softAPgetStationNum();
-
-        // Restart timer for next count.
-        ms_apclient.start(i_apClientCount);
-      }
-
-      if(ms_cleanup.remaining() < 1) {
-        // Handles device reboot after an OTA update.
-        ElegantOTA.loop();
-
-        // Restart timer for next check.
-        ms_otacheck.start(i_otaCheck);
-      }
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds
-  }
+  // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
+  xTaskCreatePinnedToCore(SerialCommsTask, "SerialCommsTask", 2048, NULL, 4, &SerialCommsTaskHandle, 1);
+  xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
+  xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
+  xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 2048, NULL, 1, &WiFiManagementTaskHandle, 1);
 }
 
 void loop() {

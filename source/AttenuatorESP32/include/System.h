@@ -427,10 +427,9 @@ void switchLoops() {
 }
 
 /*
- * Monitor for interactions by user or serial comms.
+ * Monitor for interactions by user input.
  */
-void mainLoop() {
-  bool b_notify = checkPack();
+void checkUserInputs() {
   switchLoops();
   checkRotaryPress();
   if(!b_center_lockout) {
@@ -447,8 +446,8 @@ void mainLoop() {
    * bargraph (whether stock 5-LED version or 28-segment by Frutto).
    *
    * Standalone:
-   * When not paired with the gpstar Proton Pack controller, will turn
-   * on the bargraph which will display some pre-set pattern.
+   * When not paired with the GPStar Proton Pack controller, will turn
+   * on the bargraph which will display a static, pre-set pattern.
    */
 
   // Turns the pack on or off (when paired) via left toggle.
@@ -459,7 +458,7 @@ void mainLoop() {
       if(!b_pack_on) {
         attenuatorSerialSend(A_TURN_PACK_ON);
 
-        if(!b_notify && !b_wait_for_pack && !ms_packsync.isRunning()) {
+        if(!b_comms_open && !b_wait_for_pack && !ms_packsync.isRunning()) {
           // Only force the pack bool to true if in standalone mode.
           b_pack_on = true;
         }
@@ -471,7 +470,7 @@ void mainLoop() {
       if(b_pack_on) {
         attenuatorSerialSend(A_TURN_PACK_OFF);
 
-        if(!b_notify && !b_wait_for_pack && !ms_packsync.isRunning()) {
+        if(!b_comms_open && !b_wait_for_pack && !ms_packsync.isRunning()) {
           // Only force the pack bool to false if in standalone mode.
           b_pack_on = false;
         }
@@ -562,9 +561,6 @@ void mainLoop() {
     }
   }
 
-  // Update LEDs using appropriate colour scheme and environment vars.
-  updateLEDs();
-
   // Turn off buzzer if timer finished.
   if(ms_buzzer.justFinished() || ms_buzzer.remaining() < 1) {
     buzzOff();
@@ -573,22 +569,5 @@ void mainLoop() {
   // Turn off vibration if timer finished.
   if(ms_vibrate.justFinished() || ms_vibrate.remaining() < 1) {
     vibrateOff();
-  }
-
-  if(ms_packsync.justFinished()) {
-    // The pack just went missing, so treat as disconnected.
-    b_wait_for_pack = true;
-    ms_packsync.start(i_sync_initial_delay);
-  }
-
-  /**
-   * Alert any WebSocket clients after an API call was received.
-   *
-   * Note: We only perform this action if we have data from the pack
-   * which resulted in a significant state change--this prevents the
-   * device from spamming any downstream clients with unchanged data.
-   */
-  if(b_notify) {
-    notifyWSClients(); // Send latest status to the WebSocket.
   }
 }
