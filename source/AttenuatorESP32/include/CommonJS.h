@@ -21,23 +21,36 @@
 #pragma once
 
 const char COMMONJS_page[] PROGMEM = R"=====(
-function getEl(id, type){
-  switch(type){
-    case "bool":
-        return (document.getElementById(id).checked ? 1 : 0);
-    break;
-
-    case "int":
-        return parseInt(document.getElementById(id).value || 0, 10);
-    break;
-
-    default:
-    return document.getElementById(id);
-  }  
+function getEl(id){
+  return document.getElementById(id);
 }
 
-function setEl(id, value){
+function getInt(id){
+  return parseInt(getValue(id) || 0, 10);
+}
+
+function getText(id){
+  return (getValue(id) || "").trim();
+}
+
+function getToggle(id){
+  return (getEl(id).checked ? 1 : 0);
+}
+
+function getValue(id){
+  return getEl(id).value;
+}
+
+function setHtml(id, value){
   getEl(id).innerHTML = value || "";
+}
+
+function setToggle(id, value){
+  getEl(id).checked = (value ? true : false);
+}
+
+function setValue(id, value){
+  getEl(id).value = value;
 }
 
 function hideEl(id){
