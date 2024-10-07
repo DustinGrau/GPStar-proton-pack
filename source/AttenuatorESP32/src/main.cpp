@@ -112,7 +112,7 @@ void SerialCommsTask(void *parameter) {
         notifyWSClients(); // Send latest status to the WebSocket.
       }
     }
-    
+
     vTaskDelay(2 / portTICK_PERIOD_MS); // 2ms delay
   }
 }
@@ -133,7 +133,7 @@ void UserInputTask(void *parameter) {
       // When not waiting for the pack go directly to checking user inputs.
       checkUserInputs();
     }
-    
+
     vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
   }
 }
@@ -174,7 +174,7 @@ void AnimationTask(void *parameter) {
 
     // Update the device LEDs and restart the timer.
     FastLED.show();
-      
+
     vTaskDelay(8 / portTICK_PERIOD_MS); // 8ms delay
   }
 }
@@ -217,7 +217,7 @@ void WiFiManagementTask(void *parameter) {
         ms_otacheck.start(i_otaCheck);
       }
     }
-      
+
     vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
   }
 }
@@ -383,7 +383,7 @@ void setup() {
    * The ESP32 platform comes with FreeRTOS implemented internally and exposed even
    * to the Arduino platform (meaning: no need for using the ESP-IDF exclusively).
    * In theory this allows for improved parallel processing with prioritization.
-   * 
+   *
    * Parameters:
    *  Task Function,
    *  Task Name,
@@ -396,7 +396,7 @@ void setup() {
 
   // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
   xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 4096, NULL, 5, &WiFiSetupTaskHandle, 1);
- 
+
   // Delay all lower priority tasks until WiFi and WebServer setup is done.
   vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.
 
