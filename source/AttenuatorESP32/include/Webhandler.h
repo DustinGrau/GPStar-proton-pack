@@ -21,6 +21,7 @@
 #pragma once
 
 // Web page files (defines all text as char[] variable)
+#include "CommonJS.h" // COMMONJS_page
 #include "Index.h" // INDEX_page
 #include "IndexJS.h" // INDEXJS_page
 #include "Device.h" // DEVICE_page
@@ -260,6 +261,12 @@ void startWebServer() {
   #if defined(DEBUG_SEND_TO_CONSOLE)
     Serial.println(F("Async HTTP Server Started"));
   #endif
+}
+
+void handleCommonJS(AsyncWebServerRequest *request) {
+  // Used for the root page (/) from the web server.
+  debug("Sending -> Index JavaScript");
+  request->send(200, "application/javascript", String(COMMONJS_page)); // Serve page content.
 }
 
 void handleRoot(AsyncWebServerRequest *request) {
@@ -1303,6 +1310,7 @@ void setupRouting() {
 
   // Static Pages
   httpServer.on("/", HTTP_GET, handleRoot);
+  httpServer.on("/common.js", HTTP_GET, handleCommonJS);
   httpServer.on("/index.js", HTTP_GET, handleRootJS);
   httpServer.on("/network", HTTP_GET, handleNetwork);
   httpServer.on("/password", HTTP_GET, handlePassword);
