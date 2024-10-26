@@ -43,7 +43,12 @@ const char DEVICE_page[] PROGMEM = R"=====(
   <h1>General Options</h1>
   <div class="block left">
     <div class="setting">
-      <b>Private Network:</b> <input type="text" id="wifiName" width="40" maxlength="32"/>
+      <b>Private Network:</b>
+      <input type="text" id="wifiName" width="40" maxlength="32"
+       pattern="[a-zA-Z0-9-_]*" placeholder="Provide a custom SSID for this device"
+       title="Only letters, numbers, hyphens, and underscores are allowed, up to 32 characters."/>
+      <br/>
+      You may also use http://{private_network}.local to access this device via your browser.
     </div>
     <div class="setting">
       <b class="labelSwitch">Invert Device LED Order:</b>
@@ -161,21 +166,20 @@ const char DEVICE_page[] PROGMEM = R"=====(
       }
 
       // Do not allow saving if the new SSID is too short/long, or illegal.
-      // This will also remove any spaces from the SSID (for mDNS usage).
-      var wifiName = getText("wifiName").replace(/ /g, '');
-      setValue("wifiName", wifiName); // Write back space-less name.
+      var wifiName = getText("wifiName");
       if (wifiName.length < 8) {
         alert("Error: Network name must be more than 8 characters.");
         return;
       }
       if (wifiName.length > 32) {
-        alert("Error: Network name is more than 32 characters.");
+        // Field input size should disallow this, but check just in case.
+        alert("Error: Network name cannot exceed 32 characters.");
         return;
       }
-      var ssidRegex = /^[a-zA-Z0-9_]$/;
-      if (ssidRegex.test(wifiName)) {
-        // Let's limit the name to the bare minimum of acceptable characters.
-        alert("Error: Network name may only be alphanumeric with underscores.");
+      var ssidRegex = /^[a-zA-Z0-9-_]*$/;
+      if (!ssidRegex.test(wifiName)) {
+        // The name for the SSID must conform to RFC standards which limits the allowed characters.
+        alert("Error: Network name may only contain alphanumeric characters, hyphens, and underscores.");
         return;
       }
 
