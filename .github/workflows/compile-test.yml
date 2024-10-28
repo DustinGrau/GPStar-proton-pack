@@ -16,10 +16,10 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Compile ProtonPack Project
-        working-directory: source/ProtonPack_PIO
+        working-directory: source/ProtonPack
         run: pio run
       - name: Compile NeutronaWand Project
-        working-directory: source/NeutronaWand_PIO
+        working-directory: source/NeutronaWand
         run: pio run
       - name: Compile SingleShot Project
         working-directory: source/SingleShot
