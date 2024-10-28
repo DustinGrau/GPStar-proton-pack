@@ -58,6 +58,69 @@
 #include "PowerMeter.h"
 #include "Preferences.h"
 
+// Forward declarations, needed until code can be refactored.
+void checkCyclotronAutoSpeed();
+void checkMenuVibration();
+void checkRotaryEncoder();
+void checkSwitches();
+void clearCyclotronFades();
+void cyclotron1984(uint16_t speed);
+void cyclotron2021(uint16_t speed);
+void cyclotron84LightOn(uint8_t index);
+void cyclotron84LightOff(uint8_t index);
+uint8_t cyclotron84LookupTable(uint8_t index);
+void cyclotronControl();
+void cyclotronFade();
+uint8_t cyclotronLookupTable(uint8_t index);
+void cyclotronNoCable();
+void cyclotronOverheating();
+void cyclotronSwitchLEDLoop();
+void cyclotronSwitchLEDOff();
+void cyclotronSwitchPlateLEDs();
+void fanBooster(bool state);
+void fanNFilter(bool state);
+bool fadeOutCyclotron();
+void innerCyclotronCakeOff();
+void innerCyclotronCavityOff();
+void innerCyclotronLEDPanelOff();
+void innerCyclotronRingUpdate(uint16_t speed);
+void packAlarm();
+void packOffReset();
+void packOverheatingFinished();
+void packOverheatingStart();
+void packShutdown();
+void packVenting();
+void packVentingFinished();
+void playVentSounds();
+void powercellLoop();
+void powercellOff();
+void powercellRampDown();
+bool ribbonCableAttached();
+void reset2021RampDown();
+void reset2021RampUp();
+void resetCyclotronState();
+void resetRampSpeeds();
+void restartFromWandMash();
+void serial1HandShake();
+void slimeCyclotronEffect();
+void slimeCyclotronFadeout();
+void smokeBooster(bool state);
+void smokeNFilter(bool state);
+void spectralLightsOff();
+void spectralLightsOn();
+void systemPOST();
+bool usingSlimeCyclotron();
+void ventLight(bool state);
+void ventLightLEDW(bool state);
+void vibrationOff();
+void vibrationPack(uint8_t level);
+void wandDisconnectCheck();
+void wandExtraSoundsBeepLoopStop(bool state);
+void wandExtraSoundsStop();
+void wandFiring();
+void wandStopFiringSounds();
+
+
 void setup() {
   // Setup i2c.
   Wire.begin();
