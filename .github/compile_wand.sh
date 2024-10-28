@@ -19,27 +19,19 @@ echo "Building Neutrona Wand Binary..."
 # Set the project directory based on the source folder
 PROJECT_DIR="$SRCDIR/NeutronaWand"
 
-# --warnings none
-arduino-cli compile --output-dir ${BINDIR} --fqbn arduino:avr:mega --export-binaries ${PROJECT_DIR}/NeutronaWand.ino
-
-rm -f ${BINDIR}/*.bin
-rm -f ${BINDIR}/*.eep
-rm -f ${BINDIR}/*.elf
-rm -f ${BINDIR}/*bootloader.hex
-
-if [ -f ${BINDIR}/NeutronaWand.ino.hex ]; then
-  mv ${BINDIR}/NeutronaWand.ino.hex ${BINDIR}/wand/NeutronaWand.hex
-fi
+#if [ -f ${BINDIR}/NeutronaWand.ino.hex ]; then
+#  mv ${BINDIR}/NeutronaWand.ino.hex ${BINDIR}/wand/NeutronaWand.hex
+#fi
 
 # Clean the project before building
-#pio run --project-dir "$PROJECT_DIR" --target clean
+pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-#pio run --project-dir "$PROJECT_DIR"
+pio run --project-dir "$PROJECT_DIR"
 
-#if [ -f ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ]; then
-#  mv ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/wand/NeutronaWand.hex
-#fi
+if [ -f ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ]; then
+  mv ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/wand/NeutronaWand.hex
+fi
 echo "Done."
 echo ""
 
@@ -50,23 +42,11 @@ echo "Building Neutrona Wand (Bench Test) Binary..."
 sed -i -e 's/bool b_gpstar_benchtest = false/const bool b_gpstar_benchtest = true/' ${PROJECT_DIR}/Configuration.h
 sed -i -e 's/b_gpstar_benchtest = true/\/\/b_gpstar_benchtest = true/' ${PROJECT_DIR}/Serial.h
 
-# --warnings none
-arduino-cli compile --output-dir ${BINDIR} --fqbn arduino:avr:mega --export-binaries ${PROJECT_DIR}/NeutronaWand.ino
-
-rm -f ${BINDIR}/*.bin
-rm -f ${BINDIR}/*.eep
-rm -f ${BINDIR}/*.elf
-rm -f ${BINDIR}/*bootloader.hex
-
-if [ -f ${BINDIR}/NeutronaWand.ino.hex ]; then
-  mv ${BINDIR}/NeutronaWand.ino.hex ${BINDIR}/wand/extras/NeutronaWand-BenchTest.hex
-fi
-
 # Clean the project before building
-#pio run --project-dir "$PROJECT_DIR" --target clean
+pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-#pio run --project-dir "$PROJECT_DIR"
+pio run --project-dir "$PROJECT_DIR"
 
 # Restore flag(s) from compilation
 sed -i -e 's/const bool b_gpstar_benchtest = true/bool b_gpstar_benchtest = false/' ${PROJECT_DIR}/Configuration.h
@@ -74,8 +54,8 @@ sed -i -e 's/\/\/b_gpstar_benchtest = true/b_gpstar_benchtest = true/' ${PROJECT
 
 rm -f ${PROJECT_DIR}/include/*.h-e
 
-#if [ -f ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ]; then
-#  mv ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/wand/extras/NeutronaWand-BenchTest.hex
-#fi
+if [ -f ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ]; then
+  mv ${PROJECT_DIR}/.pio/build/megaatmega2560/firmware.hex ${BINDIR}/wand/extras/NeutronaWand-BenchTest.hex
+fi
 echo "Done."
 echo ""

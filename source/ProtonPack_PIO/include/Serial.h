@@ -74,6 +74,7 @@ struct __attribute__((packed)) PackPrefs {
   uint8_t ledCycLidHue;
   uint8_t ledCycLidSat;
   uint8_t ledCycLidCenter;
+  uint8_t ledCycLidFade;
   uint8_t ledCycLidSimRing;
   uint8_t ledCycInnerPanel;
   uint8_t ledCycCakeCount;
@@ -83,6 +84,7 @@ struct __attribute__((packed)) PackPrefs {
   uint8_t ledCycCavCount;
   uint8_t ledVGCyclotron;
   uint8_t ledPowercellCount;
+  uint8_t ledInvertPowercell;
   uint8_t ledPowercellHue;
   uint8_t ledPowercellSat;
   uint8_t ledVGPowercell;
@@ -103,6 +105,7 @@ struct __attribute__((packed)) WandPrefs {
   uint8_t wandBootError;
   uint8_t defaultYearModeWand;
   uint8_t defaultYearModeCTS;
+  uint8_t numBargraphSegments;
   uint8_t invertWandBargraph;
   uint8_t bargraphOverheatBlink;
   uint8_t bargraphIdleAnimation;
@@ -135,7 +138,7 @@ struct __attribute__((packed)) SmokePrefs {
   uint8_t overheatDelay1;
 } smokeConfig;
 
-struct __attribute__((packed)) SyncData {
+struct __attribute__((packed)) WandSyncData {
   uint8_t systemMode;
   uint8_t ionArmSwitch;
   uint8_t cyclotronLidState;
@@ -148,7 +151,34 @@ struct __attribute__((packed)) SyncData {
   uint8_t effectsVolume;
   uint8_t masterMuted;
   uint8_t repeatMusicTrack;
-} packSync;
+} wandSyncData;
+
+struct __attribute__((packed)) AttenuatorSyncData {
+  uint8_t systemMode;
+  uint8_t ionArmSwitch;
+  uint8_t cyclotronLidState;
+  uint8_t systemYear;
+  uint8_t packOn;
+  uint8_t powerLevel;
+  uint8_t streamMode;
+  uint8_t wandPresent;
+  uint8_t barrelExtended;
+  uint8_t wandFiring;
+  uint8_t overheatingNow;
+  uint8_t speedMultiplier;
+  uint8_t spectralColour;
+  uint8_t spectralSaturation;
+  uint8_t masterMuted;
+  uint8_t masterVolume;
+  uint8_t effectsVolume;
+  uint8_t musicVolume;
+  uint8_t musicPlaying;
+  uint8_t musicPaused;
+  uint8_t trackLooped;
+  uint16_t currentTrack;
+  uint16_t musicCount;
+  uint16_t packVoltage;
+} attenuatorSyncData;
 
 // Adjusts which year mode the Proton Pack and Neutrona Wand are in, as switched by the Neutrona Wand.
 void toggleYearModes() {
@@ -189,6 +219,7 @@ void toggleYearModes() {
     break;
 
     case SYSTEM_AFTERLIFE:
+    default:
       // Afterlife -> Frozen Empire
       SYSTEM_YEAR_TEMP = SYSTEM_FROZEN_EMPIRE;
 
@@ -217,10 +248,6 @@ void toggleYearModes() {
       // Tell the wand to play the 1984 sound effects.
       packSerialSend(P_MODE_1984);
     break;
-
-    default:
-      // Nothing.
-    break;
   }
 
   if(b_pack_shutting_down != true && b_pack_on == false && b_spectral_lights_on != true) {
@@ -240,10 +267,10 @@ void serial1Send(uint8_t i_command, uint16_t i_value) {
   // debug(F("Command to Serial1: "));
   // debugln(i_command);
 
-  sendCmdS.s = A_COM_START;
+  sendCmdS.s = P_COM_START;
   sendCmdS.c = i_command;
   sendCmdS.d1 = i_value;
-  sendCmdS.e = A_COM_END;
+  sendCmdS.e = P_COM_END;
 
   i_send_size = serial1Coms.txObj(sendCmdS);
   serial1Coms.sendData(i_send_size, (uint8_t) PACKET_COMMAND);
@@ -256,13 +283,14 @@ void serial1Send(uint8_t i_command) {
 // Outgoing payloads to the Serial1 device
 void serial1SendData(uint8_t i_message) {
   uint16_t i_send_size = 0;
+  uint8_t i_eeprom_volume_master_percentage = 100 * ((MINIMUM_VOLUME + i_volume_min_adj) - i_volume_master_eeprom) / (MINIMUM_VOLUME + i_volume_min_adj);
 
   // debug(F("Data to Serial1: "))
   // debugln(i_message);
 
-  sendDataS.s = A_COM_START;
+  sendDataS.s = P_COM_START;
   sendDataS.m = i_message;
-  sendDataS.e = A_COM_END;
+  sendDataS.e = P_COM_END;
 
   // Set all elements of the data array to 0
   memset(sendDataW.d, 0, sizeof(sendDataW.d));
@@ -278,6 +306,11 @@ void serial1SendData(uint8_t i_message) {
       serial1Coms.sendData(i_send_size, (uint8_t) PACKET_DATA);
     break;
 
+    case A_SYNC_DATA:
+      i_send_size = serial1Coms.txObj(attenuatorSyncData);
+      serial1Coms.sendData(i_send_size, (uint8_t) PACKET_SYNC);
+    break;
+
     case A_VOLUME_SYNC:
       // Send the current volume levels.
       sendDataS.d[0] = i_volume_master_percentage;
@@ -289,11 +322,10 @@ void serial1SendData(uint8_t i_message) {
     break;
 
     case A_SEND_PREFERENCES_PACK:
-      // Any ENUM or boolean types will simply translate as numeric values.
       packConfig.defaultSystemModePack = SYSTEM_MODE;
       packConfig.defaultYearThemePack = SYSTEM_EEPROM_YEAR;
       packConfig.currentYearThemePack = SYSTEM_YEAR;
-      packConfig.defaultSystemVolume = i_volume_master_percentage;
+      packConfig.defaultSystemVolume = i_eeprom_volume_master_percentage;
       packConfig.protonStreamEffects = b_stream_effects ? 1 : 0;
       packConfig.overheatStrobeNF = b_overheat_strobe ? 1 : 0;
       packConfig.overheatLightsOff = b_overheat_lights_off ? 1 : 0;
@@ -315,6 +347,9 @@ void serial1SendData(uint8_t i_message) {
         default:
           packConfig.packVibration = 4;
         break;
+        case CYCLOTRON_MOTOR:
+          packConfig.packVibration = 5;
+        break;
       }
 
       // Cyclotron Lid
@@ -323,6 +358,7 @@ void serial1SendData(uint8_t i_message) {
       packConfig.ledCycLidSat = i_spectral_cyclotron_custom_saturation;
       packConfig.cyclotronDirection = b_clockwise ? 1 : 0;
       packConfig.ledCycLidCenter = b_cyclotron_single_led ? 1 : 0;
+      packConfig.ledCycLidFade = b_fade_cyclotron_led ? 1 : 0;
       packConfig.ledVGCyclotron = b_cyclotron_colour_toggle ? 1 : 0;
       packConfig.ledCycLidSimRing = b_cyclotron_simulate_ring ? 1 : 0;
 
@@ -347,6 +383,7 @@ void serial1SendData(uint8_t i_message) {
 
       // Power Cell
       packConfig.ledPowercellCount = i_powercell_leds;
+      packConfig.ledInvertPowercell = b_powercell_invert ? 1 : 0;
       packConfig.ledPowercellHue = i_spectral_powercell_custom_colour;
       packConfig.ledPowercellSat = i_spectral_powercell_custom_saturation;
       packConfig.ledVGPowercell = b_powercell_colour_toggle ? 1 : 0;
@@ -387,11 +424,11 @@ void serial1SendData(uint8_t i_message) {
         smokeConfig.overheatLevel3 = 0; // true|false
         smokeConfig.overheatLevel2 = 0; // true|false
         smokeConfig.overheatLevel1 = 0; // true|false
-        smokeConfig.overheatDelay5 = 10; // 2-60 Seconds
-        smokeConfig.overheatDelay4 = 10; // 2-60 Seconds
-        smokeConfig.overheatDelay3 = 10; // 2-60 Seconds
-        smokeConfig.overheatDelay2 = 10; // 2-60 Seconds
-        smokeConfig.overheatDelay1 = 10; // 2-60 Seconds
+        smokeConfig.overheatDelay5 = 30; // 2-60 Seconds
+        smokeConfig.overheatDelay4 = 35; // 2-60 Seconds
+        smokeConfig.overheatDelay3 = 40; // 2-60 Seconds
+        smokeConfig.overheatDelay2 = 50; // 2-60 Seconds
+        smokeConfig.overheatDelay1 = 60; // 2-60 Seconds
       }
 
       i_send_size = serial1Coms.txObj(smokeConfig);
@@ -451,7 +488,7 @@ void packSerialSendData(uint8_t i_message) {
     break;
 
     case P_SYNC_DATA:
-      i_send_size = packComs.txObj(packSync);
+      i_send_size = packComs.txObj(wandSyncData);
       packComs.sendData(i_send_size, (uint8_t) PACKET_SYNC);
     break;
 
@@ -473,6 +510,11 @@ void checkSerial1() {
     // debugln(i_packet_id);
 
     if(i_packet_id > 0) {
+      if(ms_serial1_check.isRunning() && b_serial1_connected) {
+        // If the timer is still running and Attenuator is connected, consider any request as proof of life.
+        ms_serial1_check.restart();
+      }
+
       // Determine the type of packet which was sent by the serial1 device.
       switch(i_packet_id) {
         case PACKET_COMMAND:
@@ -485,6 +527,11 @@ void checkSerial1() {
         break;
 
         case PACKET_DATA:
+          if(!b_serial1_connected) {
+            // Can't proceed if the Attenuator isn't connected; prevents phantom actions from occurring.
+            return;
+          }
+
           serial1Coms.rxObj(recvDataS);
           if(recvDataS.m > 0 && recvDataS.s == A_COM_START && recvDataS.e == A_COM_END) {
             debug(F("Recv. Serial1 Message: "));
@@ -494,6 +541,11 @@ void checkSerial1() {
         break;
 
         case PACKET_PACK:
+          if(!b_serial1_connected) {
+            // Can't proceed if the Attenuator isn't connected; prevents phantom actions from occurring.
+            return;
+          }
+
           serial1Coms.rxObj(packConfig);
           debugln(F("Recv. Pack Config"));
 
@@ -506,10 +558,6 @@ void checkSerial1() {
               SYSTEM_MODE = MODE_SUPER_HERO;
               packSerialSend(P_MODE_SUPER_HERO);
               serial1Send(A_MODE_SUPER_HERO);
-
-              // This is only applicable to the Mode Original, so default to off.
-              packSerialSend(P_MODE_ORIGINAL_RED_SWITCH_OFF);
-              serial1Send(A_MODE_ORIGINAL_RED_SWITCH_OFF);
             break;
 
             case 1:
@@ -521,17 +569,6 @@ void checkSerial1() {
                 // If no wand is connected we need to make sure we're in Proton Stream.
                 STREAM_MODE = PROTON;
                 serial1Send(A_PROTON_MODE);
-              }
-
-              if(switch_power.getState() == LOW) {
-                // Tell the Neutrona Wand that power to the Proton Pack is on.
-                packSerialSend(P_MODE_ORIGINAL_RED_SWITCH_ON);
-                serial1Send(A_MODE_ORIGINAL_RED_SWITCH_ON);
-              }
-              else {
-                // Tell the Neutrona Wand that power to the Proton Pack is off.
-                packSerialSend(P_MODE_ORIGINAL_RED_SWITCH_OFF);
-                serial1Send(A_MODE_ORIGINAL_RED_SWITCH_OFF);
               }
             break;
           }
@@ -590,33 +627,50 @@ void checkSerial1() {
           switch(packConfig.packVibration) {
             case 1:
               b_vibration_switch_on = true; // Override the vibration toggle switch.
-              b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
-              b_vibration_enabled = true; // Enable pack vibration.
               VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
+              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
             break;
 
             case 2:
               b_vibration_switch_on = true; // Override the vibration toggle switch.
-              b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
-              b_vibration_enabled = true; // Enable pack vibration.
               VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
+              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
             break;
 
             case 3:
-              b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
-              b_vibration_enabled = false; // Disable pack vibration.
               VIBRATION_MODE_EEPROM = VIBRATION_NONE;
+              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
             break;
 
             case 4:
             default:
-              b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
-              b_vibration_enabled = true; // Enable pack vibration.
               VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
+              VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+
+              // Reset the vibration switch state.
+              if(switch_vibration.getState() == LOW) {
+                b_vibration_switch_on = true;
+              }
+              else {
+                b_vibration_switch_on = false;
+              }
+            break;
+
+            case 5:
+              VIBRATION_MODE_EEPROM = CYCLOTRON_MOTOR;
+              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+
+              // Reset the vibration switch state.
+              if(switch_vibration.getState() == LOW) {
+                b_vibration_switch_on = true;
+              }
+              else {
+                b_vibration_switch_on = false;
+              }
             break;
           }
 
-          i_volume_master_percentage = packConfig.defaultSystemVolume;
+          i_volume_master_eeprom = (MINIMUM_VOLUME + i_volume_min_adj) - ((MINIMUM_VOLUME + i_volume_min_adj) * packConfig.defaultSystemVolume / 100);
           b_stream_effects = (packConfig.protonStreamEffects == 1);
           b_overheat_strobe = (packConfig.overheatStrobeNF == 1);
           b_overheat_lights_off = (packConfig.overheatLightsOff == 1);
@@ -651,6 +705,7 @@ void checkSerial1() {
           i_spectral_cyclotron_custom_saturation = packConfig.ledCycLidSat;
           b_clockwise = (packConfig.cyclotronDirection == 1);
           b_cyclotron_single_led = (packConfig.ledCycLidCenter == 1);
+          b_fade_cyclotron_led = (packConfig.ledCycLidFade == 1);
           b_cyclotron_colour_toggle = (packConfig.ledVGCyclotron == 1);
           b_cyclotron_simulate_ring = (packConfig.ledCycLidSimRing == 1);
 
@@ -675,6 +730,7 @@ void checkSerial1() {
 
           // Power Cell
           i_powercell_leds = packConfig.ledPowercellCount;
+          b_powercell_invert = (packConfig.ledInvertPowercell == 1);
           i_spectral_powercell_custom_colour = packConfig.ledPowercellHue;
           i_spectral_powercell_custom_saturation = packConfig.ledPowercellSat;
           b_powercell_colour_toggle = (packConfig.ledVGPowercell == 1);
@@ -691,6 +747,11 @@ void checkSerial1() {
         break;
 
         case PACKET_WAND:
+          if(!b_serial1_connected) {
+            // Can't proceed if the Attenuator isn't connected; prevents phantom actions from occurring.
+            return;
+          }
+
           serial1Coms.rxObj(wandConfig);
           debugln(F("Recv. Wand Config"));
 
@@ -703,6 +764,11 @@ void checkSerial1() {
         break;
 
         case PACKET_SMOKE:
+          if(!b_serial1_connected) {
+            // Can't proceed if the Attenuator isn't connected; prevents phantom actions from occurring.
+            return;
+          }
+
           serial1Coms.rxObj(smokeConfig);
           debugln(F("Recv. Smoke Config"));
 
@@ -733,200 +799,174 @@ void checkSerial1() {
   }
 }
 
-void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
-  switch(i_command) {
-    case A_HANDSHAKE:
-      // The Attenuator is still here.
-      ms_serial1_handshake.start(i_serial1_handshake_delay);
-      ms_serial1_handshake_checking.start(i_serial1_handshake_delay / 2);
+void doSerial1Sync() {
+  // Denote sync in progress, don't run this code again if we get another handshake.
+  // This will be cleared once the Attenuator responds back that it has been synchronized.
+  b_serial1_syncing = true;
+  b_serial1_connected = false;
+  ms_serial1_check.stop();
+
+  if(b_diagnostic) {
+    playEffect(S_BEEPS_ALT);
+  }
+
+  debugln(F("Serial1 Sync Start"));
+  serial1Send(A_SYNC_START);
+
+  // Tell the serial1 device about the wand status.
+  attenuatorSyncData.wandPresent = b_wand_connected ? 1 : 0;
+  attenuatorSyncData.barrelExtended = b_neutrona_wand_barrel_extended ? 1 : 0;
+  attenuatorSyncData.wandFiring = b_wand_firing ? 1 : 0;
+
+  switch(SYSTEM_YEAR) {
+    case SYSTEM_1984:
+      attenuatorSyncData.systemYear = 1;
+    break;
+    case SYSTEM_1989:
+      attenuatorSyncData.systemYear = 2;
+    break;
+    case SYSTEM_AFTERLIFE:
+    default:
+      attenuatorSyncData.systemYear = 3;
+    break;
+    case SYSTEM_FROZEN_EMPIRE:
+      attenuatorSyncData.systemYear = 4;
+    break;
+  }
+
+  // Pack status.
+  attenuatorSyncData.packOn = (PACK_STATE != MODE_OFF) ? 1 : 0;
+  attenuatorSyncData.systemMode = (SYSTEM_MODE == MODE_ORIGINAL) ? 2 : 1;
+  attenuatorSyncData.ionArmSwitch = (switch_power.getState() == LOW) ? 2 : 1;
+  attenuatorSyncData.powerLevel = i_wand_power_level;
+  attenuatorSyncData.packVoltage = packReading.BusVoltage;
+
+  // Synchronise the firing modes.
+  switch(STREAM_MODE) {
+    case SLIME:
+      attenuatorSyncData.streamMode = 2;
     break;
 
+    case STASIS:
+      attenuatorSyncData.streamMode = 3;
+    break;
+
+    case MESON:
+      attenuatorSyncData.streamMode = 4;
+    break;
+
+    case SPECTRAL:
+      attenuatorSyncData.streamMode = 5;
+    break;
+
+    case HOLIDAY:
+      attenuatorSyncData.streamMode = b_christmas ? 7 : 6;
+    break;
+
+    case SPECTRAL_CUSTOM:
+      attenuatorSyncData.streamMode = 8;
+    break;
+
+    case PROTON:
+    default:
+      attenuatorSyncData.streamMode = 1;
+    break;
+  }
+
+  // Current spectral custom colour for outer cyclotron.
+  attenuatorSyncData.spectralColour = i_spectral_cyclotron_custom_colour;
+  attenuatorSyncData.spectralSaturation = i_spectral_cyclotron_custom_saturation;
+
+  // Cyclotron status.
+  attenuatorSyncData.cyclotronLidState = b_cyclotron_lid_on ? 1 : 0;
+  attenuatorSyncData.speedMultiplier = i_cyclotron_multiplier;
+  attenuatorSyncData.overheatingNow = b_overheating ? 1 : 0;
+
+  // This sends over the music status and the current music track.
+  attenuatorSyncData.musicPlaying = b_playing_music ? 1 : 0;
+  attenuatorSyncData.musicPaused = b_music_paused ? 1 : 0;
+  attenuatorSyncData.trackLooped = b_repeat_track ? 2 : 1;
+  attenuatorSyncData.currentTrack = i_current_music_track;
+  attenuatorSyncData.musicCount = i_music_count;
+  attenuatorSyncData.masterMuted = (i_volume_master == i_volume_abs_min) ? 2 : 1;
+  attenuatorSyncData.masterVolume = i_volume_master_percentage;
+  attenuatorSyncData.effectsVolume = i_volume_effects_percentage;
+  attenuatorSyncData.musicVolume = i_volume_music_percentage;
+
+  serial1SendData(A_SYNC_DATA);
+
+  // Send the ribbon cable alarm status if the ribbon cable is detached.
+  if(b_alarm && ribbonCableAttached() != true) {
+    serial1Send(A_ALARM_ON);
+  }
+
+  serial1Send(A_SYNC_END);
+  debugln(F("Serial1 Sync End"));
+}
+
+void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
+  if(!b_serial1_connected) {
+    // Can't proceed if the wand isn't connected; prevents phantom actions from occurring.
+    if(i_command != A_SYNC_START && i_command != A_HANDSHAKE && i_command != A_SYNC_END) {
+      // This applies for any action other than those responsible for sync operations.
+      return;
+    }
+  }
+
+  switch(i_command) {
     case A_SYNC_START:
-      // Check if the serial1 device is telling us it is here after connecting it to the pack.
-      // Then synchronise some settings between the pack and the serial1 device.
-      if(!b_serial1_connected && !b_serial1_syncing) {
-        b_serial1_syncing = true; // Sync has begun; do not try to start this command again.
+      // Attenuator has explicitly asked to be synchronized.
+      doSerial1Sync();
+    break;
 
-        // Begin the synchronization process.
-        debugln(F("Serial1 Sync Start"));
-        serial1Send(A_SYNC_START);
+    case A_HANDSHAKE:
+      b_serial1_syncing = false; // No longer attempting to force a sync w/ Attenuator.
+      b_serial1_connected = true; // If we're receiving handshake instead of SYNC_NOW we must be connected.
 
-        // Tell the serial1 device that the pack is here (obviously).
-        serial1Send(A_PACK_CONNECTED);
-
-        // Tell the serial1 device whether a wand is connected.
-        if(b_wand_connected) {
-          serial1Send(A_WAND_CONNECTED);
-        }
-        else {
-          serial1Send(A_WAND_DISCONNECTED);
-        }
-
-        if(b_neutrona_wand_barrel_extended) {
-          // Tell the serial1 device that the Neutrona Wand barrel is extended.
-          serial1Send(A_BARREL_EXTENDED);
-        }
-
-        // Make sure this is called before the A_YEAR is sent over to the Attenuator/Wireless.
-        switch(SYSTEM_MODE) {
-          case MODE_ORIGINAL:
-            serial1Send(A_MODE_ORIGINAL);
-          break;
-
-          case MODE_SUPER_HERO:
-          default:
-            serial1Send(A_MODE_SUPER_HERO);
-          break;
-        }
-
-        switch(SYSTEM_YEAR) {
-          case SYSTEM_1984:
-            serial1Send(A_YEAR_1984);
-          break;
-          case SYSTEM_1989:
-            serial1Send(A_YEAR_1989);
-          break;
-          case SYSTEM_AFTERLIFE:
-          default:
-            serial1Send(A_YEAR_AFTERLIFE);
-          break;
-          case SYSTEM_FROZEN_EMPIRE:
-            serial1Send(A_YEAR_FROZEN_EMPIRE);
-          break;
-        }
-
-        // Send the ribbon cable alarm status if the ribbon cable is detached.
-        if(b_alarm == true && ribbonCableAttached() != true) {
-          serial1Send(A_ALARM_ON);
-        }
-
-        // Pack status.
-        if(PACK_STATE != MODE_OFF) {
-          serial1Send(A_PACK_ON);
-        }
-        else {
-          serial1Send(A_PACK_OFF);
-        }
-
-        // Send the current power level.
-        switch(i_wand_power_level) {
-          case 5:
-            serial1Send(A_POWER_LEVEL_5);
-          break;
-
-          case 4:
-            serial1Send(A_POWER_LEVEL_4);
-          break;
-
-          case 3:
-            serial1Send(A_POWER_LEVEL_3);
-          break;
-
-          case 2:
-            serial1Send(A_POWER_LEVEL_2);
-          break;
-
-          case 1:
-          default:
-            serial1Send(A_POWER_LEVEL_1);
-          break;
-        }
-
-        // Synchronise the firing modes.
-        switch(STREAM_MODE) {
-          case SLIME:
-            serial1Send(A_SLIME_MODE);
-          break;
-
-          case STASIS:
-            serial1Send(A_STASIS_MODE);
-          break;
-
-          case MESON:
-            serial1Send(A_MESON_MODE);
-          break;
-
-          case SPECTRAL:
-            serial1Send(A_SPECTRAL_MODE);
-          break;
-
-          case HOLIDAY:
-            serial1Send(A_HOLIDAY_MODE, b_christmas ? 2 : 1);
-          break;
-
-          case SPECTRAL_CUSTOM:
-            serial1SendData(A_SPECTRAL_CUSTOM_MODE);
-          break;
-
-          case PROTON:
-          default:
-            serial1Send(A_PROTON_MODE);
-          break;
-        }
-
-        serial1SendData(A_SPECTRAL_COLOUR_DATA);
-
-        if(switch_power.getState() == LOW) {
-          // Tell the Attenuator or any other device that the power to the Proton Pack is on.
-          serial1Send(A_MODE_ORIGINAL_RED_SWITCH_ON);
-        }
-        else {
-          // Tell the Attenuator or any other device that the power to the Proton Pack is off.
-          serial1Send(A_MODE_ORIGINAL_RED_SWITCH_OFF);
-        }
-
-        // Cyclotron lid status.
-        if(b_cyclotron_lid_on) {
-          serial1Send(A_CYCLOTRON_LID_ON);
-        }
-        else {
-          serial1Send(A_CYCLOTRON_LID_OFF);
-        }
-
-        // This sends over the music status and the current music track.
-        if(b_playing_music == true) {
-          serial1Send(A_MUSIC_IS_PLAYING, i_current_music_track);
-        }
-        else {
-          serial1Send(A_MUSIC_IS_NOT_PLAYING, i_current_music_track);
-        }
-
-        if(b_music_paused == true) {
-          serial1Send(A_MUSIC_IS_PAUSED);
-        }
-        else {
-          serial1Send(A_MUSIC_IS_NOT_PAUSED);
-        }
-
-        serial1Send(A_MUSIC_TRACK_COUNT_SYNC, i_music_count);
-        serial1SendData(A_VOLUME_SYNC);
-
-        b_serial1_connected = true; // Device is officially connected.
-        b_serial1_syncing = false; // Sync process has been completed.
-
-        ms_serial1_handshake.start(i_serial1_handshake_delay);
-        ms_serial1_handshake_checking.start(i_serial1_handshake_delay / 2);
-
-        serial1Send(A_SYNC_END);
+      if(b_diagnostic == true) {
+        // While in diagnostic mode, play a sound to indicate the wand is connected.
+        playEffect(S_BEEPS_ALT);
       }
     break;
 
     case A_SYNC_END:
-      debugln(F("Serial1 Sync End"));
+      debugln(F("Serial1 Synchronized"));
+      b_serial1_syncing = false;
+      b_serial1_connected = true;
+      ms_serial1_check.start(i_serial1_disconnect_delay);
     break;
 
     case A_TURN_PACK_ON:
-      // Turn the pack on.
-      if(PACK_STATE != MODE_ON) {
+      // Pretend the ion arm switch was just turned on.
+      if(SYSTEM_MODE == MODE_SUPER_HERO) {
         PACK_ACTION_STATE = ACTION_ACTIVATE;
       }
+
+      // Tell the Neutrona Wand that power to the Proton Pack is on.
+      if(b_wand_connected) {
+        packSerialSend(P_ION_ARM_SWITCH_ON);
+      }
+
+      // Tell the Attenuator or any other device that the power to the Proton Pack is on.
+      serial1Send(A_ION_ARM_SWITCH_ON);
     break;
 
     case A_TURN_PACK_OFF:
-      // Turn the pack off.
-      if(PACK_STATE != MODE_OFF) {
+      // Pretend the ion arm switch was just turned on.
+      if(PACK_STATE == MODE_ON) {
         PACK_ACTION_STATE = ACTION_OFF;
+
+        //Make sure to tell the wireless that we are not overheating.
+        serial1Send(A_OVERHEATING_FINISHED);
       }
+
+      // Tell the Neutrona Wand that power to the Proton Pack is off.
+      if(b_wand_connected) {
+        packSerialSend(P_ION_ARM_SWITCH_OFF);
+      }
+
+      // Tell the Attenuator or any other device that the power to the Proton Pack is off.
+      serial1Send(A_ION_ARM_SWITCH_OFF);
     break;
 
     case A_WARNING_CANCELLED:
@@ -944,22 +984,45 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
       }
     break;
 
+    case A_SYSTEM_LOCKOUT:
+      // Simulate a lockout as if by repeated button presses on the wand.
+      startWandMashLockout(6000);
+
+      switch(SYSTEM_YEAR) {
+        case SYSTEM_FROZEN_EMPIRE:
+          // No-op for this theme, as this is handled in startWandMashLockout
+        break;
+        default:
+          // Plays the alarm loop as heard on the wand.
+          stopSmashErrorSounds();
+          playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
+        break;
+      }
+    break;
+
+    case A_CANCEL_LOCKOUT:
+      // Initiate a restart of the pack after a lockout event has occurred.
+      restartFromWandMash();
+    break;
+
     case A_TOGGLE_MUTE:
       if(i_volume_master == i_volume_abs_min) {
         i_volume_master = i_volume_revert;
 
         packSerialSend(P_MASTER_AUDIO_NORMAL);
+        serial1Send(A_TOGGLE_MUTE, 1);
       }
       else {
         i_volume_revert = i_volume_master;
 
-        // Set the master volume to silent.
+        // Set the master volume to minimum.
         i_volume_master = i_volume_abs_min;
 
         packSerialSend(P_MASTER_AUDIO_SILENT_MODE);
+        serial1Send(A_TOGGLE_MUTE, 2);
       }
 
-      resetMasterVolume();
+      updateMasterVolume();
     break;
 
     case A_VOLUME_DECREASE:
@@ -1022,9 +1085,7 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
           pauseMusic();
         }
         else {
-          if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
-            resumeMusic();
-          }
+          resumeMusic();
         }
       }
     break;
@@ -1035,6 +1096,11 @@ void handleSerialCommand(uint8_t i_command, uint16_t i_value) {
 
     case A_MUSIC_PREV_TRACK:
       musicPrevTrack();
+    break;
+
+    case A_MUSIC_TRACK_LOOP_TOGGLE:
+      toggleMusicLoop();
+      serial1Send(A_MUSIC_TRACK_LOOP_TOGGLE, b_repeat_track ? 2 : 1);
     break;
 
     case A_REQUEST_PREFERENCES_PACK:
@@ -1180,8 +1246,10 @@ void doWandSync() {
   // Denote sync in progress, don't run this code again if we get another handshake.
   // This will be cleared once the wand responds back that it has been synchronized.
   b_wand_syncing = true;
+  b_wand_connected = false;
+  ms_wand_check.stop();
 
-  if(b_diagnostic == true) {
+  if(b_diagnostic) {
     // While in diagnostic mode, play a sound to indicate the wand is being synchronized.
     playEffect(S_BEEPS);
   }
@@ -1190,10 +1258,9 @@ void doWandSync() {
   stopEffect(S_WAND_SYNC);
   playEffect(S_WAND_SYNC);
 
-
   // Begin the synchronization process which tells the wand the pack got the handshake.
   debugln(F("Wand Sync Start"));
-  packSerialSend(P_SYNC_START);
+  packSerialSend(P_SYNC_START, b_pack_post_finish ? 0 : 1);
 
   // Attaching a new wand means we need to stop any prior overheat as the wand initiates this action.
   if(b_overheating == true) {
@@ -1212,131 +1279,100 @@ void doWandSync() {
   // Make sure this is called before the P_YEAR is sent over to the Neutrona Wand.
   switch(SYSTEM_MODE) {
     case MODE_ORIGINAL:
-      packSync.systemMode = 2; // MODE_ORIGINAL.
+      wandSyncData.systemMode = 2; // MODE_ORIGINAL.
 
       if(switch_power.getState() == LOW) {
-        packSync.ionArmSwitch = 2; // ion arm switch on.
+        wandSyncData.ionArmSwitch = 2; // ion arm switch on.
       }
       else {
-        packSync.ionArmSwitch = 1; // Ion arm switch off.
+        wandSyncData.ionArmSwitch = 1; // Ion arm switch off.
       }
     break;
 
     case MODE_SUPER_HERO:
     default:
-      packSync.systemMode = 1; // MODE_SUPER_HERO.
+      wandSyncData.systemMode = 1; // MODE_SUPER_HERO.
 
       // This is only applicable to the Mode Original, so default to off.
-      packSync.ionArmSwitch = 1; // Ion arm switch off.
+      wandSyncData.ionArmSwitch = 1; // Ion arm switch off.
     break;
-  }
-
-  // Send the state of the cyclotron lid.
-  if(b_cyclotron_lid_on) {
-    packSync.cyclotronLidState = 2; // Lid is on.
-  }
-  else {
-    packSync.cyclotronLidState = 1; // Lid is off.
   }
 
   // Make sure to send this after the system (operation) mode is sent.
   switch(SYSTEM_YEAR) {
     case SYSTEM_1984:
-      packSync.systemYear = 1; // 1984.
+      wandSyncData.systemYear = 1; // 1984.
     break;
     case SYSTEM_1989:
-      packSync.systemYear = 2; // 1989.
+      wandSyncData.systemYear = 2; // 1989.
     break;
     case SYSTEM_AFTERLIFE:
     default:
-      packSync.systemYear = 3; // Afterlife.
+      wandSyncData.systemYear = 3; // Afterlife.
     break;
     case SYSTEM_FROZEN_EMPIRE:
-      packSync.systemYear = 4; // Frozen Empire.
+      wandSyncData.systemYear = 4; // Frozen Empire.
     break;
   }
 
+  // Send the state of the cyclotron lid.
+  wandSyncData.cyclotronLidState = b_cyclotron_lid_on ? 2 : 1;
+
   // Denote the current looping preference for the current track; used by the menu system.
-  b_repeat_track ? (packSync.repeatMusicTrack = 2) : (packSync.repeatMusicTrack = 1); // 1 = No repeat, 2 = Repeat.
+  wandSyncData.repeatMusicTrack = b_repeat_track ? 2 : 1; // 1 = No repeat, 2 = Repeat.
 
   // Vibration enabled or disabled from the Proton Pack toggle switch.
-  b_vibration_switch_on ? (packSync.vibrationEnabled = 2) : (packSync.vibrationEnabled = 1); // 1 = Vibration off, 2 = Vibration on.
+  wandSyncData.vibrationEnabled = b_vibration_switch_on ? 2 : 1; // 1 = Vibration off, 2 = Vibration on.
 
   // Pack power status.
-  (PACK_STATE != MODE_OFF) ? (packSync.packOn = 2) : (packSync.packOn = 1); // 1 = Pack off, 2 = Pack on.
+  wandSyncData.packOn = PACK_STATE != MODE_OFF ? 2 : 1; // 1 = Pack off, 2 = Pack on.
 
   // Reset the wand power levels.
-  packSync.powerLevel = i_wand_power_level;
+  wandSyncData.powerLevel = i_wand_power_level;
 
   // Synchronise the firing mode.
   switch(STREAM_MODE) {
     case SLIME:
-      packSync.streamMode = 2; // 2 = Slime Mode.
+      wandSyncData.streamMode = 2; // 2 = Slime Mode.
     break;
 
     case STASIS:
-      packSync.streamMode = 3; // 3 = Stasis Mode.
+      wandSyncData.streamMode = 3; // 3 = Stasis Mode.
     break;
 
     case MESON:
-      packSync.streamMode = 4; // 4 = Meson Mode.
+      wandSyncData.streamMode = 4; // 4 = Meson Mode.
     break;
 
     case SPECTRAL:
-      packSync.streamMode = 5; // 5 = Spectral Mode
+      wandSyncData.streamMode = 5; // 5 = Spectral Mode
     break;
 
     case HOLIDAY:
-      if(!b_christmas) {
-        packSync.streamMode = 6; // 6 = Holiday (Halloween) Mode
-      }
-      else {
-        packSync.streamMode = 7; // 7 = Holiday (Christmas) Mode
-      }
+      wandSyncData.streamMode = b_christmas ? 7 : 6; // 6 = Halloween, 7 = Christmas
     break;
 
     case SPECTRAL_CUSTOM:
-      packSync.streamMode = 8; // 8 = Spectral Custom Mode.
+      wandSyncData.streamMode = 8; // 8 = Spectral Custom Mode.
     break;
 
     case PROTON:
     default:
-      packSync.streamMode = 1; // 1 = Proton Mode.
-
-      STREAM_MODE = PROTON;
-
-      if(b_cyclotron_colour_toggle == true) {
-        // Reset the Cyclotron LED colours.
-        cyclotronColourReset();
-      }
-
-      if(b_powercell_colour_toggle == true && b_pack_on == true) {
-        // Reset the Power Cell colours if the Power Cell is running.
-        b_powercell_updating = true;
-        powercellDraw();
-      }
+      wandSyncData.streamMode = 1; // 1 = Proton Mode.
     break;
   }
 
-  // Update the Inner Cyclotron LEDs if required.
-  cyclotronSwitchLEDUpdate();
-
-  // Make sure the pack is fully reset if it is off while a new wand is connected.
   if(b_pack_on != true) {
+    // Set this flag to false to force a full reset of the pack if a new wand is connected.
     b_reset_start_led = false;
   }
 
   // Synchronise the volume settings.
-  packSync.masterVolume = i_volume_master_percentage;
-  packSync.effectsVolume = i_volume_effects_percentage;
+  wandSyncData.masterVolume = i_volume_master_percentage;
+  wandSyncData.effectsVolume = i_volume_effects_percentage;
 
-  if(i_volume_master == i_volume_abs_min) {
     // Telling the wand to be silent if required.
-    packSync.masterMuted = 2; // 2 = Muted.
-  }
-  else {
-    packSync.masterMuted = 1; // 1 = Not muted.
-  }
+  wandSyncData.masterMuted = (i_volume_master == i_volume_abs_min) ? 2 : 1;
 
   // Send the completed synchronization packet.
   packSerialSendData(P_SYNC_DATA);
@@ -1363,11 +1399,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
   switch(i_command) {
     case W_SYNC_NOW:
       // Wand has explicitly asked to be synchronized, so treat as not yet connected.
-      b_wand_connected = false;
-      b_wand_syncing = false;
-      ms_wand_check.stop();
-
-      // Stop any wand sounds which are playing on the pack.
+      // First we stop any wand sounds which are playing on the pack.
       wandExtraSoundsStop();
       wandExtraSoundsBeepLoopStop(false);
 
@@ -1378,15 +1410,12 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       b_wand_syncing = false; // No longer attempting to force a sync w/ wand.
       b_wand_connected = true; // If we're receiving handshake instead of SYNC_NOW we must be connected
 
-      // Wand was connected and still present, so restart the disconnection check.
-      ms_wand_check.restart();
-
       // Tell the serial1 device the wand is still connected.
       serial1Send(A_WAND_CONNECTED);
 
       if(b_diagnostic == true) {
         // While in diagnostic mode, play a sound to indicate the wand is connected.
-        playEffect(S_BEEPS_ALT);
+        playEffect(S_BEEPS);
       }
     break;
 
@@ -1504,7 +1533,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_WAND_BEEP:
       if(b_overheating != true) {
-        playEffect(S_AFTERLIFE_BEEP_WAND_S5, false, i_volume_effects - i_wand_beep_level);
+        playEffect(S_AFTERLIFE_BEEP_WAND_S5, false, i_volume_effects - i_wand_idle_level);
       }
     break;
 
@@ -1643,9 +1672,14 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case W_BOSON_DART_SOUND:
-      playEffect(S_BOSON_DART_FIRE, false, i_volume_effects, false, 0, false);
+      if(b_stream_effects) {
+        playEffect(S_BOSON_DART_FIRE_IMPACT, false, i_volume_effects, false, 0, false);
+      }
+      else {
+        playEffect(S_BOSON_DART_FIRE, false, i_volume_effects, false, 0, false);
+      }
 
-      if(b_vibration_firing && b_vibration_switch_on) {
+      if(VIBRATION_MODE == VIBRATION_FIRING_ONLY && b_vibration_switch_on) {
         ms_menu_vibration.start(350); // If vibrate while firing is enabled and vibration switch is on, vibrate the pack.
       }
     break;
@@ -1653,7 +1687,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_SHOCK_BLAST_SOUND:
       playEffect(S_SHOCK_BLAST_FIRE, false, i_volume_effects, false, 0, false);
 
-      if(b_vibration_firing && b_vibration_switch_on) {
+      if(VIBRATION_MODE == VIBRATION_FIRING_ONLY && b_vibration_switch_on) {
         ms_menu_vibration.start(300); // If vibrate while firing is enabled and vibration switch is on, vibrate the pack.
       }
     break;
@@ -1665,7 +1699,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_MESON_COLLIDER_SOUND:
       playEffect(S_MESON_COLLIDER_FIRE, false, i_volume_effects, false, 0, false);
 
-      if(b_vibration_firing && b_vibration_switch_on) {
+      if(VIBRATION_MODE == VIBRATION_FIRING_ONLY && b_vibration_switch_on) {
         ms_menu_vibration.start(200); // If vibrate while firing is enabled and vibration switch is on, vibrate the pack.
       }
     break;
@@ -1676,6 +1710,21 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_FIRING:
       // Wand is firing.
+      if(i_value == 1) {
+        b_firing_intensify = true;
+
+        if(b_wand_firing && !b_sound_firing_intensify_trigger) {
+          b_sound_firing_intensify_trigger = true;
+        }
+      }
+      else {
+        b_firing_alt = true;
+
+        if(b_wand_firing && !b_sound_firing_alt_trigger) {
+          b_sound_firing_alt_trigger = true;
+        }
+      }
+
       wandFiring();
     break;
 
@@ -1776,7 +1825,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_PACK_SLIME_OPEN);
-        playEffect(S_PACK_SLIME_TANK_LOOP, true, 0, true, 900);
+        playEffect(S_PACK_SLIME_TANK_LOOP, true, i_volume_effects, true, 700);
 
         if((SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE)) {
           adjustGainEffect(S_AFTERLIFE_PACK_STARTUP, i_volume_effects - 30, true, 100);
@@ -1836,7 +1885,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_STASIS_OPEN);
-        playEffect(S_STASIS_IDLE_LOOP, true, 0, true, 900);
+        playEffect(S_STASIS_IDLE_LOOP, true, i_volume_effects, true, 2000);
       }
 
       // Stasis mode.
@@ -1882,7 +1931,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         stopEffect(S_MESON_IDLE_LOOP);
 
         playEffect(S_MESON_OPEN);
-        playEffect(S_MESON_IDLE_LOOP, true, 0, true, 900);
+        playEffect(S_MESON_IDLE_LOOP, true, i_volume_effects, true, 1250);
       }
 
       // Meson mode.
@@ -1998,6 +2047,9 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         playEffect(S_CLICK);
         b_settings = false;
       }
+      else {
+        b_christmas ? playEffect(S_CHRISTMAS_MODE_VOICE) : playEffect(S_HALLOWEEN_MODE_VOICE);
+      }
 
       if(b_cyclotron_colour_toggle == true) {
         // Reset the Cyclotron LED colours.
@@ -2078,6 +2130,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Toggle the optional inner cyclotron LED panel board.
       switch(INNER_CYC_PANEL_MODE) {
         case PANEL_INDIVIDUAL:
+        default:
           INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
 
           stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
@@ -2112,6 +2165,25 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the LED count for the panel and update the LED counts.
       resetInnerCyclotronLEDs(); // Must call this first, prior to updating counts
       updateProtonPackLEDCounts(); // Must call this after resetting # of LEDs
+    break;
+
+    case W_TOGGLE_CYCLOTRON_FADING:
+      b_fade_cyclotron_led = !b_fade_cyclotron_led;
+
+      if(b_fade_cyclotron_led) {
+        stopEffect(S_VOICE_CYCLOTRON_FADING_DISABLED);
+        stopEffect(S_VOICE_CYCLOTRON_FADING_ENABLED);
+        playEffect(S_VOICE_CYCLOTRON_FADING_ENABLED);
+
+        packSerialSend(P_CYCLOTRON_FADING_ENABLED);
+      }
+      else {
+        stopEffect(S_VOICE_CYCLOTRON_FADING_DISABLED);
+        stopEffect(S_VOICE_CYCLOTRON_FADING_ENABLED);
+        playEffect(S_VOICE_CYCLOTRON_FADING_DISABLED);
+
+        packSerialSend(P_CYCLOTRON_FADING_DISABLED);
+      }
     break;
 
     case W_OVERHEATING:
@@ -2163,7 +2235,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the smoke timer and cyclotron speed timer if the wand is firing.
       if(b_wand_firing == true) {
         if(ms_smoke_timer.isRunning()) {
-          ms_smoke_timer.start(PROGMEM_READU32(i_smoke_timer[i_wand_power_level - 1]));
+          ms_smoke_timer.start(PROGMEM_READU16(i_smoke_timer[i_wand_power_level - 1]));
         }
 
         if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
@@ -2181,7 +2253,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the smoke timer and cyclotron speed timer if the wand is firing.
       if(b_wand_firing == true) {
         if(ms_smoke_timer.isRunning()) {
-          ms_smoke_timer.start(PROGMEM_READU32(i_smoke_timer[i_wand_power_level - 1]));
+          ms_smoke_timer.start(PROGMEM_READU16(i_smoke_timer[i_wand_power_level - 1]));
         }
 
         if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
@@ -2199,7 +2271,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the smoke timer and cyclotron speed timer if the wand is firing.
       if(b_wand_firing == true) {
         if(ms_smoke_timer.isRunning()) {
-          ms_smoke_timer.start(PROGMEM_READU32(i_smoke_timer[i_wand_power_level - 1]));
+          ms_smoke_timer.start(PROGMEM_READU16(i_smoke_timer[i_wand_power_level - 1]));
         }
 
         if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
@@ -2217,7 +2289,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the smoke timer and cyclotron speed timer if the wand is firing.
       if(b_wand_firing == true) {
         if(ms_smoke_timer.isRunning()) {
-          ms_smoke_timer.start(PROGMEM_READU32(i_smoke_timer[i_wand_power_level - 1]));
+          ms_smoke_timer.start(PROGMEM_READU16(i_smoke_timer[i_wand_power_level - 1]));
         }
 
         if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
@@ -2236,7 +2308,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Note that since the wand cannot enter or exit Power Level 5 while firing, this should never be necessary.
       if(b_wand_firing == true) {
         if(ms_smoke_timer.isRunning()) {
-          ms_smoke_timer.start(PROGMEM_READU32(i_smoke_timer[i_wand_power_level - 1]));
+          ms_smoke_timer.start(PROGMEM_READU16(i_smoke_timer[i_wand_power_level - 1]));
         }
 
         if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
@@ -2287,15 +2359,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       overheatDecrement(5);
     break;
 
-    case W_FIRING_INTENSIFY:
-      // Wand firing in intensify mode.
-      b_firing_intensify = true;
-
-      if(b_wand_firing == true && b_sound_firing_intensify_trigger != true) {
-        b_sound_firing_intensify_trigger = true;
-      }
-    break;
-
     case W_FIRING_INTENSIFY_MIX:
       // Wand firing in intensify mode mix.
       b_firing_intensify = true;
@@ -2324,15 +2387,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       b_firing_intensify = false;
       b_sound_firing_intensify_trigger = false;
-    break;
-
-    case W_FIRING_ALT:
-      // Wand firing in alt mode.
-      b_firing_alt = true;
-
-      if(b_wand_firing == true && b_sound_firing_alt_trigger != true) {
-        b_sound_firing_alt_trigger = true;
-      }
     break;
 
     case W_FIRING_ALT_MIX:
@@ -2608,48 +2662,77 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       playEffect(S_BEEPS_ALT);
 
-      if(b_vibration_enabled == false) {
-        b_vibration_enabled = true; // Enable pack vibration.
-        b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
+      switch(VIBRATION_MODE) {
+        case VIBRATION_ALWAYS:
+          VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+          b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
 
-        // Proton Pack vibration enabled.
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          // Proton Pack vibration while firing enabled.
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
-        playEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          playEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
 
-        packSerialSend(P_PACK_VIBRATION_ENABLED);
+          packSerialSend(P_PACK_VIBRATION_FIRING_ENABLED);
 
-        ms_menu_vibration.start(250); // Confirmation buzz for 250ms.
-      }
-      else if(b_vibration_enabled == true && b_vibration_firing != true) {
-        b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
-        b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
+          ms_menu_vibration.start(250); // Confirmation buzz for 250ms.
+        break;
 
-        // Proton Pack vibration while firing enabled.
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+        case VIBRATION_FIRING_ONLY:
+        default:
+          VIBRATION_MODE = VIBRATION_NONE;
 
-        playEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          // Proton Pack vibration disabled.
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
-        packSerialSend(P_PACK_VIBRATION_FIRING_ENABLED);
+          playEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
 
-        ms_menu_vibration.start(250); // Confirmation buzz for 250ms.
-      }
-      else {
-        b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
-        b_vibration_enabled = false; // Disable pack vibration.
+          packSerialSend(P_PACK_VIBRATION_DISABLED);
+        break;
 
-        // Proton Pack vibration disabled.
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
-        stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+        case VIBRATION_NONE:
+          VIBRATION_MODE = CYCLOTRON_MOTOR;
 
-        playEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          // Reset the vibration switch state.
+          if(switch_vibration.getState() == LOW) {
+            b_vibration_switch_on = true;
+          }
+          else {
+            b_vibration_switch_on = false;
+          }
 
-        packSerialSend(P_PACK_VIBRATION_DISABLED);
+          // Proton Pack motorized cyclotron support enabled.
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
+
+          playEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
+
+          packSerialSend(P_PACK_MOTORIZED_CYCLOTRON_ENABLED);
+        break;
+
+        case CYCLOTRON_MOTOR:
+          VIBRATION_MODE = VIBRATION_ALWAYS;
+          b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
+
+          // Proton Pack vibration enabled.
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
+
+          playEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+
+          packSerialSend(P_PACK_VIBRATION_ENABLED);
+
+          ms_menu_vibration.start(250); // Confirmation buzz for 250ms.
+        break;
       }
     break;
 
@@ -2662,8 +2745,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         case VIBRATION_DEFAULT:
         default:
           VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
-          b_vibration_enabled = true; // Enable pack vibration.
-          b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
+          VIBRATION_MODE = VIBRATION_MODE_EEPROM;
           b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
 
           // Proton Pack vibration enabled.
@@ -2671,6 +2753,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
           playEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
 
@@ -2680,8 +2763,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         break;
         case VIBRATION_ALWAYS:
           VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
-          b_vibration_enabled = true; // Enable pack vibration.
-          b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
+          VIBRATION_MODE = VIBRATION_MODE_EEPROM;
           b_vibration_switch_on = true; // Override the Proton Pack vibration toggle switch.
 
           // Proton Pack vibration firing enabled.
@@ -2689,6 +2771,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
           playEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
 
@@ -2698,25 +2781,47 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         break;
         case VIBRATION_FIRING_ONLY:
           VIBRATION_MODE_EEPROM = VIBRATION_NONE;
-          b_vibration_enabled = false; // Disable pack vibration.
-          b_vibration_firing = false; // Disable the "only vibrate while firing" feature.
+          VIBRATION_MODE = VIBRATION_MODE_EEPROM;
 
           // Proton Pack vibration disabled.
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
           playEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
 
           packSerialSend(P_PACK_VIBRATION_DISABLED);
         break;
         case VIBRATION_NONE:
-          VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
-          b_vibration_enabled = true; // Enable pack vibration.
-          b_vibration_firing = true; // Enable the "only vibrate while firing" feature.
+          VIBRATION_MODE_EEPROM = CYCLOTRON_MOTOR;
+          VIBRATION_MODE = VIBRATION_MODE_EEPROM;
 
-          // Reset the vibration state.
+          // Reset the vibration switch state.
+          if(switch_vibration.getState() == LOW) {
+            b_vibration_switch_on = true;
+          }
+          else {
+            b_vibration_switch_on = false;
+          }
+
+          // Proton Pack motorized cyclotron support enabled.
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_FIRING_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
+          stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
+
+          playEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
+
+          packSerialSend(P_PACK_MOTORIZED_CYCLOTRON_ENABLED);
+        break;
+        case CYCLOTRON_MOTOR:
+          VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
+          VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+
+          // Reset the vibration switch state.
           if(switch_vibration.getState() == LOW) {
             b_vibration_switch_on = true;
           }
@@ -2729,6 +2834,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_ENABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DISABLED);
           stopEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
+          stopEffect(S_VOICE_MOTORIZED_CYCLOTRON_ENABLED);
 
           playEffect(S_VOICE_PROTON_PACK_VIBRATION_DEFAULT);
 
@@ -2990,23 +3096,27 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_MUSIC_TRACK_LOOP_TOGGLE:
       toggleMusicLoop();
+      serial1Send(A_MUSIC_TRACK_LOOP_TOGGLE, b_repeat_track ? 2 : 1);
     break;
 
-    case W_SILENT_MODE:
-      // Remember the current master volume level.
-      i_volume_revert = i_volume_master;
+    case W_TOGGLE_MUTE:
+      if(i_volume_master == i_volume_abs_min) {
+        i_volume_master = i_volume_revert;
 
-      // Set the master volume to silent.
-      i_volume_master = i_volume_abs_min;
+        // Notify the Attenuator we are unmuted.
+        serial1Send(A_TOGGLE_MUTE, 1);
+      }
+      else {
+        i_volume_revert = i_volume_master;
 
-      resetMasterVolume();
-    break;
+        // Set the master volume to minimum.
+        i_volume_master = i_volume_abs_min;
 
-    case W_VOLUME_REVERT:
-      // Restore the master volume to previous level.
-      i_volume_master = i_volume_revert;
+        // Notify the Attenuator we are muted.
+        serial1Send(A_TOGGLE_MUTE, 2);
+      }
 
-      resetMasterVolume();
+      updateMasterVolume();
     break;
 
     case W_VOLUME_DECREASE:
@@ -4085,6 +4195,41 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       playEffect(S_VOICE_BARREL_LED_48);
     break;
 
+    case W_TOGGLE_POWERCELL_DIRECTION:
+      if(b_powercell_invert == true) {
+        b_powercell_invert = false;
+
+        stopEffect(S_VOICE_POWERCELL_NOT_INVERTED);
+        stopEffect(S_VOICE_POWERCELL_INVERTED);
+
+        playEffect(S_VOICE_POWERCELL_NOT_INVERTED);
+        packSerialSend(P_POWERCELL_NOT_INVERTED);
+      }
+      else {
+        b_powercell_invert = true;
+
+        stopEffect(S_VOICE_POWERCELL_INVERTED);
+        stopEffect(S_VOICE_POWERCELL_NOT_INVERTED);
+
+        playEffect(S_VOICE_POWERCELL_INVERTED);
+        packSerialSend(P_POWERCELL_INVERTED);
+      }
+    break;
+
+    case W_BARGRAPH_28_SEGMENTS:
+      stopEffect(S_VOICE_BARGRAPH_28_SEGMENTS);
+      stopEffect(S_VOICE_BARGRAPH_30_SEGMENTS);
+
+      playEffect(S_VOICE_BARGRAPH_28_SEGMENTS);
+    break;
+
+    case W_BARGRAPH_30_SEGMENTS:
+      stopEffect(S_VOICE_BARGRAPH_28_SEGMENTS);
+      stopEffect(S_VOICE_BARGRAPH_30_SEGMENTS);
+
+      playEffect(S_VOICE_BARGRAPH_30_SEGMENTS);
+    break;
+
     case W_BARGRAPH_INVERTED:
       stopEffect(S_VOICE_BARGRAPH_INVERTED);
       stopEffect(S_VOICE_BARGRAPH_NOT_INVERTED);
@@ -4261,9 +4406,13 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case W_YEAR_MODES_CYCLE_EEPROM:
-      if(b_switch_mode_override == true) {
+      if(b_switch_mode_override) {
         if(SYSTEM_YEAR_TEMP == SYSTEM_FROZEN_EMPIRE) {
+          // Disable the year mode override flag so the toggle switch takes effect.
           b_switch_mode_override = false;
+
+          stopEffect(S_BEEPS_BARGRAPH);
+          playEffect(S_BEEPS_BARGRAPH);
 
           stopEffect(S_VOICE_YEAR_MODE_DEFAULT);
           stopEffect(S_VOICE_FROZEN_EMPIRE);
@@ -4274,7 +4423,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
           packSerialSend(P_YEAR_MODE_DEFAULT);
 
-          // 1 = toggle switch, 2 = 1984, 3 = 1989, 4 = Afterlife, 5 = Frozen Empire.
           SYSTEM_EEPROM_YEAR = SYSTEM_TOGGLE_SWITCH;
         }
         else {
@@ -4282,13 +4430,16 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
       else {
-        toggleYearModes();
-
         // Turn on the year mode override flag. This resets when you flip the year mode toggle switch on the pack.
         b_switch_mode_override = true;
+
+        // Have to set this to Frozen Empire so 1984 will be triggered.
+        SYSTEM_YEAR_TEMP = SYSTEM_FROZEN_EMPIRE;
+
+        toggleYearModes();
       }
 
-      if(b_switch_mode_override == true) {
+      if(b_switch_mode_override) {
         switch(SYSTEM_YEAR_TEMP) {
           case SYSTEM_1984:
             SYSTEM_EEPROM_YEAR = SYSTEM_1984;
