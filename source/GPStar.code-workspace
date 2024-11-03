@@ -1,22 +1,21 @@
 {
 	"folders": [
 		{
+			"path": "External"
+		},
+		{
 			"path": "SingleShot"
 		},
 		{
-			"name": "AttenuatorNano",
 			"path": "AttenuatorNano"
 		},
 		{
-			"name": "AttenuatorESP32",
 			"path": "AttenuatorESP32"
 		},
 		{
-			"name": "ProtonPack",
 			"path": "ProtonPack"
 		},
 		{
-			"name": "NeutronaWand",
 			"path": "NeutronaWand"
 		}
 	],

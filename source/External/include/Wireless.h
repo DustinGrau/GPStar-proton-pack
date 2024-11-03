@@ -1,7 +1,7 @@
 /**
  *   gpstar External - Ghostbusters Proton Pack & Neutrona Wand.
- *   Copyright (C) 2023 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
- *                    & Dustin Grau <dustin.grau@gmail.com>
+ *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
+ *                         & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,12 +17,33 @@
  *   along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-// Requires library from https://github.com/Links2004/arduinoWebSockets
-#include <ArduinoJson.h>
+
+/**
+ * Wireless (WiFi) Communications for ESP32
+ *
+ * This device will use the SoftAP mode to act as a standalone WiFi access point, allowing
+ * direct connections to the device without need for a full wireless network. All address
+ * (IP) assignments will be handled as part of the code here.
+ *
+ * Note that per the Expressif programming guide: "ESP32 has only one 2.4 GHz ISM band RF
+ * module, which is shared by Bluetooth (BT & BLE) and Wi-Fi, so Bluetooth can’t receive
+ * or transmit data while Wi-Fi is receiving or transmitting data and vice versa. Under
+ * such circumstances, ESP32 uses the time-division multiplexing method to receive and
+ * transmit packets."
+ *
+ * Essentially performance suffers when both WiFi and Bluetooth are enabled and so we
+ * must choose which is more useful to the operation of this device. Decision: WiFi.
+ *
+ * https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/coexist.html
+ */
 #include <Preferences.h>
-#include <WebServer.h>
-#include <WebSocketsClient.h>
 #include <WiFi.h>
+#include <WiFiAP.h>
+#include <ESPmDNS.h>
+#include <AsyncJson.h>
+#include <ESPAsyncWebServer.h>
+#include <ElegantOTA.h>
+#include <WebSocketsClient.h>
 
 // Preferences for SSID and AP password, which will use a "credentials" namespace.
 Preferences preferences;
@@ -42,7 +63,7 @@ bool b_socket_config = false; // Denotes websocket configuration was performed
 
 WebSocketsClient webSocket; // WebSocket client class instance
 
-DynamicJsonDocument jsonDoc(1024); // Used for processing JSON body data.
+JsonDocument jsonDoc; // Used for processing JSON body data.
 
 boolean startWiFi() {
   // Begin some diagnostic information to console.
