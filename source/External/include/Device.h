@@ -84,7 +84,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
           }
         }
       };
-      xhttp.open("GET", "/config/attenuator", true);
+      xhttp.open("GET", "/config/device", true);
       xhttp.send();
     }
 
@@ -129,7 +129,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
           }
         }
       };
-      xhttp.open("PUT", "/config/attenuator/save", true);
+      xhttp.open("PUT", "/config/device/save", true);
       xhttp.setRequestHeader("Content-Type", "application/json");
       xhttp.send(body);
     }

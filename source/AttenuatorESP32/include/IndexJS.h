@@ -539,7 +539,7 @@ function getDevicePrefs() {
       }
     }
   };
-  xhttp.open("GET", "/config/attenuator", true);
+  xhttp.open("GET", "/config/device", true);
   xhttp.send();
 }
 
