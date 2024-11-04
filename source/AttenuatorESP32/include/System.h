@@ -190,10 +190,10 @@ void updateLEDs() {
     case HOLIDAY:
       switch(HOLIDAY_MODE) {
         case CHRISTMAS:
-        default:
           i_scheme = C_REDGREEN;
         break;
         case HALLOWEEN:
+        default:
           i_scheme = C_ORANGEPURPLE;
         break;
       }

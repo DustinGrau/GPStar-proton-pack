@@ -30,3 +30,6 @@ jobs:
       - name: Compile Attenuator for ESP32
         working-directory: source/AttenuatorESP32
         run: pio run
+      - name: Compile External Device
+        working-directory: source/External
+        run: pio run
