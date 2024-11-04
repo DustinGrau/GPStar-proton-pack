@@ -1,5 +1,5 @@
 /**
- *   GPStar Attenuator - Ghostbusters Proton Pack & Neutrona Wand.
+ *   GPStar External - Ghostbusters Proton Pack & Neutrona Wand.
  *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *                         & Dustin Grau <dustin.grau@gmail.com>
  *

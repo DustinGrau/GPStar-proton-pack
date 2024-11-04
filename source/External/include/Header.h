@@ -18,17 +18,13 @@
  *
  */
 
-#define USE_DEBUGS 0
-
-/*
- * Pin for built-in LED
- */
-#define BUILT_IN_LED 2
+#pragma once
 
 /*
  * Pin for Addressable LEDs
  */
 #define DEVICE_LED_PIN 23
+#define BUILT_IN_LED 2
 #define DEVICE_NUM_LEDS 1
 CRGB device_leds[DEVICE_NUM_LEDS];
 
@@ -47,12 +43,6 @@ enum device {
 };
 
 /*
- * Delay for fastled to update the addressable LEDs
- */
-millisDelay ms_fast_led;
-const uint8_t i_fast_led_delay = 3;
-
-/*
  * Delay for LED blinking.
  */
 millisDelay ms_blink;
@@ -60,9 +50,14 @@ const uint8_t i_blink_delay = 200;
 bool b_blink = true;
 
 /*
- * Current firing states and wand/firing mode
+ * Wand Firing Modes + Settings
  */
-enum FIRING_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, VENTING, SETTINGS };
-enum FIRING_MODES FIRING_MODE;
+enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
+enum POWER_LEVELS POWER_LEVEL;
+enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, SETTINGS };
+enum STREAM_MODES STREAM_MODE;
 bool b_firing = false;
 uint8_t i_power = 0;
+
+// Forward declarations.
+void debug(String message);

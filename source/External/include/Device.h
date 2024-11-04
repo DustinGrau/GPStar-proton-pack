@@ -1,5 +1,5 @@
 /**
- *   GPStar Attenuator - Ghostbusters Proton Pack & Neutrona Wand.
+ *   GPStar External - Ghostbusters Proton Pack & Neutrona Wand.
  *   Copyright (C) 2023-2024 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *                         & Dustin Grau <dustin.grau@gmail.com>
  *
@@ -33,7 +33,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1 id="top">Attenuator Settings</h1>
+  <h1 id="top">Device Settings</h1>
   <div class="block left">
     <p>
       Change system configuration options using the available toggles and selectors.
@@ -50,62 +50,6 @@ const char DEVICE_page[] PROGMEM = R"=====(
       <b>Private Network:</b>
       <input type="text" id="wifiName" width="42" maxlength="32" placeholder="Custom SSID"
        title="Only letters, numbers, hyphens, and underscores are allowed, up to 32 characters."/>
-    </div>
-    <div class="setting">
-      <b class="labelSwitch">Invert Device LED Order:</b>
-      <label class="switch">
-        <input id="invertLEDs" name="invertLEDs" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
-      <b class="labelSwitch">Enable Piezo Buzzer:</b>
-      <label class="switch">
-        <input id="buzzer" name="buzzer" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
-      <b class="labelSwitch">Enable Vibration:</b>
-      <label class="switch">
-        <input id="vibration" name="vibration" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
-      <b class="labelSwitch">Feedback on Overheat:</b>
-      <label class="switch">
-        <input id="overheat" name="overheat" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
-      <b class="labelSwitch">Feedback when Firing:</b>
-      <label class="switch">
-        <input id="firing" name="firing" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
-      <b>Rad Lens Idle:</b>
-      <select id="radLensIdle" name="radLensIdle">
-        <option value="0">Amber Pulse</option>
-        <option value="1">Orange Fade</option>
-      </select>
-    </div>
-    <div class="setting">
-      <b>Status Display:</b>
-      <select id="displayType" name="displayType">
-        <option value="0">Text</option>
-        <option value="1">Graphical</option>
-        <option value="2">Both</option>
-      </select>
-    </div>
-    <div class="setting">
-      <b>Song List:</b> <span id="byteCount"></span><br/>
-      <textarea id="songList" name="songList" rows="40" cols="38"
-       style="text-align:left;" oninput="updateByteCount()"
-       placeholder="Add a list of track names, 1 per line, up to 2000 Bytes in total"></textarea>
     </div>
   </div>
 
@@ -128,13 +72,6 @@ const char DEVICE_page[] PROGMEM = R"=====(
       setTimeout(getSettings, 100);
     }
 
-    function updateByteCount() {
-        var songList = getEl("songList");
-        var byteCount = getEl("byteCount");
-        var byteLength = new TextEncoder().encode(songList.value).length;
-        byteCount.innerHTML = byteLength + "/2000 Bytes";
-    }
-
     function getSettings() {
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
@@ -143,14 +80,6 @@ const char DEVICE_page[] PROGMEM = R"=====(
           if (settings) {
             // Update fields with the current values, or supply an expected default as necessary.
             setValue("wifiName", settings.wifiName || "");
-            setToggle("invertLEDs", settings.invertLEDs);
-            setToggle("buzzer", settings.buzzer);
-            setToggle("vibration", settings.vibration);
-            setToggle("overheat", settings.overheat);
-            setToggle("firing", settings.firing);
-            setValue("radLensIdle", settings.radLensIdle || 0); // Default: 0 [Amber Pulse]
-            setValue("displayType", settings.displayType || 0); // Default: 0 [Text]
-            setValue("songList", settings.songList || "");
             updateByteCount();
           }
         }
@@ -160,12 +89,6 @@ const char DEVICE_page[] PROGMEM = R"=====(
     }
 
     function saveSettings() {
-      // Do not allow saving if track list is too large for allowed storage space.
-      if (getValue("songList").length > 2000) {
-        alert("Error: Unable to save track listing (exceeds allowed bytes).");
-        return;
-      }
-
       // Do not allow saving if the new SSID is too short/long, or illegal.
       var wifiName = getText("wifiName");
       if (wifiName.length < 8) {
@@ -186,15 +109,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
 
       // Saves current settings to attenuator, updating runtime variables and making changes immediately effective.
       var settings = {
-        wifiName: wifiName,
-        invertLEDs: getToggle("invertLEDs"),
-        buzzer: getToggle("buzzer"),
-        vibration: getToggle("vibration"),
-        overheat: getToggle("overheat"),
-        firing: getToggle("firing"),
-        radLensIdle: getInt("radLensIdle"),
-        displayType: getInt("displayType"),
-        songList: getText("songList")
+        wifiName: wifiName
       };
       var body = JSON.stringify(settings);
 
