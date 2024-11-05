@@ -87,6 +87,9 @@ void AnimationTask(void *parameter) {
       Serial.println(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
+    // Update blinking lights based on websocket data.
+    blinkLights();
+
     // Update the device LEDs and restart the timer.
     FastLED.show();
 
@@ -155,25 +158,6 @@ void UserInputTask(void *parameter) {
       Serial.println(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
-    // When the wifi connection is established, proceed with websocket.
-    if (b_ap_started && b_ext_wifi_started) {
-      if (!b_socket_config) {
-        // Connect to the Attenuator device which is at a known IP address.
-        webSocket.begin("192.168.1.2", 80, "/ws");
-
-        webSocket.onEvent(webSocketEvent); // WebSocket event handler
-
-        // If connection broken/failed then retry every X seconds.
-        webSocket.setReconnectInterval(i_websocket_retry_wait);
-
-        // Denote that we configured the websocket connection.
-        b_socket_config = true;
-      }
-
-      webSocket.loop(); // Keep the socket alive.
-      blinkLights(); // Update blinking lights.
-    }
-
     vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
   }
 }
@@ -200,20 +184,22 @@ void WiFiManagementTask(void *parameter) {
       // Try to reconnect then check status.
       WiFi.reconnect();
     }
+    else {
+      // When the wifi connection is established, proceed with websocket.
+      if (b_ap_started && b_ext_wifi_started) {
+        if (!b_socket_config) {
+          debug(F("WebSocket not connected"));
 
-    if (!b_ext_wifi_started) {
-      // Timeout expired, check if we have a connection yet.
-      if (WiFi.status() == WL_CONNECTED) {
-        // On first connection, output some status indicating as such.
-        Serial.println("WiFi Connected");
-        Serial.println(WiFi.localIP());
-        b_ext_wifi_started = true;
-      }
-      else {
-        // When not connected, could be any number of status possible.
-        Serial.println("."); // Note that we're still waiting.
-        b_ext_wifi_started = false;
-        b_socket_config = false;
+          // Connect to the Attenuator device which is at a known IP address.
+          webSocket.begin("192.168.1.2", 80, "/ws");
+
+          webSocket.onEvent(webSocketEvent); // WebSocket event handler.
+
+          // If connection broken/failed then retry every X seconds.
+          webSocket.setReconnectInterval(i_websocket_retry_wait);
+        }
+
+        webSocket.loop(); // Keep the socket alive.
       }
     }
 
@@ -263,7 +249,7 @@ void WiFiSetupTask(void *parameter) {
 void setup() {
   Serial.begin(115200); // Serial monitor via USB connection.
   delay(1000); // Provide a delay to allow serial output.
-
+  Serial.flush(); // Wait for outgoing data to complete.
 
   // Prepare the on-board (non-power) LED to be used as an output pin for indication.
   pinMode(BUILT_IN_LED, OUTPUT);

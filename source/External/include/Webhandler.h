@@ -440,79 +440,83 @@ void setupRouting() {
 }
 
 // Act upon data sent via the websocket (as a client).
-void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
-  if (type == WStype_CONNECTED) {
-    Serial.println("WebSocket Connected");
-    digitalWrite(BUILT_IN_LED, HIGH);
-  }
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+	switch(type) {
+		case WStype_DISCONNECTED:
+			Serial.println("WebSocket Disconnected!\n");
+      digitalWrite(BUILT_IN_LED, LOW); 
+      b_socket_config = false;
+    break;
 
-  if (type == WStype_DISCONNECTED) {
-    Serial.println("WebSocket Disconnected");
-    digitalWrite(BUILT_IN_LED, LOW);
-  }
+		case WStype_CONNECTED:
+      Serial.printf("WebSocket Connected to url: %s\n", payload);
+      digitalWrite(BUILT_IN_LED, HIGH);
+      b_socket_config = true;
+    break;
 
-  if (type == WStype_TEXT) {
-    /*
-     * Deserialize incoming JSON String from remote websocket server.
-     * NOTE: Some data from the Attenuator/Wireless may be plain text
-     * which will cause an error to be thrown. Only continue when no
-     * error is present from deserialization.
-     */
-    DeserializationError jsonError = deserializeJson(jsonBody, payload);
-    if (!jsonError) {
-      // Store values as a known datatype (String).
-      String data_mode = jsonBody["mode"];
-      String data_theme = jsonBody["theme"];
-      String data_switch = jsonBody["switch"];
-      String data_pack = jsonBody["pack"];
-      String data_safety = jsonBody["safety"];
-      String data_wand = jsonBody["wand"];
-      String data_wandMode = jsonBody["wandMode"];
-      String data_firing = jsonBody["firing"];
-      String data_cable = jsonBody["cable"];
-      String data_ctron = jsonBody["cyclotron"];
-      String data_temp = jsonBody["temperature"];
+		case WStype_TEXT:
+      /*
+      * Deserialize incoming JSON String from remote websocket server.
+      * NOTE: Some data from the Attenuator/Wireless may be plain text
+      * which will cause an error to be thrown. Only continue when no
+      * error is present from deserialization.
+      */
+      DeserializationError jsonError = deserializeJson(jsonBody, payload);
+      if (!jsonError) {
+        // Store values as a known datatype (String).
+        String data_mode = jsonBody["mode"];
+        String data_theme = jsonBody["theme"];
+        String data_switch = jsonBody["switch"];
+        String data_pack = jsonBody["pack"];
+        String data_safety = jsonBody["safety"];
+        String data_wandPower = jsonBody["wandPower"];
+        String data_wandMode = jsonBody["wandMode"];
+        String data_firing = jsonBody["firing"];
+        String data_cable = jsonBody["cable"];
+        String data_ctron = jsonBody["cyclotron"];
+        String data_temp = jsonBody["temperature"];
 
-      // Convert power (1-5) to an integer.
-      i_power = (int)jsonBody["power"];
+        // Convert power (1-5) to an integer.
+        i_power = (int)jsonBody["power"];
 
-      // Output some data to the serial console when needed.
-      #if defined(DEBUG_SEND_TO_CONSOLE)
-        Serial.print(data_wandMode);
-        Serial.print(" is ");
-        Serial.print(data_firing);
-        Serial.print(" at level ");
-        Serial.println(i_power);
-      #endif
+        // Output some data to the serial console when needed.
+        #if defined(DEBUG_SEND_TO_CONSOLE)
+          Serial.print(data_wandMode);
+          Serial.print(" is ");
+          Serial.print(data_firing);
+          Serial.print(" at level ");
+          Serial.println(i_power);
+        #endif
 
-      // Change LED for testing
-      if(data_firing == "Firing") {
-        //Serial.println(data_firing);
-        b_firing = true;
+        // Change LED for testing
+        if(data_firing == "Firing") {
+          //Serial.println(data_firing);
+          b_firing = true;
 
-        if(data_wandMode == "Proton") {
-          STREAM_MODE = PROTON;
-        }
-        else if(data_wandMode == "Slime") {
-          STREAM_MODE = SLIME;
-        }
-        else if(data_wandMode == "Stasis") {
-          STREAM_MODE = STASIS;
-        }
-        else if(data_wandMode == "Meson") {
-          STREAM_MODE = MESON;
-        }
-        else if(data_wandMode == "Settings") {
-          STREAM_MODE = SETTINGS;
+          if(data_wandMode == "Proton") {
+            STREAM_MODE = PROTON;
+          }
+          else if(data_wandMode == "Slime") {
+            STREAM_MODE = SLIME;
+          }
+          else if(data_wandMode == "Stasis") {
+            STREAM_MODE = STASIS;
+          }
+          else if(data_wandMode == "Meson") {
+            STREAM_MODE = MESON;
+          }
+          else if(data_wandMode == "Settings") {
+            STREAM_MODE = SETTINGS;
+          }
+          else {
+            STREAM_MODE = SPECTRAL;
+          }
         }
         else {
-          STREAM_MODE = SPECTRAL;
+          //Serial.println(data_firing);
+          b_firing = false;
         }
       }
-      else {
-        //Serial.println(data_firing);
-        b_firing = false;
-      }
-    }
-  }
+    break;
+	}
 }

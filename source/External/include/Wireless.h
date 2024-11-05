@@ -77,7 +77,7 @@ unsigned long i_progress_millis = 0;
 // Define a WebSocket client connection and related variables.
 WebSocketsClient webSocket;
 bool b_socket_config = false; // WS client socket configured.
-uint8_t i_websocket_retry_wait = 100; // Delay for WS retry.
+uint16_t i_websocket_retry_wait = 1000; // Delay for WS retry.
 
 // Create timer for OTA updates.
 millisDelay ms_otacheck;

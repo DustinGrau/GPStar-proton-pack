@@ -83,19 +83,24 @@ void blinkLights() {
       // Turn on LED's according to the firing mode.
       switch(STREAM_MODE) {
         case PROTON:
+          // Red
           digitalWrite(LED_R_PIN, HIGH);
         break;
         case SLIME:
+          // Green
           digitalWrite(LED_G_PIN, HIGH);
         break;
         case STASIS:
+          // Blue
           digitalWrite(LED_B_PIN, HIGH);
         break;
         case MESON:
+          // Orange
           digitalWrite(LED_R_PIN, HIGH);
           digitalWrite(LED_G_PIN, HIGH);
         break;
         default:
+          // White
           digitalWrite(LED_R_PIN, HIGH);
           digitalWrite(LED_G_PIN, HIGH);
           digitalWrite(LED_B_PIN, HIGH);
