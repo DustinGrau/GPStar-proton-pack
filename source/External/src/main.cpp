@@ -174,32 +174,28 @@ void WiFiManagementTask(void *parameter) {
       Serial.println(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
-    if (WiFi.status() == WL_CONNECTION_LOST) {
-      Serial.println("WiFi Connection Lost");
+    // Handle reconnection to external WiFi when necessary.
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println(F("WiFi Connection Lost"));
 
       // If wifi has dropped, clear some flags.
       b_ext_wifi_started = false;
-      b_socket_config = false;
+      b_socket_ready = false;
 
       // Try to reconnect then check status.
-      WiFi.reconnect();
-    }
-    else {
-      // When the wifi connection is established, proceed with websocket.
-      if (b_ap_started && b_ext_wifi_started) {
-        if (!b_socket_config) {
-          debug(F("WebSocket not connected"));
-
-          // Connect to the Attenuator device which is at a known IP address.
-          webSocket.begin("192.168.1.2", 80, "/ws");
-
-          webSocket.onEvent(webSocketEvent); // WebSocket event handler.
-
-          // If connection broken/failed then retry every X seconds.
-          webSocket.setReconnectInterval(i_websocket_retry_wait);
-        }
-
-        webSocket.loop(); // Keep the socket alive.
+      if (WiFi.reconnect()) {
+        Serial.println(F("WiFi Reconnect"));
+        b_ext_wifi_started = true;
+        setupWebSocket();
+      }
+      else {
+        Serial.println(F("WiFi Restart"));
+        WiFi.disconnect(); // Explicitly issue a disconnect.
+        delay(100); // Delay needed before WiFi restart.
+        b_ext_wifi_started = startExternalWifi();
+        if (b_ext_wifi_started) {
+          setupWebSocket(); // Restore the WebSocket connection.
+        }        
       }
     }
 
@@ -230,6 +226,9 @@ void WiFiSetupTask(void *parameter) {
   if(startWiFi()) {
     // Start the local web server.
     startWebServer();
+
+    // Connect to a WebSocket device on the external WiFi.
+    setupWebSocket();
 
     // Begin timer for remote client events.
     ms_otacheck.start(i_otaCheck);
@@ -339,4 +338,9 @@ void loop() {
   printMemoryStats();  // Print memory usage
   delay(3000);         // Wait 5 seconds before printing again
   #endif
+
+  // Exception: Run the WebSocket client loop if connected to WiFi.
+  if (b_ext_wifi_started && b_socket_ready) {
+    webSocket.loop();
+  }
 }

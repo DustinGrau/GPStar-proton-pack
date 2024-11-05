@@ -76,8 +76,11 @@ unsigned long i_progress_millis = 0;
 
 // Define a WebSocket client connection and related variables.
 WebSocketsClient webSocket;
-bool b_socket_config = false; // WS client socket configured.
-uint16_t i_websocket_retry_wait = 1000; // Delay for WS retry.
+const char* ws_host = "192.168.1.2"; // WebSocket server IP
+const uint16_t ws_port = 80;         // WebSocket server port
+const char* ws_uri = "/ws";          // WebSocket URI
+bool b_socket_ready = false;         // WS client socket ready
+uint16_t i_websocket_retry_wait = 1000; // Delay for WS retry
 
 // Create timer for OTA updates.
 millisDelay ms_otacheck;

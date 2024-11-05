@@ -373,11 +373,14 @@ AsyncCallbackJsonWebHandler *wifiChangeHandler = new AsyncCallbackJsonWebHandler
 
       // Disconnect from the WiFi network and re-apply any changes.
       WiFi.disconnect();
+      b_ext_wifi_started = false;
 
       delay(100); // Delay needed.
 
       if(b_enabled) {
-        if(startExternalWifi()) {
+        b_ext_wifi_started = startExternalWifi(); // Restart and set global flag.
+
+        if(b_ext_wifi_started) {
           jsonBody["status"] = "Settings updated, WiFi connection restarted successfully.";
         }
         else {
@@ -418,9 +421,9 @@ void setupRouting() {
 
   // Static Pages
   httpServer.on("/", HTTP_GET, handleRoot);
+  httpServer.on("/common.js", HTTP_GET, handleCommonJS);
   httpServer.on("/favicon.ico", HTTP_GET, handleFavIco);
   httpServer.on("/favicon.svg", HTTP_GET, handleFavSvg);
-  httpServer.on("/common.js", HTTP_GET, handleCommonJS);
   httpServer.on("/index.js", HTTP_GET, handleRootJS);
   httpServer.on("/network", HTTP_GET, handleNetwork);
   httpServer.on("/password", HTTP_GET, handlePassword);
@@ -444,14 +447,16 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
 			Serial.println("WebSocket Disconnected!\n");
-      digitalWrite(BUILT_IN_LED, LOW); 
-      b_socket_config = false;
+      digitalWrite(BUILT_IN_LED, LOW);
+      b_socket_ready = false;
+      webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 
 		case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
       digitalWrite(BUILT_IN_LED, HIGH);
-      b_socket_config = true;
+      b_socket_ready = true;
+      webSocket.sendTXT("Hello from external lights");
     break;
 
 		case WStype_TEXT:
@@ -519,4 +524,12 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       }
     break;
 	}
+}
+
+// Function to setup WebSocket connection.
+void setupWebSocket() {
+    Serial.println(F("Initializing WebSocket Connection..."));
+    webSocket.begin(ws_host, ws_port, ws_uri);
+    webSocket.onEvent(webSocketEvent);
+    b_socket_ready = true;
 }
