@@ -51,7 +51,7 @@
 Preferences preferences;
 
 // Set up values for the SSID and password for the built-in WiFi access point (AP).
-const uint8_t i_max_attempts = 3; // Max attempts to establish a external WiFi connection.
+const uint8_t i_max_attempts = 2; // Max attempts to establish a external WiFi connection.
 const String ap_ssid_prefix = "External"; // This will be the base of the SSID name.
 String ap_default_passwd = "555-2368"; // This will be the default password for the AP.
 String ap_ssid; // Reserved for holding the full, private AP name for this device.
@@ -76,11 +76,11 @@ unsigned long i_progress_millis = 0;
 
 // Define a WebSocket client connection and related variables.
 WebSocketsClient webSocket;
-const char* ws_host = "192.168.1.2"; // WebSocket server IP
-const uint16_t ws_port = 80;         // WebSocket server port
-const char* ws_uri = "/ws";          // WebSocket URI
-bool b_socket_ready = false;         // WS client socket ready
-uint16_t i_websocket_retry_wait = 1000; // Delay for WS retry
+const String ws_host = "192.168.1.2";  // WebSocket server IP
+const uint16_t ws_port = 80;           // WebSocket server port
+const String ws_uri = "/ws";           // WebSocket URI
+bool b_socket_ready = false;           // WS client socket ready
+uint16_t i_websocket_retry_wait = 500; // Delay for WS retry
 
 // Create timer for OTA updates.
 millisDelay ms_otacheck;
@@ -272,10 +272,6 @@ bool startExternalWifi() {
   if(b_wifi_enabled && wifi_ssid.length() >= 2 && wifi_pass.length() >= 8) {
     uint8_t i_curr_attempt = 0;
 
-    // When external WiFi is desired, enable simultaneous SoftAP + Station mode.
-    WiFi.mode(WIFI_MODE_APSTA);
-    delay(300);
-
     #if defined(DEBUG_WIRELESS_SETUP)
       Serial.println();
       Serial.println(F("Starting External WiFi Configuration"));
@@ -373,18 +369,9 @@ bool startWiFi() {
   WiFi.setSleep(false);
   delay(100);
 
-  // Attempt connection to an external (preferred) WiFi as a client.
-  b_ext_wifi_started = startExternalWifi();
-
-  if(!b_wifi_enabled || !b_ext_wifi_started) {
-    #if defined(DEBUG_WIRELESS_SETUP)
-      Serial.println(F("External WiFi not available, switching to SoftAP mode..."));
-    #endif
-
-    // When external WiFi is unavailable, switch to only use the SoftAP mode.
-    WiFi.mode(WIFI_MODE_AP);
-    delay(300);
-  }
+  // Always enable simultaneous SoftAP + Station mode.
+  WiFi.mode(WIFI_MODE_APSTA);
+  delay(300);
 
   // Start the built-in access point (softAP) with the preferred credentials.
   // This should ALWAYS be available for direct connections to the device.

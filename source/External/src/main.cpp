@@ -175,27 +175,35 @@ void WiFiManagementTask(void *parameter) {
     #endif
 
     // Handle reconnection to external WiFi when necessary.
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println(F("WiFi Connection Lost"));
+    if (b_ap_started) {
+      /*
+      if (WiFi.status() != WL_CONNECTED) {
+        Serial.println(F("WiFi Connection Lost"));
 
-      // If wifi has dropped, clear some flags.
-      b_ext_wifi_started = false;
-      b_socket_ready = false;
+        // If wifi has dropped, clear some flags.
+        b_ext_wifi_started = false;
+        b_socket_ready = false;
 
-      // Try to reconnect then check status.
-      if (WiFi.reconnect()) {
-        Serial.println(F("WiFi Reconnect"));
-        b_ext_wifi_started = true;
-        setupWebSocket();
-      }
-      else {
+        // Try to reconnect then check status.
         Serial.println(F("WiFi Restart"));
-        WiFi.disconnect(); // Explicitly issue a disconnect.
+        //WiFi.disconnect(); // Explicitly issue a disconnect.
         delay(100); // Delay needed before WiFi restart.
         b_ext_wifi_started = startExternalWifi();
         if (b_ext_wifi_started) {
           setupWebSocket(); // Restore the WebSocket connection.
-        }        
+        }
+      }
+      */
+      // WL_IDLE_STATUS      = 0,
+      // WL_NO_SSID_AVAIL    = 1,
+      // WL_SCAN_COMPLETED   = 2,
+      // WL_CONNECTED        = 3,
+      // WL_CONNECT_FAILED   = 4,
+      // WL_CONNECTION_LOST  = 5,
+      // WL_DISCONNECTED     = 6
+      if (WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
+        Serial.println(F("WiFi Connected, Socket Not Configured"));
+        setupWebSocket(); // Restore the WebSocket connection.
       }
     }
 
@@ -208,9 +216,14 @@ void WiFiManagementTask(void *parameter) {
         // Restart timer for next check.
         ms_otacheck.start(i_otaCheck);
       }
+
+      // Try to start the external WiFi.
+      if(!b_ext_wifi_started) {
+        b_ext_wifi_started = startExternalWifi();
+      }
     }
 
-    vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
+    vTaskDelay(2000 / portTICK_PERIOD_MS); // 2000ms delay
   }
 }
 
@@ -227,10 +240,7 @@ void WiFiSetupTask(void *parameter) {
     // Start the local web server.
     startWebServer();
 
-    // Connect to a WebSocket device on the external WiFi.
-    setupWebSocket();
-
-    // Begin timer for remote client events.
+    // Begin timer for remote update events.
     ms_otacheck.start(i_otaCheck);
   }
 
@@ -319,7 +329,7 @@ void setup() {
   // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
   xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
   xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
-  xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 2048, NULL, 1, &WiFiManagementTaskHandle, 1);
+  xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 4096, NULL, 1, &WiFiManagementTaskHandle, 0);
 
   // Create idle tasks for each core, used to estimate % busy for core.
   #if defined(DEBUG_PERFORMANCE)

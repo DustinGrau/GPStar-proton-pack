@@ -458,6 +458,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       b_socket_ready = true;
       webSocket.sendTXT("Hello from external lights");
     break;
+		case WStype_ERROR:
+      Serial.printf("WebSocket Error: %s\n", payload);
+    break;
 
 		case WStype_TEXT:
       /*
@@ -530,6 +533,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 void setupWebSocket() {
     Serial.println(F("Initializing WebSocket Connection..."));
     webSocket.begin(ws_host, ws_port, ws_uri);
+    webSocket.setReconnectInterval(i_websocket_retry_wait);
     webSocket.onEvent(webSocketEvent);
     b_socket_ready = true;
 }
