@@ -58,6 +58,7 @@ void ledsOff() {
   digitalWrite(LED_R_PIN, LOW);
   digitalWrite(LED_G_PIN, LOW);
   digitalWrite(LED_B_PIN, LOW);
+  fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
 void blinkLights() {
@@ -81,6 +82,11 @@ void blinkLights() {
     }
     else {
       // Turn on LED's according to the firing mode.
+      for(uint8_t i = 0; i < DEVICE_NUM_LEDS; i++) {
+        //device_leds[i] = getHueAsGBR(PRIMARY_LED, C_WHITE);
+        device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE);
+      }
+
       switch(STREAM_MODE) {
         case PROTON:
           // Red

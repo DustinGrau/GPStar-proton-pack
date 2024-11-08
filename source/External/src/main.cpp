@@ -279,7 +279,7 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, DEVICE_LED_PIN>(device_leds, DEVICE_NUM_LEDS);
 
   // Change the addressable LED to black by default.
-  device_leds[PRIMARY_LED] = getHueAsRGB(PRIMARY_LED, C_BLACK);
+  fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
   // Set digital pins for LED's
   pinMode(BUILT_IN_LED, OUTPUT);

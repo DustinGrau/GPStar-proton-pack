@@ -23,10 +23,10 @@
 /*
  * Pin for Addressable LEDs
  */
-#define DEVICE_LED_PIN 23
 #define BUILT_IN_LED 2
-#define DEVICE_NUM_LEDS 1
-CRGB device_leds[DEVICE_NUM_LEDS];
+#define DEVICE_LED_PIN 23
+#define DEVICE_NUM_LEDS 8
+CRGB device_leds[DEVICE_NUM_LEDS]; 
 
 /*
  * Pins for RGB LEDs

@@ -69,12 +69,12 @@ uint8_t getBrightness(uint8_t i_percent = 100) {
 
 // Special values for colour cycles: current hue (colour) and when to change colour.
 // This must match the number of device ENUM entries (though that is rarely changed).
-uint8_t i_curr_colour[DEVICE_NUM_LEDS] = { 0 };
-uint8_t i_curr_bright[DEVICE_NUM_LEDS] = { 0 };
-int16_t i_next_bright[DEVICE_NUM_LEDS] = { -1 }; // Uses int to allow negative steps.
-uint8_t i_count[DEVICE_NUM_LEDS] = { 0 }; // Counter-based changes for certain themes.
-millisDelay ms_colour_change[DEVICE_NUM_LEDS]; // Timers for changing colours for certain themes.
-uint16_t i_change_delay[DEVICE_NUM_LEDS] = { 10 }; // Default delay time for changes.
+uint8_t i_curr_colour[1] = { 0 };
+uint8_t i_curr_bright[1] = { 0 };
+int16_t i_next_bright[1] = { -1 }; // Uses int to allow negative steps.
+uint8_t i_count[1] = { 0 }; // Counter-based changes for certain themes.
+millisDelay ms_colour_change[1]; // Timers for changing colours for certain themes.
+uint16_t i_change_delay[1] = { 10 }; // Default delay time for changes.
 
 CHSV getHue(uint8_t i_device, uint8_t i_colour, uint8_t i_brightness = 255, uint8_t i_saturation = 255) {
   // Brightness here is a value from 0-255 as limited by byte (uint8_t) type.
@@ -338,4 +338,18 @@ CRGB getHueAsRGB(uint8_t i_device, uint8_t i_colour, uint8_t i_brightness = 255,
 CRGB getHueAsGRB(uint8_t i_device, uint8_t i_colour, uint8_t i_brightness = 255) {
   // Forward to getHueAsRGB() with the flag set for GRB colour swap.
   return getHueAsRGB(i_device, i_colour, i_brightness, true);
+}
+
+CRGB getHueAsGBR(uint8_t i_device, uint8_t i_colour, uint8_t i_brightness = 255) {
+  // Brightness here is a value from 0-255 as limited by byte (uint8_t) type.
+
+  // Get the initial colour using the HSV scheme.
+  CHSV hsv = getHue(i_device, i_colour, i_brightness);
+
+  // Convert from HSV to RGB.
+  CRGB rgb; // RGB Array as { r, g, b }
+  hsv2rgb_rainbow(hsv, rgb);
+
+  // Swap colour values before returning.
+  return CRGB(rgb[1], rgb[2], rgb[0]);
 }
