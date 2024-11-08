@@ -501,23 +501,23 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
           //Serial.println(data_firing);
           b_firing = true;
 
-          if(data_wandMode == "Proton") {
+          if(data_wandMode == "Proton Stream") {
             STREAM_MODE = PROTON;
           }
-          else if(data_wandMode == "Slime") {
+          else if(data_wandMode == "Plasm System") {
             STREAM_MODE = SLIME;
           }
-          else if(data_wandMode == "Stasis") {
+          else if(data_wandMode == "Dark Matter Gen.") {
             STREAM_MODE = STASIS;
           }
-          else if(data_wandMode == "Meson") {
+          else if(data_wandMode == "Particle System") {
             STREAM_MODE = MESON;
           }
           else if(data_wandMode == "Settings") {
             STREAM_MODE = SETTINGS;
           }
           else {
-            STREAM_MODE = SPECTRAL;
+            STREAM_MODE = SPECTRAL; // Spectral/Holiday/Custom
           }
         }
         else {
