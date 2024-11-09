@@ -88,7 +88,8 @@ void AnimationTask(void *parameter) {
     #endif
 
     // Update blinking lights based on websocket data.
-    blinkLights();
+    //blinkLights();
+    animateLights();
 
     // Update the device LEDs and restart the timer.
     FastLED.show();
@@ -277,6 +278,7 @@ void setup() {
 
   // RGB LEDs for use when needed.
   FastLED.addLeds<NEOPIXEL, DEVICE_LED_PIN>(device_leds, DEVICE_NUM_LEDS);
+  ms_anim_change.start(i_animation_duration); // Default animation time.
 
   // Change the addressable LED to black by default.
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);

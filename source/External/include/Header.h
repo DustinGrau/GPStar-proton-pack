@@ -43,11 +43,12 @@ enum device {
 };
 
 /*
- * Delay for LED blinking.
+ * Timer and delay for LED animation sequence
  */
-millisDelay ms_blink;
-const uint8_t i_blink_delay = 200;
-bool b_blink = true;
+#define ANIMATION_DURATION_MS 1000  // 1 second by default
+millisDelay ms_anim_change;
+const uint16_t i_animation_time = 400;
+uint16_t i_animation_duration = ANIMATION_DURATION_MS / DEVICE_NUM_LEDS;
 
 /*
  * Wand Firing Modes + Settings
@@ -57,7 +58,7 @@ enum POWER_LEVELS POWER_LEVEL;
 enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, SETTINGS };
 enum STREAM_MODES STREAM_MODE;
 bool b_firing = false;
-uint8_t i_power = 0;
+uint8_t i_power = 1;
 
 // Forward declarations.
 void debug(String message);

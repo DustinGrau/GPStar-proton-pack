@@ -61,31 +61,72 @@ void ledsOff() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
-void blinkLights() {
-  if(b_firing) {
-    // Only begin blinking if firing.
-    if(ms_blink.remaining() < 1) {
-      b_blink = !b_blink; // Flip the flag.
+void animateLights() {
+  static uint16_t wavePosition = 0;
 
+  // Update timer interval in case i_power changes
+  if (ms_anim_change.justFinished()) {
+    if(b_firing) {
+      // Speed up animation only when firing.
+      ms_anim_change.start(i_animation_duration / ((i_power + 1) * 2));
+    }
+    else {
+      // Otherwise return to normal speed.
+      ms_anim_change.start(i_animation_duration);
+    }
+
+    for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
+      device_leds[i] = CHSV((wavePosition + i * 20) % 255, 255, 255);  // Wave effect
+    }
+
+    wavePosition += 5; // Move the wave position
+  }
+}
+
+void blinkLights() {
+  static bool b_restart = true;
+  static uint8_t i_current = 0;
+  static uint16_t i_delay_total;
+  static uint16_t i_delay_led;
+
+  if(b_firing) {
+    // Only perform blinking if firing.
+    if (i_current == 0) {
+      b_restart = true; // Blink when sequence is complete.
+    }
+    else {
+      b_restart = false; // Otherwise the animation is ongoing.
+    }
+
+    // Increment the count for the animation sequence.
+    i_current++;
+    if (i_current > 1) {
+      // Ensure we cycle back around in the sequence.
+      i_current = i_current % DEVICE_NUM_LEDS;
+    }
+
+    if(ms_anim_change.remaining() < 1) {
       if(i_power > 0) {
         // Speed up the blink with the power level.
-        ms_blink.start(i_blink_delay / i_power);
+        i_delay_total = i_animation_time / i_power;
+        
       }
       else {
         // Handle case where power is unset.
-        ms_blink.start(i_blink_delay);
+        i_delay_total = i_animation_time;
       }
+      ms_anim_change.start(i_delay_total);
+      i_delay_led = i_delay_total / DEVICE_NUM_LEDS;
     }
 
-    if(b_blink) {
-      ledsOff(); // Turn off LED's
+    if(b_restart) {
+      ledsOff(); // Turn off LEDs when flag is true.
     }
     else {
       // Turn on LED's according to the firing mode.
-      for(uint8_t i = 0; i < DEVICE_NUM_LEDS; i++) {
-        //device_leds[i] = getHueAsGBR(PRIMARY_LED, C_WHITE);
-        device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE);
-      }
+
+      //device_leds[i_current] = getHueAsGBR(PRIMARY_LED, C_WHITE);
+      device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_WHITE);
 
       switch(STREAM_MODE) {
         case PROTON:
@@ -116,6 +157,7 @@ void blinkLights() {
   }
   else {
     ledsOff(); // Turn off the RGB LED's
-    b_blink = true; // Set to the blink (off) state.
+    b_restart = true; // Mark animation as reset.
+    i_current = 0; // Reset the LED sequence.
   }
 }
