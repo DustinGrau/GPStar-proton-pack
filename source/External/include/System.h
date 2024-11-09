@@ -61,8 +61,9 @@ void ledsOff() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
+// Animates the LEDs in a wave-like pattern
 void animateLights() {
-  static uint16_t wavePosition = 0;
+  static uint16_t i_led_position = 0;
 
   // Update timer interval in case i_power changes
   if (ms_anim_change.justFinished()) {
@@ -76,10 +77,12 @@ void animateLights() {
     }
 
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
-      device_leds[i] = CHSV((wavePosition + i * 20) % 255, 255, 255);  // Wave effect
+      uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
+      //device_leds[i] = CHSV((i_led_position + i * 20) % 255, 255, 255);
+      device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE, 255 - i_brightness);
     }
 
-    wavePosition += 5; // Move the wave position
+    i_led_position += 5; // Move the wave position by shifting position for the next update.
   }
 }
 
