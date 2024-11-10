@@ -500,35 +500,36 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         if(data_firing == "Firing") {
           //Serial.println(data_firing);
           b_firing = true;
-
-          if(data_wandMode == "Proton Stream") {
-            STREAM_MODE = PROTON;
-          }
-          else if(data_wandMode == "Plasm System") {
-            STREAM_MODE = SLIME;
-          }
-          else if(data_wandMode == "Dark Matter Gen.") {
-            STREAM_MODE = STASIS;
-          }
-          else if(data_wandMode == "Particle System") {
-            STREAM_MODE = MESON;
-          }
-          else if(data_wandMode == "Spectral Stream") {
-            STREAM_MODE = SPECTRAL;
-          }
-          else if(data_wandMode == "Holiday Stream") {
-            STREAM_MODE = HOLIDAY;
-          }
-          else if(data_wandMode == "Settings") {
-            STREAM_MODE = SETTINGS;
-          }
-          else {
-            STREAM_MODE = SPECTRAL_CUSTOM; // Custom Stream
-          }
         }
         else {
           //Serial.println(data_firing);
           b_firing = false;
+        }
+
+        // Always keep up with the current stream mode.
+        if(data_wandMode == "Proton Stream") {
+          STREAM_MODE = PROTON;
+        }
+        else if(data_wandMode == "Plasm System") {
+          STREAM_MODE = SLIME;
+        }
+        else if(data_wandMode == "Dark Matter Gen.") {
+          STREAM_MODE = STASIS;
+        }
+        else if(data_wandMode == "Particle System") {
+          STREAM_MODE = MESON;
+        }
+        else if(data_wandMode == "Spectral Stream") {
+          STREAM_MODE = SPECTRAL;
+        }
+        else if(data_wandMode == "Holiday Stream") {
+          STREAM_MODE = HOLIDAY;
+        }
+        else if(data_wandMode == "Settings") {
+          STREAM_MODE = SETTINGS;
+        }
+        else {
+          STREAM_MODE = SPECTRAL_CUSTOM; // Custom Stream
         }
       }
     break;
