@@ -108,7 +108,7 @@ void animateLights() {
       }
     }
 
-    i_led_position += 5; // Move the wave position by shifting position for the next update.
+    i_led_position += i_animation_step; // Move the wave position by shifting position for the next update.
   }
 }
 
