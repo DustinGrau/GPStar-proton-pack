@@ -45,11 +45,11 @@ enum device {
 /*
  * Timer and delay for LED animation sequence
  */
-#define ANIMATION_DURATION_MS 1000  // 1 second by default
+#define ANIMATION_DURATION_MS 800  // Time for a full end-to-end animation
 millisDelay ms_anim_change;
 const uint16_t i_animation_time = 400;
 uint16_t i_animation_duration = ANIMATION_DURATION_MS / DEVICE_NUM_LEDS;
-uint8_t i_min_brightness = 0;   // Minimum brightness
+uint8_t i_min_brightness = 10;  // Minimum brightness
 uint8_t i_max_brightness = 255; // Maximum brightness
 
 /*

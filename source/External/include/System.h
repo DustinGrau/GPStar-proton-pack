@@ -79,7 +79,33 @@ void animateLights() {
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
       uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
       //device_leds[i] = CHSV((i_led_position + i * 20) % 255, 255, 255);
-      device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE, 255 - i_brightness);
+      
+      switch(STREAM_MODE) {
+        case PROTON:
+          // Red
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_RED, 255 - i_brightness);
+        break;
+        case SLIME:
+          // Green
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_GREEN, 255 - i_brightness);
+        break;
+        case STASIS:
+          // Blue
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_BLUE, 255 - i_brightness);
+        break;
+        case MESON:
+          // Orange
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_ORANGE, 255 - i_brightness);
+        break;
+        case SPECTRAL:
+          // Rainbow
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_RAINBOW, 255 - i_brightness);
+        break;
+        default:
+          // White (Holiday/Custom)
+          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE, 255 - i_brightness);
+        break;
+      }
     }
 
     i_led_position += 5; // Move the wave position by shifting position for the next update.
@@ -127,33 +153,34 @@ void blinkLights() {
     }
     else {
       // Turn on LED's according to the firing mode.
-
-      //device_leds[i_current] = getHueAsGBR(PRIMARY_LED, C_WHITE);
-      device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_WHITE);
-
       switch(STREAM_MODE) {
         case PROTON:
           // Red
           digitalWrite(LED_R_PIN, HIGH);
+          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RED);
         break;
         case SLIME:
           // Green
           digitalWrite(LED_G_PIN, HIGH);
+          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_GREEN);
         break;
         case STASIS:
           // Blue
           digitalWrite(LED_B_PIN, HIGH);
+          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_BLUE);
         break;
         case MESON:
           // Orange
           digitalWrite(LED_R_PIN, HIGH);
           digitalWrite(LED_G_PIN, HIGH);
+          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_ORANGE);
         break;
         default:
           // White
           digitalWrite(LED_R_PIN, HIGH);
           digitalWrite(LED_G_PIN, HIGH);
           digitalWrite(LED_B_PIN, HIGH);
+          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RAINBOW);
         break;
       }
     }
