@@ -257,9 +257,9 @@ void WiFiSetupTask(void *parameter) {
 }
 
 void setup() {
+  //Serial.begin(115200); // Serial monitor via USB connection.
   Serial.begin(115200); // Serial monitor via USB connection.
   delay(1000); // Provide a delay to allow serial output.
-  Serial.flush(); // Wait for outgoing data to complete.
 
   // Prepare the on-board (non-power) LED to be used as an output pin for indication.
   pinMode(BUILT_IN_LED, OUTPUT);
