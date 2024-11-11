@@ -1,25 +1,22 @@
 {
 	"folders": [
 		{
-			"path": "WifiTest"
-		},
-		{
-			"path": "External"
-		},
-		{
-			"path": "SingleShot"
-		},
-		{
-			"path": "AttenuatorNano"
+			"path": "BeltGizmo"
 		},
 		{
 			"path": "AttenuatorESP32"
+		},
+		{
+			"path": "AttenuatorNano"
 		},
 		{
 			"path": "ProtonPack"
 		},
 		{
 			"path": "NeutronaWand"
+		},
+		{
+			"path": "SingleShot"
 		}
 	],
 	"settings": {}
