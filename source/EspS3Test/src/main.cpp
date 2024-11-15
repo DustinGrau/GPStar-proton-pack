@@ -10,7 +10,7 @@ void setup() {
 }
 
 void loop() {
-  leds[0] = CRGB::Red;   // Set LED to red
+  leds[0] = CRGB::Green; // Set LED to green
   FastLED.show();        // Update the LED to display the color
   Serial.println("Hello world"); // Print message when LED is lit
   delay(1000);           // Wait for 1 second
