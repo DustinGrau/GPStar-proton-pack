@@ -30,6 +30,6 @@ jobs:
       - name: Compile Attenuator for ESP32
         working-directory: source/AttenuatorESP32
         run: pio run
-      - name: Compile External Device
+      - name: Compile Belt Gizmo Project
         working-directory: source/BeltGizmo
         run: pio run
