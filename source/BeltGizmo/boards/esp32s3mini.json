@@ -44,6 +44,11 @@
     "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
+  },
+  "offsets": {
+    "bootloader": "0x0",
+    "partition_table": "0x8000",
+    "application": "0x10000"
   }
 }
   
