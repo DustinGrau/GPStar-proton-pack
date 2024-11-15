@@ -27,7 +27,7 @@
 /*
  * Pin for Addressable LEDs
  */
-#define BUILT_IN_LED 2 // D2 for ESP-WROOM-32, D21 for Waveshare ESP32-S3 Mini
+#define BUILT_IN_LED 21 // D2 for ESP-WROOM-32, D21 for Waveshare ESP32-S3 Mini
 #define DEVICE_LED_PIN 4
 #define DEVICE_NUM_LEDS 8
 CRGB device_leds[DEVICE_NUM_LEDS]; 
