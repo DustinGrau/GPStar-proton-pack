@@ -260,9 +260,6 @@ void setup() {
   Serial.begin(115200); // Serial monitor via USB connection.
   delay(1000); // Provide a delay to allow serial output.
 
-  // Prepare the on-board (non-power) LED to be used as an output pin for indication.
-  FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(board_leds, BOARD_NUM_LEDS); // Initialize WS2812 LED
-
   // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
   // Lower frequency means less power consumption, but slower performance (obviously).
   setCpuFrequencyMhz(240);
@@ -275,7 +272,7 @@ void setup() {
   STREAM_MODE = PROTON;
   POWER_LEVEL = LEVEL_1;
 
-  // RGB LEDs for use when needed.
+  // Device RGB LEDs for use when needed.
   FastLED.addLeds<NEOPIXEL, DEVICE_LED_PIN>(device_leds, DEVICE_NUM_LEDS);
   ms_anim_change.start(i_animation_duration); // Default animation time.
 
@@ -288,10 +285,13 @@ void setup() {
   pinMode(LED_B_PIN, OUTPUT);
 
   // Set default state for LED's.
-  board_leds[0] = CRGB::Red; // Default to red at boot.
   digitalWrite(LED_R_PIN, LOW);
   digitalWrite(LED_G_PIN, LOW);
   digitalWrite(LED_B_PIN, LOW);
+
+  // Prepare the on-board RGB LED to be used as an output pin for indication (may be GRB?).
+  //FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(board_leds, BOARD_NUM_LEDS);
+  board_leds[0] = CRGB::Green; // Default to red at boot.
 
   // Delay before configuring and running tasks.
   delay(200);
