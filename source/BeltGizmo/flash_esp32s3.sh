@@ -2,11 +2,11 @@
 
 # Configuration variables
 CHIP="esp32s3"
-PORT="/dev/cu.usbmodem*"   # Change as needed
+PORT="/dev/cu.usbmodem146101"   # Change as needed
 BAUD="460800"
-BOOTLOADER="bootloader.bin"
-PARTITION_TABLE="partition_table.bin"
-FIRMWARE="firmware.bin"
+BOOTLOADER="./.pio/build/esp32s3mini/bootloader.bin"
+PARTITION_TABLE="./.pio/build/esp32s3mini/partitions.bin"
+FIRMWARE="./.pio/build/esp32s3mini/firmware.bin"
 BOOTLOADER_OFFSET="0x0"
 PARTITION_OFFSET="0x8000"
 FIRMWARE_OFFSET="0x10000"
