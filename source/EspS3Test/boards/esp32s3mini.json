@@ -7,7 +7,6 @@
       "-DARDUINO_EVENT_RUNNING_CORE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DBOARD_HAS_PSRAM",
-      "-DCONFIG_ESP_COREDUMP_ENABLE_TO_NONE",
       "-DARDUINO_FASTLED_RMT_BUILTIN_DRIVER"
     ],
     "f_cpu": "240000000L",
@@ -32,4 +31,3 @@
   "url": "https://www.waveshare.com/esp32-s3-mini.htm",
   "vendor": "Waveshare"
 }
-  
