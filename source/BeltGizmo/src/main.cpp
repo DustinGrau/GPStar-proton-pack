@@ -261,7 +261,7 @@ void setup() {
   delay(1000); // Provide a delay to allow serial output.
 
   // Prepare the on-board (non-power) LED to be used as an output pin for indication.
-  pinMode(BUILT_IN_LED, OUTPUT);
+  FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(board_leds, BOARD_NUM_LEDS); // Initialize WS2812 LED
 
   // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
   // Lower frequency means less power consumption, but slower performance (obviously).
@@ -283,13 +283,12 @@ void setup() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
   // Set digital pins for LED's
-  pinMode(BUILT_IN_LED, OUTPUT);
   pinMode(LED_R_PIN, OUTPUT);
   pinMode(LED_G_PIN, OUTPUT);
   pinMode(LED_B_PIN, OUTPUT);
 
   // Set default state for LED's.
-  digitalWrite(BUILT_IN_LED, LOW);
+  board_leds[0] = CRGB::Red; // Default to red at boot.
   digitalWrite(LED_R_PIN, LOW);
   digitalWrite(LED_G_PIN, LOW);
   digitalWrite(LED_B_PIN, LOW);

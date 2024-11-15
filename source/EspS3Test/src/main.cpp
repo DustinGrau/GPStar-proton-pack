@@ -7,7 +7,7 @@ CRGB leds[NUM_LEDS];   // Create an array to hold LED data
 void setup() {
   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);  // Initialize WS2812 LED
   Serial.begin(115200);  // Start Serial communication at 115200 baud
-}
+} 
 
 void loop() {
   leds[0] = CRGB::Green; // Set LED to green
