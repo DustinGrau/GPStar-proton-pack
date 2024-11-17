@@ -53,10 +53,6 @@ void printPartitions() {
 }
 
 void ledsOff() {
-  // Turn off the RGB pins.
-  digitalWrite(LED_R_PIN, LOW);
-  digitalWrite(LED_G_PIN, LOW);
-  digitalWrite(LED_B_PIN, LOW);
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
@@ -155,30 +151,22 @@ void blinkLights() {
       switch(STREAM_MODE) {
         case PROTON:
           // Red
-          digitalWrite(LED_R_PIN, HIGH);
           device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RED);
         break;
         case SLIME:
           // Green
-          digitalWrite(LED_G_PIN, HIGH);
           device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_GREEN);
         break;
         case STASIS:
           // Blue
-          digitalWrite(LED_B_PIN, HIGH);
           device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_BLUE);
         break;
         case MESON:
           // Orange
-          digitalWrite(LED_R_PIN, HIGH);
-          digitalWrite(LED_G_PIN, HIGH);
           device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_ORANGE);
         break;
         default:
           // White
-          digitalWrite(LED_R_PIN, HIGH);
-          digitalWrite(LED_G_PIN, HIGH);
-          digitalWrite(LED_B_PIN, HIGH);
           device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RAINBOW);
         break;
       }

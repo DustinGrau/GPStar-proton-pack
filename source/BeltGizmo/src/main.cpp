@@ -279,19 +279,8 @@ void setup() {
   // Change the addressable LED to black by default.
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
-  // Set digital pins for LED's
-  pinMode(LED_R_PIN, OUTPUT);
-  pinMode(LED_G_PIN, OUTPUT);
-  pinMode(LED_B_PIN, OUTPUT);
-
-  // Set default state for LED's.
-  digitalWrite(LED_R_PIN, LOW);
-  digitalWrite(LED_G_PIN, LOW);
-  digitalWrite(LED_B_PIN, LOW);
-
-  // Prepare the on-board RGB LED to be used as an output pin for indication (may be GRB?).
-  //FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(board_leds, BOARD_NUM_LEDS);
-  board_leds[0] = CRGB::Green; // Default to red at boot.
+  // Prepare the on-board RGB LED to be used as an output pin for indication.
+  rgbLedWrite(BUILT_IN_LED, RGB_BRIGHTNESS, 0, 0); // Default to red at boot.
 
   // Delay before configuring and running tasks.
   delay(200);
