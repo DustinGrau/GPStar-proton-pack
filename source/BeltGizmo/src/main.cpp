@@ -262,7 +262,7 @@ void setup() {
 
   // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
   // Lower frequency means less power consumption, but slower performance (obviously).
-  setCpuFrequencyMhz(240);
+  setCpuFrequencyMhz(160);
   #if defined(DEBUG_SEND_TO_CONSOLE)
     Serial.print(F("CPU Freq (MHz): "));
     Serial.println(getCpuFrequencyMhz());
@@ -280,7 +280,7 @@ void setup() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
   // Prepare the on-board RGB LED to be used as an output pin for indication.
-  rgbLedWrite(BUILT_IN_LED, RGB_BRIGHTNESS, 0, 0); // Default to red at boot.
+  digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
 
   // Delay before configuring and running tasks.
   delay(200);
@@ -317,7 +317,7 @@ void setup() {
 
   // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
   xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
-  xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
+  xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 4096, NULL, 2, &AnimationTaskHandle, 1);
   xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 4096, NULL, 1, &WiFiManagementTaskHandle, 0);
 
   // Create idle tasks for each core, used to estimate % busy for core.

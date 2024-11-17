@@ -59,6 +59,7 @@ void ledsOff() {
 // Animates the LEDs in a wave-like pattern
 void animateLights() {
   static uint16_t i_led_position = 0;
+  uint8_t i_color;
 
   // Update timer interval in case i_power changes
   if (ms_anim_change.justFinished()) {
@@ -77,104 +78,29 @@ void animateLights() {
       
       switch(STREAM_MODE) {
         case PROTON:
-          // Red
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_RED, 255 - i_brightness);
+          i_color = C_RED;
         break;
         case SLIME:
-          // Green
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_GREEN, 255 - i_brightness);
+          i_color = C_GREEN;
         break;
         case STASIS:
-          // Blue
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_BLUE, 255 - i_brightness);
+          i_color = C_BLUE;
         break;
         case MESON:
-          // Orange
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_ORANGE, 255 - i_brightness);
+          i_color = C_ORANGE;
         break;
         case SPECTRAL:
-          // Rainbow
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_RAINBOW, 255 - i_brightness);
+          i_color = C_RAINBOW;
         break;
         default:
-          // White (Holiday/Custom)
-          device_leds[i] = getHueAsRGB(PRIMARY_LED, C_WHITE, 255 - i_brightness);
+          i_color = C_WHITE;
         break;
       }
+
+      //device_leds[i] = getHueAsRGB(PRIMARY_LED, i_color, 255 - i_brightness);
+      device_leds[i] = getHueAsGBR(PRIMARY_LED, i_color, 255 - i_brightness);
     }
 
     i_led_position += i_animation_step; // Move the wave position by shifting position for the next update.
-  }
-}
-
-void blinkLights() {
-  static bool b_restart = true;
-  static uint8_t i_current = 0;
-  static uint16_t i_delay_total;
-  static uint16_t i_delay_led;
-
-  if(b_firing) {
-    // Only perform blinking if firing.
-    if (i_current == 0) {
-      b_restart = true; // Blink when sequence is complete.
-    }
-    else {
-      b_restart = false; // Otherwise the animation is ongoing.
-    }
-
-    // Increment the count for the animation sequence.
-    i_current++;
-    if (i_current > 1) {
-      // Ensure we cycle back around in the sequence.
-      i_current = i_current % DEVICE_NUM_LEDS;
-    }
-
-    if(ms_anim_change.remaining() < 1) {
-      if(i_power > 0) {
-        // Speed up the blink with the power level.
-        i_delay_total = i_animation_time / i_power;
-        
-      }
-      else {
-        // Handle case where power is unset.
-        i_delay_total = i_animation_time;
-      }
-      ms_anim_change.start(i_delay_total);
-      i_delay_led = i_delay_total / DEVICE_NUM_LEDS;
-    }
-
-    if(b_restart) {
-      ledsOff(); // Turn off LEDs when flag is true.
-    }
-    else {
-      // Turn on LED's according to the firing mode.
-      switch(STREAM_MODE) {
-        case PROTON:
-          // Red
-          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RED);
-        break;
-        case SLIME:
-          // Green
-          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_GREEN);
-        break;
-        case STASIS:
-          // Blue
-          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_BLUE);
-        break;
-        case MESON:
-          // Orange
-          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_ORANGE);
-        break;
-        default:
-          // White
-          device_leds[i_current] = getHueAsRGB(PRIMARY_LED, C_RAINBOW);
-        break;
-      }
-    }
-  }
-  else {
-    ledsOff(); // Turn off the RGB LED's
-    b_restart = true; // Mark animation as reset.
-    i_current = 0; // Reset the LED sequence.
   }
 }

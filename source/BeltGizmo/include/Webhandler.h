@@ -446,14 +446,14 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
 			Serial.println("WebSocket Disconnected!\n");
-      rgbLedWrite(BUILT_IN_LED, 0, 0, RGB_BRIGHTNESS); // Blue when disconnected.
+      digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
       b_socket_ready = false;
       webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 
 		case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
-      rgbLedWrite(BUILT_IN_LED, 0, RGB_BRIGHTNESS, 0); // Green when connected.
+      digitalWrite(BUILT_IN_LED, HIGH); // Turn on the built-in LED.
       b_socket_ready = true;
       webSocket.sendTXT("Hello from external lights");
     break;
