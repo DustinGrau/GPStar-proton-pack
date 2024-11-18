@@ -1,26 +1,31 @@
 {
-	"folders": [
-		{
-			"path": "EspS3Test"
-		},
-		{
-			"path": "BeltGizmo"
-		},
-		{
-			"path": "AttenuatorESP32"
-		},
-		{
-			"path": "AttenuatorNano"
-		},
-		{
-			"path": "ProtonPack"
-		},
-		{
-			"path": "NeutronaWand"
-		},
-		{
-			"path": "SingleShot"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": "EspS3Test"
+    },
+    {
+      "path": "BeltGizmo"
+    },
+    {
+      "path": "AttenuatorESP32"
+    },
+    {
+      "path": "AttenuatorNano"
+    },
+    {
+      "path": "ProtonPack"
+    },
+    {
+      "path": "NeutronaWand"
+    },
+    {
+      "path": "SingleShot"
+    }
+  ],
+  "settings": {
+    "editor.detectIndentation": false,
+  "editor.indentSize": "2",
+    "editor.insertSpaces": true,
+  "editor.tabSize": 2
+  }
 }

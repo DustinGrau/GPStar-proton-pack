@@ -443,25 +443,25 @@ void setupRouting() {
 
 // Act upon data sent via the websocket (as a client).
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-	switch(type) {
-		case WStype_DISCONNECTED:
-			Serial.println("WebSocket Disconnected!\n");
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("WebSocket Disconnected!\n");
       digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
       b_socket_ready = false;
       webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 
-		case WStype_CONNECTED:
+    case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
       digitalWrite(BUILT_IN_LED, HIGH); // Turn on the built-in LED.
       b_socket_ready = true;
       webSocket.sendTXT("Hello from external lights");
     break;
-		case WStype_ERROR:
+    case WStype_ERROR:
       Serial.printf("WebSocket Error: %s\n", payload);
     break;
 
-		case WStype_TEXT:
+    case WStype_TEXT:
       /*
       * Deserialize incoming JSON String from remote websocket server.
       * NOTE: Some data from the Attenuator/Wireless may be plain text
@@ -532,14 +532,14 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         }
       }
     break;
-	}
+  }
 }
 
 // Function to setup WebSocket connection.
 void setupWebSocket() {
-    Serial.println(F("Initializing WebSocket Connection..."));
-    webSocket.begin(ws_host, ws_port, ws_uri);
-    webSocket.setReconnectInterval(i_websocket_retry_wait);
-    webSocket.onEvent(webSocketEvent);
-    b_socket_ready = true;
+  Serial.println(F("Initializing WebSocket Connection..."));
+  webSocket.begin(ws_host, ws_port, ws_uri);
+  webSocket.setReconnectInterval(i_websocket_retry_wait);
+  webSocket.onEvent(webSocketEvent);
+  b_socket_ready = true;
 }
