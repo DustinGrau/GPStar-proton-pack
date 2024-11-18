@@ -6,12 +6,12 @@ The custom software needed for operation must be compiled and uploaded to your d
 
 Please refer to the table below for a list of devices and their supported software release.
 
-| Controller Device | v1.x | v2.x | v3.x | v4.x | v5.x |
-|-------------------|------|------|------|------|------|
-| <img src='images/gpstar_logo.png' width=20 align="left"/> GPStar Proton Pack PCB   | Yes | Yes | Yes | Yes | Yes |
-| <img src='images/gpstar_logo.png' width=20 align="left"/> GPStar Neutrona Wand PCB | Yes | Yes | Yes | Yes | Yes |
-| <sup>d1</sup> DIY Arduino Mega Proton Pack   | Yes | Yes <sup>2</sup> | Yes <sup>3</sup> | Yes <sup>3</sup> | Yes <sup>3</sup> |
-| <sup>d1</sup> DIY Arduino Mega Neutrona Wand | Yes | Yes <sup>2</sup> | Yes <sup>2</sup> | Yes <sup>2</sup> | Yes <sup>2</sup> |
+| Controller Device | v1.x | v2.x | v3.x | v4.x | v5.x | v6.x |
+|-------------------|------|------|------|------|------|------|
+| <img src='images/gpstar_logo.png' width=20 align="left"/> GPStar Proton Pack PCB   | Yes | Yes | Yes | Yes | Yes | Yes |
+| <img src='images/gpstar_logo.png' width=20 align="left"/> GPStar Neutrona Wand PCB | Yes | Yes | Yes | Yes | Yes | Yes |
+| <sup>d1</sup> DIY Arduino Mega Proton Pack   | Yes | Yes <sup>2</sup> | Yes <sup>3</sup> | Yes <sup>3</sup> | Yes <sup>3</sup> | Yes <sup>3</sup> |
+| <sup>d1</sup> DIY Arduino Mega Neutrona Wand | Yes | Yes <sup>2</sup> | Yes <sup>2</sup> | Yes <sup>2</sup> | Yes <sup>2</sup> | Yes <sup>2</sup> |
 
 <sup>d1</sup> These are now considered as "legacy" devices and have distinct end-of-life notes in later versions (see additional superscript notations).
 
@@ -37,7 +37,7 @@ The following libraries are required to be installed. All can be found within th
 - **SerialTransfer** by PowerBroker2 (3.1.3+)
 - **Simple ht16k33 Library** by Ipaseen (1.0.2+)
 - **Switch** by Albert van Dalen (1.2.4+)
-- **GPStar Audio Serial Library** by Michael Rajotte (1.1.0+)
+- **GPStar Audio Serial Library** by Michael Rajotte (1.2.0+)
 
 You will also need some basic Boards libraries:
 
