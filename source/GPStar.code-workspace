@@ -24,8 +24,8 @@
   ],
   "settings": {
     "editor.detectIndentation": false,
-  "editor.indentSize": "2",
+    "editor.indentSize": "2",
     "editor.insertSpaces": true,
-  "editor.tabSize": 2
+    "editor.tabSize": 2
   }
 }
