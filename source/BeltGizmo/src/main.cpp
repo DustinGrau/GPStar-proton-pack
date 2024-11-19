@@ -193,7 +193,7 @@ void WiFiManagementTask(void *parameter) {
       }
 
       if (WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
-        Serial.println(F("WiFi Connected, Socket Not Configured"));
+        debug(F("WiFi Connected, Socket Not Configured"));
         b_ext_wifi_paused = false; // Resume retries when needed.
         setupWebSocketClient(); // Restore the WebSocket connection.
       }

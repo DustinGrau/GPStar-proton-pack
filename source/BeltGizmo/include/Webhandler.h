@@ -510,7 +510,7 @@ void setupRouting() {
 void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
-      Serial.println("WebSocket Disconnected!\n");
+      debug("Client WebSocket Disconnected!");
       digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
       WiFi.disconnect();
       b_ext_wifi_started = false;
@@ -553,21 +553,14 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         i_power = (int)jsonBody["power"];
 
         // Output some data to the serial console when needed.
-        #if defined(DEBUG_SEND_TO_CONSOLE)
-          Serial.print(data_wandMode);
-          Serial.print(" is ");
-          Serial.print(data_firing);
-          Serial.print(" at level ");
-          Serial.println(i_power);
-        #endif
+        String dataMessage = data_wandMode + " is " + data_firing + " at level " + i_power;
+        debug(dataMessage);
 
         // Change LED for testing
         if(data_firing == "Firing") {
-          //Serial.println(data_firing);
           b_firing = true;
         }
         else {
-          //Serial.println(data_firing);
           b_firing = false;
         }
 
@@ -603,7 +596,7 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 // Function to setup WebSocket connection.
 void setupWebSocketClient() {
-  Serial.println(F("Initializing WebSocket Connection..."));
+  debug(F("Initializing WebSocket Client Connection..."));
   wsClient.begin(ws_host, ws_port, ws_uri);
   wsClient.setReconnectInterval(i_websocket_retry_wait);
   wsClient.onEvent(webSocketClientEvent);
