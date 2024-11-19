@@ -20,10 +20,54 @@
 #pragma once
 
 const char INDEXJS_page[] PROGMEM = R"=====(
+var websocket;
+var statusInterval;
+
 window.addEventListener("load", onLoad);
 
 function onLoad(event) {
   getDevicePrefs(); // Get all preferences.
+  initWebSocket(); // Open the WebSocket.
+}
+function initWebSocket() {
+  console.log("Attempting to open a WebSocket connection...");
+  let gateway = "ws://" + window.location.hostname + "/ws";
+  websocket = new WebSocket(gateway);
+  websocket.onopen = onOpen;
+  websocket.onclose = onClose;
+  websocket.onmessage = onMessage;
+  doHeartbeat();
+}
+
+function doHeartbeat() {
+  if (websocket.readyState == websocket.OPEN) {
+    websocket.send("heartbeat"); // Send a specific message.
+  }
+  setTimeout(doHeartbeat, 8000);
+}
+
+function onOpen(event) {
+  console.log("Connection opened");
+
+  // Clear the automated status interval timer.
+  clearInterval(statusInterval);
+}
+
+function onClose(event) {
+  console.log("Connection closed");
+  setTimeout(initWebSocket, 1000);
+
+  // Fallback for when WebSocket is unavailable.
+  if (!statusInterval) {
+    statusInterval = setInterval(function() {
+      getStatus(); // Check for status every X seconds
+    }, 1000);
+  }
+}
+
+function onMessage(event) {
+  // Everything gets sent to console.
+  console.log(event.data);
 }
 
 function getDevicePrefs() {

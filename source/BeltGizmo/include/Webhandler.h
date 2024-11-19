@@ -39,6 +39,44 @@ JsonDocument jsonBody; // Used for processing JSON body/payload data.
 JsonDocument jsonSuccess; // Used for sending JSON status as success.
 String status; // Holder for simple "status: success" response.
 
+void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  switch(type) {
+    case WS_EVT_CONNECT:
+      #if defined(DEBUG_SEND_TO_CONSOLE)
+        Serial.printf("WebSocket[%s][%lu] Connect\n", server->url(), client->id());
+      #endif
+      i_ws_client_count++;
+    break;
+
+    case WS_EVT_DISCONNECT:
+      #if defined(DEBUG_SEND_TO_CONSOLE)
+        Serial.printf("WebSocket[%s][C:%lu] Disconnect\n", server->url(), client->id());
+      #endif
+      if(i_ws_client_count > 0) {
+        i_ws_client_count--;
+      }
+    break;
+
+    case WS_EVT_ERROR:
+      #if defined(DEBUG_SEND_TO_CONSOLE)
+        Serial.printf("WebSocket[%s][C:%lu] Error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+      #endif
+    break;
+
+    case WS_EVT_PONG:
+      #if defined(DEBUG_SEND_TO_CONSOLE)
+        Serial.printf("WebSocket[%s][C:%lu] Pong[L:%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+      #endif
+    break;
+
+    case WS_EVT_DATA:
+      #if defined(DEBUG_SEND_TO_CONSOLE)
+        Serial.printf("WebSocket[%s][C:%lu] Data[L:%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+      #endif
+    break;
+  }
+}
+
 void startWebServer() {
   // Configures URI routing with function handlers.
   setupRouting();
@@ -47,6 +85,10 @@ void startWebServer() {
   jsonSuccess.clear();
   jsonSuccess["status"] = "success";
   serializeJson(jsonSuccess, status);
+
+  // Configure the WebSocket endpoint.
+  ws.onEvent(onWebSocketEventHandler);
+  httpServer.addHandler(&ws);
 
   // Configure the OTA firmware endpoint handler.
   ElegantOTA.begin(&httpServer);
@@ -465,7 +507,7 @@ void setupRouting() {
 }
 
 // Act upon data sent via the websocket (as a client).
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       Serial.println("WebSocket Disconnected!\n");
@@ -473,14 +515,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       WiFi.disconnect();
       b_ext_wifi_started = false;
       delay(100); // Delay needed.
-      //webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 
     case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
       digitalWrite(BUILT_IN_LED, HIGH); // Turn on the built-in LED.
       b_socket_ready = true;
-      webSocket.sendTXT("Hello from external lights");
+      wsClient.sendTXT("Hello from Belt Gizmo");
     break;
     case WStype_ERROR:
       Serial.printf("WebSocket Error: %s\n", payload);
@@ -561,10 +602,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 }
 
 // Function to setup WebSocket connection.
-void setupWebSocket() {
+void setupWebSocketClient() {
   Serial.println(F("Initializing WebSocket Connection..."));
-  webSocket.begin(ws_host, ws_port, ws_uri);
-  webSocket.setReconnectInterval(i_websocket_retry_wait);
-  webSocket.onEvent(webSocketEvent);
+  wsClient.begin(ws_host, ws_port, ws_uri);
+  wsClient.setReconnectInterval(i_websocket_retry_wait);
+  wsClient.onEvent(webSocketClientEvent);
   b_socket_ready = true;
 }

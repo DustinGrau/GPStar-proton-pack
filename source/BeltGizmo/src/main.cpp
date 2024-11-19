@@ -176,15 +176,31 @@ void WiFiManagementTask(void *parameter) {
 
     // Handle reconnection to external WiFi when necessary.
     if (b_ap_started) {
+      if(b_ws_started && ms_cleanup.remaining() < 1) {
+        // Clean up oldest WebSocket connections.
+        ws.cleanupClients();
+
+        // Restart timer for next cleanup action.
+        ms_cleanup.start(i_websocketCleanup);
+      }
+
+      if(ms_apclient.remaining() < 1) {
+        // Update the current count of AP clients.
+        i_ap_client_count = WiFi.softAPgetStationNum();
+
+        // Restart timer for next count.
+        ms_apclient.start(i_apClientCount);
+      }
+
       if (WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
         Serial.println(F("WiFi Connected, Socket Not Configured"));
         b_ext_wifi_paused = false; // Resume retries when needed.
-        setupWebSocket(); // Restore the WebSocket connection.
+        setupWebSocketClient(); // Restore the WebSocket connection.
       }
     }
 
     // Proceed with management if the AP and web server are started.
-    if(b_ap_started && b_ws_started) {
+    if(b_ap_started) {
       if(ms_otacheck.remaining() < 1) {
         // Handles device reboot after an OTA update.
         ElegantOTA.loop();
@@ -199,7 +215,7 @@ void WiFiManagementTask(void *parameter) {
       }
     }
 
-    vTaskDelay(2000 / portTICK_PERIOD_MS); // 2000ms delay
+    vTaskDelay(1000 / portTICK_PERIOD_MS); // 1000ms delay
   }
 }
 
@@ -216,7 +232,9 @@ void WiFiSetupTask(void *parameter) {
     // Start the local web server.
     startWebServer();
 
-    // Begin timer for remote update events.
+    // Begin timer for remote client events.
+    ms_cleanup.start(i_websocketCleanup);
+    ms_apclient.start(i_apClientCount);
     ms_otacheck.start(i_otaCheck);
   }
 
@@ -232,7 +250,6 @@ void WiFiSetupTask(void *parameter) {
 }
 
 void setup() {
-  //Serial.begin(115200); // Serial monitor via USB connection.
   Serial.begin(115200); // Serial monitor via USB connection.
   delay(1000); // Provide a delay to allow serial output.
 
@@ -293,7 +310,7 @@ void setup() {
 
   // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
   xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
-  xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 4096, NULL, 2, &AnimationTaskHandle, 1);
+  xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
   xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 4096, NULL, 1, &WiFiManagementTaskHandle, 0);
 
   // Create idle tasks for each core, used to estimate % busy for core.
@@ -303,6 +320,78 @@ void setup() {
   #endif
 }
 
+// Helper function to format bytes with a comma separator
+String formatBytesWithCommas(uint32_t bytes) {
+    String result = String(bytes);
+    int insertPosition = result.length() - 3;
+    while(insertPosition > 0) {
+        result = result.substring(0, insertPosition) + "," + result.substring(insertPosition);
+        insertPosition -= 3;
+    }
+    return result;
+}
+
+// Function to calculate and print CPU load
+void printCPULoad() {
+  uint32_t idle0 = idleTimeCore0;
+  uint32_t idle1 = idleTimeCore1;
+
+  // Calculate CPU load as (total time - idle time) / total time
+  float cpuLoadCore0 = 100.0 - ((float)idle0 / (float)(idle0 + idle1)) * 100.0;
+  float cpuLoadCore1 = 100.0 - ((float)idle1 / (float)(idle0 + idle1)) * 100.0;
+
+  Serial.print(F("CPU Load Core0: "));
+  Serial.print(cpuLoadCore0);
+  Serial.println(F("%"));
+
+  Serial.print(F("CPU Load Core1: "));
+  Serial.print(cpuLoadCore1);
+  Serial.println(F("%"));
+
+  // Reset idle times after calculation
+  idleTimeCore0 = 0;
+  idleTimeCore1 = 0;
+}
+
+void printMemoryStats() {
+  Serial.println(F("Memory Usage Stats:"));
+
+  // Heap memory
+  Serial.print(F("|-Total Free Heap: "));
+  Serial.print(formatBytesWithCommas(esp_get_free_heap_size()));
+  Serial.println(F(" bytes"));
+
+  Serial.print(F("|-Minimum Free Heap Ever: "));
+  Serial.print(formatBytesWithCommas(esp_get_minimum_free_heap_size()));
+  Serial.println(F(" bytes"));
+
+  Serial.print(F("|-Maximum Allocatable Block: "));
+  Serial.print(formatBytesWithCommas(heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)));
+  Serial.println(F(" bytes"));
+
+  // Stack memory (for the main task)
+  Serial.println(F("|-Tasks Stack High Water Mark:"));
+  Serial.print(F("|--Main Task: "));
+  Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(NULL)));
+  Serial.println(F(" bytes"));
+
+  // Stack memory (for other tasks)
+  if (AnimationTaskHandle != NULL) {
+    Serial.print(F("|--Animation: "));
+    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
+    Serial.println(F(" / 2,048 bytes"));
+  }
+  if (UserInputTaskHandle != NULL) {
+    Serial.print(F("|--User Input: "));
+    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
+    Serial.println(F(" / 4,096 bytes"));
+  }
+  if (WiFiManagementTaskHandle != NULL) {
+    Serial.print(F("|--WiFi Mgmt.: "));
+    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
+    Serial.println(F(" / 2,048 bytes"));
+  }
+}
 
 void loop() {
   // No work done here, only in the tasks!
@@ -316,6 +405,6 @@ void loop() {
 
   // Exception: Run the WebSocket client loop if connected to WiFi.
   if (b_ext_wifi_started && b_socket_ready) {
-    webSocket.loop();
+    wsClient.loop();
   }
 }

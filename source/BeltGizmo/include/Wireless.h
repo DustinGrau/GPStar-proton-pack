@@ -97,7 +97,7 @@ const uint16_t i_apClientCount = 200;
  * which means our local network needs to differ and so this device will be
  * available at 192.168.2.2
  */ 
-WebSocketsClient webSocket;
+WebSocketsClient wsClient;
 const String ws_host = "192.168.1.2";  // WebSocket server IP
 const uint16_t ws_port = 80;           // WebSocket server port
 const String ws_uri = "/ws";           // WebSocket URI
