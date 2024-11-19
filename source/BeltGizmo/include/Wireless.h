@@ -50,12 +50,13 @@
 Preferences preferences;
 
 // Set up values for the SSID and password for the built-in WiFi access point (AP).
-const uint8_t i_max_attempts = 2; // Max attempts to establish a external WiFi connection.
+const uint8_t i_max_attempts = 3; // Max attempts to establish a external WiFi connection.
 const String ap_ssid_prefix = "BeltGizmo"; // This will be the base of the SSID name.
 String ap_default_passwd = "555-2368"; // This will be the default password for the AP.
 String ap_ssid; // Reserved for holding the full, private AP name for this device.
 bool b_ap_started = false; // Denotes the softAP network has been started.
 bool b_ws_started = false; // Denotes the web server has been started.
+bool b_ext_wifi_paused = false; // Denotes retry attempts are paused.
 bool b_ext_wifi_started = false; // Denotes external WiFi was joined.
 
 // Local variables for connecting to a preferred WiFi network (when available).
@@ -73,7 +74,12 @@ AsyncWebServer httpServer(80);
 // Track time to refresh progress for OTA updates.
 unsigned long i_progress_millis = 0;
 
-// Define a WebSocket client connection and related variables.
+/**
+ * Define a WebSocket client connection and related variables.
+ * This should be a standard GPStar Proton Pack wireless device at 192.168.1.2,
+ * which means our local network needs to differ and so this device will be
+ * available at 192.168.2.2
+ */ 
 WebSocketsClient webSocket;
 const String ws_host = "192.168.1.2";  // WebSocket server IP
 const uint16_t ws_port = 80;           // WebSocket server port
@@ -273,7 +279,7 @@ bool startExternalWifi() {
 
     #if defined(DEBUG_WIRELESS_SETUP)
       Serial.println();
-      Serial.println(F("Starting External WiFi Configuration"));
+      Serial.println(F("Attempting External WiFi Configuration"));
       Serial.print(F("Stored External SSID: "));
       Serial.println(wifi_ssid);
       Serial.print(F("Stored External PASS: "));
@@ -351,6 +357,7 @@ bool startExternalWifi() {
         Serial.println(F("Max connection attempts reached."));
         Serial.println(F("Cannot connect to external WiFi."));
       #endif
+      b_ext_wifi_paused = true;
     }
   }
 

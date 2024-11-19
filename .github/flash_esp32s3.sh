@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Configuration variables
-CHIP="esp32s3"
+CHIP="esp32s3"             # esp32 or esp32s3
 PORT="/dev/cu.usbmodem146101"   # Change as needed
-BAUD="460800"
+BAUD="460800"              # 460800 or 921600
 BOOTLOADER="./.pio/build/esp32s3mini/bootloader.bin"
 PARTITION_TABLE="./.pio/build/esp32s3mini/partitions.bin"
 FIRMWARE="./.pio/build/esp32s3mini/firmware.bin"

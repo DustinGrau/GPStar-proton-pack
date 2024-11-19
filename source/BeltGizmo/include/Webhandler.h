@@ -197,11 +197,34 @@ void handleGetWifi(AsyncWebServerRequest *request) {
   request->send(200, "application/json", getWifiSettings());
 }
 
-void handleRestart(AsyncWebServerRequest *request) {
+void handleRestartDevice(AsyncWebServerRequest *request) {
   // Performs a restart of the device.
   request->send(204, "application/json", status);
   delay(1000);
   ESP.restart();
+}
+
+void handleRestartWiFi(AsyncWebServerRequest *request) {
+  // Performs a restart of the external WiFi.
+  jsonBody.clear();
+
+  // Disconnect from the WiFi network and re-apply any changes.
+  WiFi.disconnect();
+  b_ext_wifi_started = false;
+
+  delay(100); // Delay needed.
+
+  b_ext_wifi_started = startExternalWifi(); // Restart and set global flag.
+  if(b_ext_wifi_started) {
+    jsonBody["status"] = "WiFi connection restarted successfully.";
+  }
+  else {
+    jsonBody["status"] = "WiFi connection was not successful.";
+  }
+
+  String result;
+  serializeJson(jsonBody, result); // Serialize to string.
+  request->send(200, "application/json", result);
 }
 
 // Handles the JSON body for the pack settings save request.
@@ -378,7 +401,6 @@ AsyncCallbackJsonWebHandler *wifiChangeHandler = new AsyncCallbackJsonWebHandler
 
       if(b_enabled) {
         b_ext_wifi_started = startExternalWifi(); // Restart and set global flag.
-
         if(b_ext_wifi_started) {
           jsonBody["status"] = "Settings updated, WiFi connection restarted successfully.";
         }
@@ -432,7 +454,8 @@ void setupRouting() {
 
   // Get/Set Handlers
   httpServer.on("/config/device", HTTP_GET, handleGetDeviceConfig);
-  httpServer.on("/restart", HTTP_DELETE, handleRestart);
+  httpServer.on("/restart", HTTP_DELETE, handleRestartDevice);
+  httpServer.on("/wifi/restart", HTTP_GET, handleRestartWiFi);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
 
   // Body Handlers
@@ -447,7 +470,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     case WStype_DISCONNECTED:
       Serial.println("WebSocket Disconnected!\n");
       digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
-      b_socket_ready = false;
+      WiFi.disconnect();
+      b_ext_wifi_started = false;
+      delay(100); // Delay needed.
+      b_ext_wifi_started = startExternalWifi(); // Restart and set global flag.
       webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 

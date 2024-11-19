@@ -176,33 +176,9 @@ void WiFiManagementTask(void *parameter) {
 
     // Handle reconnection to external WiFi when necessary.
     if (b_ap_started) {
-      /*
-      if (WiFi.status() != WL_CONNECTED) {
-        Serial.println(F("WiFi Connection Lost"));
-
-        // If wifi has dropped, clear some flags.
-        b_ext_wifi_started = false;
-        b_socket_ready = false;
-
-        // Try to reconnect then check status.
-        Serial.println(F("WiFi Restart"));
-        //WiFi.disconnect(); // Explicitly issue a disconnect.
-        delay(100); // Delay needed before WiFi restart.
-        b_ext_wifi_started = startExternalWifi();
-        if (b_ext_wifi_started) {
-          setupWebSocket(); // Restore the WebSocket connection.
-        }
-      }
-      */
-      // WL_IDLE_STATUS      = 0,
-      // WL_NO_SSID_AVAIL    = 1,
-      // WL_SCAN_COMPLETED   = 2,
-      // WL_CONNECTED        = 3,
-      // WL_CONNECT_FAILED   = 4,
-      // WL_CONNECTION_LOST  = 5,
-      // WL_DISCONNECTED     = 6
       if (WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
         Serial.println(F("WiFi Connected, Socket Not Configured"));
+        b_ext_wifi_paused = false; // Resume retries when needed.
         setupWebSocket(); // Restore the WebSocket connection.
       }
     }
@@ -218,7 +194,7 @@ void WiFiManagementTask(void *parameter) {
       }
 
       // Try to start the external WiFi.
-      if(!b_ext_wifi_started) {
+      if(!b_ext_wifi_started && !b_ext_wifi_paused) {
         b_ext_wifi_started = startExternalWifi();
       }
     }
