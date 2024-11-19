@@ -473,8 +473,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       WiFi.disconnect();
       b_ext_wifi_started = false;
       delay(100); // Delay needed.
-      b_ext_wifi_started = startExternalWifi(); // Restart and set global flag.
-      webSocket.begin(ws_host, ws_port, ws_uri);
+      //webSocket.begin(ws_host, ws_port, ws_uri);
     break;
 
     case WStype_CONNECTED:

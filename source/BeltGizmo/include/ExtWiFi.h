@@ -81,6 +81,8 @@ const char NETWORK_page[] PROGMEM = R"=====(
     <a href="/">&laquo; Back</a>
     &nbsp;&nbsp;&nbsp;
     <button type="button" class="green" onclick="saveSettings()">Save</button>
+    &nbsp;&nbsp;&nbsp;
+    <button type="button" class="orange" onclick="restartWiFi()">Rejoin</button>
     <br/>
     <br/>
   </div>
@@ -110,6 +112,18 @@ const char NETWORK_page[] PROGMEM = R"=====(
         }
       };
       xhttp.open("GET", "/wifi/settings", true);
+      xhttp.send();
+    }
+
+    function restartWiFi() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var jObj = JSON.parse(this.responseText);
+          alert(jObj.status); // Always display status returned.
+        }
+      };
+      xhttp.open("GET", "/wifi/restart", true);
       xhttp.send();
     }
 
