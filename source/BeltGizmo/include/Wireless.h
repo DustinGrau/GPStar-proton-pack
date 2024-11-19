@@ -71,8 +71,25 @@ String wifi_gateway; // Gateway IP for external WiFi network
 // Docs: https://github.com/me-no-dev/ESPAsyncWebServer
 AsyncWebServer httpServer(80);
 
+// Define a websocket endpoint for the async web server.
+AsyncWebSocket ws("/ws");
+
+// Track the number of connected WiFi (AP) clients.
+uint8_t i_ap_client_count = 0;
+
+// Track the number of connected WebSocket clients.
+uint8_t i_ws_client_count = 0;
+
 // Track time to refresh progress for OTA updates.
 unsigned long i_progress_millis = 0;
+
+// Create timer for WebSocket cleanup.
+millisDelay ms_cleanup;
+const uint16_t i_websocketCleanup = 5000;
+
+// Create timer for checking connections.
+millisDelay ms_apclient;
+const uint16_t i_apClientCount = 200;
 
 /**
  * Define a WebSocket client connection and related variables.
@@ -357,7 +374,7 @@ bool startExternalWifi() {
         Serial.println(F("Max connection attempts reached."));
         Serial.println(F("Cannot connect to external WiFi."));
       #endif
-      b_ext_wifi_paused = true;
+      b_ext_wifi_paused = true; // Pause retries after exhausting attempts.
     }
   }
 
