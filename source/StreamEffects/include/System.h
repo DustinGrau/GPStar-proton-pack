@@ -56,38 +56,28 @@ void ledsOff() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
-// Animate the lights with the current palette
 void animateLights() {
-  static uint16_t i_led_position = 0;
-  static uint16_t i_secondary_position = 0; // For the secondary color
-
-  // Ensure power level stays within the range 1-5
-  i_power = constrain(i_power, 1, 5);
-
-  // Map power level (1-5) to animation duration (50-10ms)
-  uint16_t i_timer = map(i_power, 1, 5, 50, 10);
-  ms_anim_change.start(i_timer);
-
+  static uint8_t paletteIndex = 0; // Tracks the current base color index in the palette
+  static uint16_t wavePosition = 0; // Tracks the position of the wave
+  
   if (ms_anim_change.justFinished()) {
-    for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
-      // Primary color wave (brightness animation)
-      uint8_t brightness = map(
-        sin8((i_led_position + i * 32) % 255), 
-        0, 255, 
-        i_min_brightness, i_max_brightness
-      );
-      CRGB primaryColor = ColorFromPalette(cp_StreamPalette, i_led_position + i * 32);
-      device_leds[i] = primaryColor.nscale8(brightness);
+    // Map power level (1-5) to animation duration (slow -> fast)
+    uint16_t i_timer = map(i_power, 1, 5, 80, 10);
+    ms_anim_change.start(i_timer);
 
-      // Secondary color wave (fixed brightness)
-      if (((i_secondary_position / 2) + i * 64) % 255 < 10) { // Secondary travels 2x speed
-        CRGB secondaryColor = ColorFromPalette(cp_StreamPalette, i_secondary_position + i * 64);
-        //device_leds[i] = secondaryColor; // Overwrite with secondary color
-      }
+    // Iterate through all LEDs
+    for (uint16_t i = 0; i < DEVICE_NUM_LEDS; i++) {
+      // Calculate a brightness factor based on the wave position
+      uint8_t brightness = sin8((wavePosition + i * 20) % 255);
+
+      // Use the brightness to modulate the color from the palette
+      CRGB color = ColorFromPalette(cp_StreamPalette, paletteIndex + i * 5);
+      device_leds[i] = color;
+      device_leds[i].nscale8(brightness); // Scale the color by brightness
     }
 
-    // Update positions for primary and secondary animations
-    i_led_position += i_animation_step;
-    //i_secondary_position += i_animation_step * 2; // Secondary moves faster
+    // Increment the palette index and wave position for the next frame
+    paletteIndex += (i_animation_step / 2); // Adjust this step size for smoother or faster transitions
+    wavePosition += i_animation_step; // Adjust this step size to control wave speed
   }
 }

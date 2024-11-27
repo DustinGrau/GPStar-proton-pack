@@ -265,23 +265,30 @@ void setup() {
   // Initialize palettes with custom color gradients
   paletteProton = CRGBPalette16(
     CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
-    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Red, CRGB::Red, CRGB::Orange, CRGB::Orange,
     CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
-    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue
+    CRGB::Red, CRGB::Red, CRGB::Orange, CRGB::Orange
   );
 
   paletteSlime = CRGBPalette16(
     CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
-    CRGB::Yellow, CRGB::Yellow, CRGB::Yellow, CRGB::Yellow,
+    CRGB::Green, CRGB::Green, CRGB::Black, CRGB::Black,
     CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
-    CRGB::Yellow, CRGB::Yellow, CRGB::Yellow, CRGB::Yellow
+    CRGB::Green, CRGB::Green, CRGB::Black, CRGB::Black
+  );
+
+  paletteStasis = CRGBPalette16(
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Blue, CRGB::Blue, CRGB::Indigo, CRGB::Indigo,
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Blue, CRGB::Blue, CRGB::Indigo, CRGB::Indigo
   );
 
   paletteMeson = CRGBPalette16(
-    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange,
-    CRGB::Purple, CRGB::Purple, CRGB::Purple, CRGB::Purple,
+    CRGB::Yellow, CRGB::Yellow, CRGB::Orange, CRGB::Orange,
     CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
-    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange
+    CRGB::Yellow, CRGB::Yellow, CRGB::Orange, CRGB::Orange,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
   );
 
   paletteSpectral = CRGBPalette16(
@@ -290,10 +297,10 @@ void setup() {
   );
 
   paletteHoliday = CRGBPalette16(
-    CRGB::Red, CRGB::Green, CRGB::Red, CRGB::Green,
-    CRGB::White, CRGB::White, CRGB::White, CRGB::White,
-    CRGB::Red, CRGB::Green, CRGB::Red, CRGB::Green,
-    CRGB::White, CRGB::White, CRGB::White, CRGB::White
+    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
   );
 
   paletteWhite = CRGBPalette16(
@@ -325,13 +332,13 @@ void setup() {
    */
 
   // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
-  xTaskCreatePinnedToCore(PreferencesTask, "PreferencesTask", 4096, NULL, 6, &PreferencesTaskHandle, 1);
+  xTaskCreatePinnedToCore(PreferencesTask, "PreferencesTask", 4096, NULL, 4, &PreferencesTaskHandle, 1);
 
   // Delay all lower priority tasks until Preferences are loaded.
   vTaskDelay(100 / portTICK_PERIOD_MS); // Delay for 100ms to avoid competition.
 
   // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
-  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 4096, NULL, 5, &WiFiSetupTaskHandle, 1);
+  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 4096, NULL, 3, &WiFiSetupTaskHandle, 1);
 
   // Delay all lower priority tasks until WiFi and WebServer setup is done.
   vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.
