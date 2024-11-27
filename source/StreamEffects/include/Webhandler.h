@@ -506,6 +506,33 @@ void setupRouting() {
   httpServer.addHandler(wifiChangeHandler); // /wifi/update
 }
 
+// Function to update the current palette based on stream mode.
+void updateStreamPalette() {
+  switch (STREAM_MODE) {
+    case PROTON:
+      cp_StreamPalette = paletteProton;
+      break;
+    case SLIME:
+      cp_StreamPalette = paletteSlime;
+      break;
+    case STASIS:
+      cp_StreamPalette = paletteStasis;
+      break;
+    case MESON:
+      cp_StreamPalette = paletteMeson;
+      break;
+    case SPECTRAL:
+      cp_StreamPalette = paletteSpectral;
+      break;
+    case HOLIDAY:
+      cp_StreamPalette = paletteHoliday;
+      break;
+    default:
+      cp_StreamPalette = paletteWhite;
+      break;
+  }
+}
+
 // Act upon data sent via the websocket (as a client).
 void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
@@ -587,6 +614,8 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         else {
           STREAM_MODE = SPECTRAL_CUSTOM; // Custom Stream
         }
+
+        updateStreamPalette();
       }
     break;
   }

@@ -276,6 +276,49 @@ void setup() {
   // Change the addressable LED to black by default.
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
+  // Initialize palettes with different colors
+
+  // Initialize palettes with custom color gradients
+  paletteProton = CRGBPalette16(
+    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue
+  );
+
+  paletteSlime = CRGBPalette16(
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::Yellow, CRGB::Yellow, CRGB::Yellow, CRGB::Yellow,
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::Yellow, CRGB::Yellow, CRGB::Yellow, CRGB::Yellow
+  );
+
+  paletteMeson = CRGBPalette16(
+    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange,
+    CRGB::Purple, CRGB::Purple, CRGB::Purple, CRGB::Purple,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange
+  );
+
+  paletteSpectral = CRGBPalette16(
+    CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, CRGB::Blue, CRGB::Indigo, CRGB::Violet, CRGB::Black,
+    CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, CRGB::Blue, CRGB::Indigo, CRGB::Violet, CRGB::Black
+  );
+
+  paletteHoliday = CRGBPalette16(
+    CRGB::Red, CRGB::Green, CRGB::Red, CRGB::Green,
+    CRGB::White, CRGB::White, CRGB::White, CRGB::White,
+    CRGB::Red, CRGB::Green, CRGB::Red, CRGB::Green,
+    CRGB::White, CRGB::White, CRGB::White, CRGB::White
+  );
+
+  paletteWhite = CRGBPalette16(
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::White, CRGB::White, CRGB::White, CRGB::White,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::White, CRGB::White, CRGB::White, CRGB::White
+  );
+
   // Delay before configuring and running tasks.
   delay(200);
 

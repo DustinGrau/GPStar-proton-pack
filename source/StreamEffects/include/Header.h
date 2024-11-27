@@ -33,6 +33,17 @@
 CRGB device_leds[DEVICE_NUM_LEDS];
 
 /*
+ * Define Color Palettes
+ */
+CRGBPalette16 paletteProton;
+CRGBPalette16 paletteSlime;
+CRGBPalette16 paletteStasis;
+CRGBPalette16 paletteMeson;
+CRGBPalette16 paletteSpectral;
+CRGBPalette16 paletteHoliday;
+CRGBPalette16 paletteWhite;
+
+/*
  * Addressable LED Devices
  */
 enum device {
@@ -42,6 +53,7 @@ enum device {
 /*
  * Timer and delay for LED animation sequence
  */
+CRGBPalette16 cp_StreamPalette = paletteProton; // Current color palette
 #define ANIMATION_DURATION_MS 1000  // Time for a full end-to-end animation
 millisDelay ms_anim_change;
 const uint16_t i_animation_time = 400;

@@ -56,48 +56,32 @@ void ledsOff() {
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 }
 
-// Animates the LEDs in a wave-like pattern
+// Animate the lights with the current palette
 void animateLights() {
-  static uint16_t i_led_position = 0;
-  uint16_t i_timer;
-  uint8_t i_color;  
+  static uint16_t primaryWavePosition = 0;
+  static uint16_t secondaryWavePosition = 0;
 
-  // Update timer interval in case i_power changes
   if (ms_anim_change.justFinished()) {
-    // Set change rate relative to power level.
-    i_timer = i_animation_duration / ((i_power + 1) * 2);
-    Serial.print(i_animation_duration);
-    Serial.print(" : ");
-    Serial.println(i_timer);
+    // Scale animation duration to maintain flexibility for i_power range
+    uint8_t adjustedPower = 6 - i_power; // Reverse the scale for timings
+    uint16_t i_timer = i_animation_duration / (adjustedPower * 2);
     ms_anim_change.start(i_timer);
 
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
-      uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
-      
-      switch(STREAM_MODE) {
-        case PROTON:
-          i_color = C_RED;
-        break;
-        case SLIME:
-          i_color = C_GREEN;
-        break;
-        case STASIS:
-          i_color = C_BLUE;
-        break;
-        case MESON:
-          i_color = C_ORANGE;
-        break;
-        case SPECTRAL:
-          i_color = C_RAINBOW;
-        break;
-        default:
-          i_color = C_WHITE;
-        break;
-      }
+      // Calculate brightness for primary wave
+      uint8_t brightness = map(sin8((primaryWavePosition + i * 16) % 255), 0, 255, i_min_brightness, i_max_brightness);
+      CRGB color = ColorFromPalette(cp_StreamPalette, 128);  // Use primary color
+      device_leds[i] = color;
+      device_leds[i].fadeToBlackBy(255 - brightness);
 
-      device_leds[i] = getHueAsRGB(PRIMARY_LED, i_color, 255 - i_brightness);
+      // Add secondary color at full brightness moving twice as fast
+      if ((secondaryWavePosition + i * 32) % 255 < 16) {  // Narrow band of secondary color
+        device_leds[i] = ColorFromPalette(cp_StreamPalette, 0);  // Use secondary color
+      }
     }
 
-    i_led_position += i_animation_step; // Move the wave position by shifting position for the next update.
+    // Update wave positions
+    primaryWavePosition += i_animation_step;
+    secondaryWavePosition += i_animation_step * 2;  // Secondary wave moves 2x faster
   }
 }
