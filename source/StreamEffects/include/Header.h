@@ -26,9 +26,10 @@
 
 /*
  * Pin for Addressable LEDs
+ * 50 LEDs per Meter: https://a.co/d/dlDyCkz
  */
 #define DEVICE_LED_PIN 4
-#define DEVICE_NUM_LEDS 300
+#define DEVICE_NUM_LEDS 250
 CRGB device_leds[DEVICE_NUM_LEDS];
 
 /*

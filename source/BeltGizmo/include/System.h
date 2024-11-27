@@ -74,7 +74,6 @@ void animateLights() {
 
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
       uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
-      //device_leds[i] = CHSV((i_led_position + i * 20) % 255, 255, 255);
       
       switch(STREAM_MODE) {
         case PROTON:

@@ -70,11 +70,11 @@ void animateLights() {
     else {
       // Otherwise return to normal speed.
       ms_anim_change.start(i_animation_duration);
+      ledsOff(); // Keep the LEDs turned off.
     }
 
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
       uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
-      //device_leds[i] = CHSV((i_led_position + i * 20) % 255, 255, 255);
       
       switch(STREAM_MODE) {
         case PROTON:
@@ -97,8 +97,7 @@ void animateLights() {
         break;
       }
 
-      //device_leds[i] = getHueAsRGB(PRIMARY_LED, i_color, 255 - i_brightness);
-      device_leds[i] = getHueAsGBR(PRIMARY_LED, i_color, 255 - i_brightness);
+      device_leds[i] = getHueAsRGB(PRIMARY_LED, i_color, 255 - i_brightness);
     }
 
     i_led_position += i_animation_step; // Move the wave position by shifting position for the next update.
