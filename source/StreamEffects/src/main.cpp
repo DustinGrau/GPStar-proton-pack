@@ -86,9 +86,13 @@ void AnimationTask(void *parameter) {
       Serial.println(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
-    // Update blinking lights based on websocket data.
-    //blinkLights();
-    animateLights();
+    // Update light animation based on websocket data.
+    if(b_firing) {
+      animateLights();
+    }
+    else {
+      ledsOff();
+    }
 
     // Update the device LEDs and restart the timer.
     FastLED.show();

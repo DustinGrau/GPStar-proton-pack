@@ -59,19 +59,17 @@ void ledsOff() {
 // Animates the LEDs in a wave-like pattern
 void animateLights() {
   static uint16_t i_led_position = 0;
-  uint8_t i_color;
+  uint16_t i_timer;
+  uint8_t i_color;  
 
   // Update timer interval in case i_power changes
   if (ms_anim_change.justFinished()) {
-    if(b_firing) {
-      // Speed up animation only when firing.
-      ms_anim_change.start(i_animation_duration / ((i_power + 1) * 2));
-    }
-    else {
-      // Otherwise return to normal speed.
-      ms_anim_change.start(i_animation_duration);
-      ledsOff(); // Keep the LEDs turned off.
-    }
+    // Set change rate relative to power level.
+    i_timer = i_animation_duration / ((i_power + 1) * 2);
+    Serial.print(i_animation_duration);
+    Serial.print(" : ");
+    Serial.println(i_timer);
+    ms_anim_change.start(i_timer);
 
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
       uint8_t i_brightness = map(sin8((i_led_position + i * 32) % 255), 0, 255, i_min_brightness, i_max_brightness);
