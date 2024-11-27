@@ -272,9 +272,6 @@ void setup() {
   // Change the addressable LED to black by default.
   fill_solid(device_leds, DEVICE_NUM_LEDS, CRGB::Black);
 
-  // Prepare the on-board RGB LED to be used as an output pin for indication.
-  digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
-
   // Delay before configuring and running tasks.
   delay(200);
 

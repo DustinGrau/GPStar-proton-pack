@@ -27,7 +27,6 @@
 /*
  * Pin for Addressable LEDs
  */
-#define BUILT_IN_LED 2
 #define DEVICE_LED_PIN 4
 #define DEVICE_NUM_LEDS 300
 CRGB device_leds[DEVICE_NUM_LEDS];

@@ -511,7 +511,6 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       debug("Client WebSocket Disconnected!");
-      digitalWrite(BUILT_IN_LED, LOW); // Turn off the built-in LED.
       WiFi.disconnect();
       b_ext_wifi_started = false;
       delay(100); // Delay needed.
@@ -519,7 +518,6 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
 
     case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
-      digitalWrite(BUILT_IN_LED, HIGH); // Turn on the built-in LED.
       b_socket_ready = true;
       wsClient.sendTXT("Hello from Belt Gizmo");
     break;
