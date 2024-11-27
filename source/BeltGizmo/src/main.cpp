@@ -45,7 +45,6 @@
 // Task Handles
 TaskHandle_t AnimationTaskHandle = NULL;
 TaskHandle_t PreferencesTaskHandle = NULL;
-TaskHandle_t UserInputTaskHandle = NULL;
 TaskHandle_t WiFiManagementTaskHandle = NULL;
 TaskHandle_t WiFiSetupTaskHandle = NULL;
 
@@ -143,22 +142,6 @@ void PreferencesTask(void *parameter) {
   // Task ends after setup is complete and MUST be removed from scheduling.
   // Failure to do this can cause an error within the watchdog timer!
   vTaskDelete(NULL);
-}
-
-// User Input Task (Loop)
-void UserInputTask(void *parameter) {
-  while(true) {
-    #if defined(DEBUG_TASK_TO_CONSOLE)
-      // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing UserInputTask in core"));
-      Serial.print(xPortGetCoreID());
-      // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
-    #endif
-
-    vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
-  }
 }
 
 // WiFi Management Task (Loop)
@@ -308,7 +291,6 @@ void setup() {
   vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.
 
   // Create tasks which utilize a loop for continuous operation (prioritized highest to lowest).
-  xTaskCreatePinnedToCore(UserInputTask, "UserInputTask", 4096, NULL, 3, &UserInputTaskHandle, 1);
   xTaskCreatePinnedToCore(AnimationTask, "AnimationTask", 2048, NULL, 2, &AnimationTaskHandle, 1);
   xTaskCreatePinnedToCore(WiFiManagementTask, "WiFiManagementTask", 4096, NULL, 1, &WiFiManagementTaskHandle, 0);
 
@@ -379,11 +361,6 @@ void printMemoryStats() {
     Serial.print(F("|--Animation: "));
     Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
     Serial.println(F(" / 2,048 bytes"));
-  }
-  if (UserInputTaskHandle != NULL) {
-    Serial.print(F("|--User Input: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
-    Serial.println(F(" / 4,096 bytes"));
   }
   if (WiFiManagementTaskHandle != NULL) {
     Serial.print(F("|--WiFi Mgmt.: "));

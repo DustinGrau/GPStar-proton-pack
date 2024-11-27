@@ -53,12 +53,10 @@ enum device {
 /*
  * Timer and delay for LED animation sequence
  */
-CRGBPalette16 cp_StreamPalette = paletteProton; // Current color palette
-#define ANIMATION_DURATION_MS 1000  // Time for a full end-to-end animation
+CRGBPalette16 cp_StreamPalette; // Current color palette
 millisDelay ms_anim_change;
-const uint16_t i_animation_time = 400;
+const uint16_t i_animation_time = 100;
 const uint8_t i_animation_step = 5;
-uint16_t i_animation_duration = ANIMATION_DURATION_MS / DEVICE_NUM_LEDS;
 uint8_t i_min_brightness = 0;   // Minimum brightness
 uint8_t i_max_brightness = 255; // Maximum brightness
 

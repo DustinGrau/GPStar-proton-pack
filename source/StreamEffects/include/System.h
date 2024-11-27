@@ -58,30 +58,36 @@ void ledsOff() {
 
 // Animate the lights with the current palette
 void animateLights() {
-  static uint16_t primaryWavePosition = 0;
-  static uint16_t secondaryWavePosition = 0;
+  static uint16_t i_led_position = 0;
+  static uint16_t i_secondary_position = 0; // For the secondary color
+
+  // Ensure power level stays within the range 1-5
+  i_power = constrain(i_power, 1, 5);
+
+  // Map power level (1-5) to animation duration (50-10ms)
+  uint16_t i_timer = map(i_power, 1, 5, 50, 10);
+  ms_anim_change.start(i_timer);
 
   if (ms_anim_change.justFinished()) {
-    // Scale animation duration to maintain flexibility for i_power range
-    uint8_t adjustedPower = 6 - i_power; // Reverse the scale for timings
-    uint16_t i_timer = i_animation_duration / (adjustedPower * 2);
-    ms_anim_change.start(i_timer);
-
     for (int i = 0; i < DEVICE_NUM_LEDS; i++) {
-      // Calculate brightness for primary wave
-      uint8_t brightness = map(sin8((primaryWavePosition + i * 16) % 255), 0, 255, i_min_brightness, i_max_brightness);
-      CRGB color = ColorFromPalette(cp_StreamPalette, 128);  // Use primary color
-      device_leds[i] = color;
-      device_leds[i].fadeToBlackBy(255 - brightness);
+      // Primary color wave (brightness animation)
+      uint8_t brightness = map(
+        sin8((i_led_position + i * 32) % 255), 
+        0, 255, 
+        i_min_brightness, i_max_brightness
+      );
+      CRGB primaryColor = ColorFromPalette(cp_StreamPalette, i_led_position + i * 32);
+      device_leds[i] = primaryColor.nscale8(brightness);
 
-      // Add secondary color at full brightness moving twice as fast
-      if ((secondaryWavePosition + i * 32) % 255 < 16) {  // Narrow band of secondary color
-        device_leds[i] = ColorFromPalette(cp_StreamPalette, 0);  // Use secondary color
+      // Secondary color wave (fixed brightness)
+      if (((i_secondary_position / 2) + i * 64) % 255 < 10) { // Secondary travels 2x speed
+        CRGB secondaryColor = ColorFromPalette(cp_StreamPalette, i_secondary_position + i * 64);
+        //device_leds[i] = secondaryColor; // Overwrite with secondary color
       }
     }
 
-    // Update wave positions
-    primaryWavePosition += i_animation_step;
-    secondaryWavePosition += i_animation_step * 2;  // Secondary wave moves 2x faster
+    // Update positions for primary and secondary animations
+    i_led_position += i_animation_step;
+    //i_secondary_position += i_animation_step * 2; // Secondary moves faster
   }
 }

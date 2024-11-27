@@ -33,3 +33,6 @@ jobs:
       - name: Compile Belt Gizmo Project
         working-directory: source/BeltGizmo
         run: pio run
+      - name: Compile Stream Effects Project
+        working-directory: source/StreamEffects
+        run: pio run
