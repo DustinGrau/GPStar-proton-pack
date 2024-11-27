@@ -1,9 +1,6 @@
 {
   "folders": [
     {
-      "path": "EspS3Test"
-    },
-    {
       "path": "BeltGizmo"
     },
     {
@@ -20,6 +17,9 @@
     },
     {
       "path": "SingleShot"
+    },
+    {
+      "path": "StreamEffects"
     }
   ],
   "settings": {

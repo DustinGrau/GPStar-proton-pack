@@ -1,5 +1,5 @@
 /**
- *   GPStar BeltGizmo - Ghostbusters Props, Mods, and Kits.
+ *   GPStar Stream Effects - Ghostbusters Props, Mods, and Kits.
  *   Copyright (C) 2024 Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,8 @@ const char INDEX_page[] PROGMEM = R"=====(
   <meta http-equiv="Cache-control" content="public">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-title" content="Belt Gizmo"/>
-  <title>Belt Gizmo</title>
+  <meta name="apple-mobile-web-app-title" content="Stream Effects"/>
+  <title>Stream Effects</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <link rel="shortcut icon" href="/favicon.ico"/>
   <link rel="stylesheet" href="/style.css">
