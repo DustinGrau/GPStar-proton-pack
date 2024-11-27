@@ -27,7 +27,7 @@
 /*
  * Pin for Addressable LEDs
  */
-#define BUILT_IN_LED 21 // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
+#define BUILT_IN_LED 2
 #define DEVICE_LED_PIN 4
 #define DEVICE_NUM_LEDS 300
 CRGB device_leds[DEVICE_NUM_LEDS];
@@ -42,7 +42,7 @@ enum device {
 /*
  * Timer and delay for LED animation sequence
  */
-#define ANIMATION_DURATION_MS 800  // Time for a full end-to-end animation
+#define ANIMATION_DURATION_MS 1000  // Time for a full end-to-end animation
 millisDelay ms_anim_change;
 const uint16_t i_animation_time = 400;
 const uint8_t i_animation_step = 5;
