@@ -55,8 +55,8 @@ enum device {
  */
 CRGBPalette16 cp_StreamPalette; // Current color palette
 millisDelay ms_anim_change;
-const uint16_t i_animation_time = 100;
-const uint8_t i_animation_step = 10;
+const uint16_t i_animation_time = 10; // How often to update the position of LEDs
+const uint8_t i_animation_step = 6; // Base rate for stepping through positions
 uint8_t i_min_brightness = 0;   // Minimum brightness
 uint8_t i_max_brightness = 255; // Maximum brightness
 

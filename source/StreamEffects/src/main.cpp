@@ -90,7 +90,12 @@ void AnimationTask(void *parameter) {
       animateLights();
     }
     else {
-      ledsOff();
+      if(b_ext_wifi_started) {
+        ledsOff();
+      }
+      else {
+        device_leds[0] = getHueAsRGB(PRIMARY_LED, C_PURPLE, 255);
+      }
     }
 
     // Update the device LEDs and restart the timer.
@@ -162,7 +167,7 @@ void WiFiManagementTask(void *parameter) {
     #endif
 
     // Handle reconnection to external WiFi when necessary.
-    if (b_ap_started) {
+    if(b_ap_started) {
       if(b_ws_started && ms_cleanup.remaining() < 1) {
         // Clean up oldest WebSocket connections.
         ws.cleanupClients();
@@ -214,8 +219,18 @@ void WiFiSetupTask(void *parameter) {
     Serial.println(xPortGetCoreID());
   #endif
 
+  // Set a visual indicator that WiFi is being configured.
+  device_leds[0] = getHueAsRGB(PRIMARY_LED, C_RED, 255);
+  FastLED.show();
+
   // Begin by setting up WiFi as a prerequisite to all else.
   if(startWiFi()) {
+    if(b_ap_started) {
+      // Indicate we've established the private network.
+      device_leds[0] = getHueAsRGB(PRIMARY_LED, C_BLUE, 255);
+      FastLED.show();
+    }
+
     // Start the local web server.
     startWebServer();
 
@@ -224,6 +239,12 @@ void WiFiSetupTask(void *parameter) {
     ms_apclient.start(i_apClientCount);
     ms_otacheck.start(i_otaCheck);
   }
+
+  vTaskDelay(200 / portTICK_PERIOD_MS); // 200ms delay
+
+  // Clear LED once we have the AP and web server started.
+  device_leds[0] = CRGB::Black;
+  FastLED.show();
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
@@ -264,24 +285,24 @@ void setup() {
 
   // Initialize palettes with custom color gradients
   paletteProton = CRGBPalette16(
-    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
-    CRGB::Red, CRGB::Red, CRGB::Orange, CRGB::Orange,
-    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
-    CRGB::Red, CRGB::Red, CRGB::Orange, CRGB::Orange
+    CRGB::Red, CRGB::Red, CRGB::Maroon, CRGB::Maroon,
+    CRGB::Orange, CRGB::Red, CRGB::Red, CRGB::Black,
+    CRGB::Red, CRGB::Red, CRGB::Maroon, CRGB::Maroon,
+    CRGB::Orange, CRGB::Red, CRGB::Red, CRGB::Black
   );
 
   paletteSlime = CRGBPalette16(
     CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
-    CRGB::Green, CRGB::Green, CRGB::Black, CRGB::Black,
+    CRGB::LimeGreen, CRGB::LimeGreen, CRGB::Black, CRGB::Black,
     CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
-    CRGB::Green, CRGB::Green, CRGB::Black, CRGB::Black
+    CRGB::LimeGreen, CRGB::LimeGreen, CRGB::Black, CRGB::Black
   );
 
   paletteStasis = CRGBPalette16(
     CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
-    CRGB::Blue, CRGB::Blue, CRGB::Indigo, CRGB::Indigo,
+    CRGB::Indigo, CRGB::Indigo, CRGB::Black, CRGB::Black,
     CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
-    CRGB::Blue, CRGB::Blue, CRGB::Indigo, CRGB::Indigo
+    CRGB::Indigo, CRGB::Indigo, CRGB::Black, CRGB::Black
   );
 
   paletteMeson = CRGBPalette16(
@@ -304,10 +325,10 @@ void setup() {
   );
 
   paletteWhite = CRGBPalette16(
+    CRGB::GhostWhite, CRGB::GhostWhite, CRGB::Gainsboro, CRGB::Gainsboro,
     CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
-    CRGB::White, CRGB::White, CRGB::White, CRGB::White,
-    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
-    CRGB::White, CRGB::White, CRGB::White, CRGB::White
+    CRGB::GhostWhite, CRGB::GhostWhite, CRGB::Gainsboro, CRGB::Gainsboro,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
   );
 
   // Delay before configuring and running tasks.

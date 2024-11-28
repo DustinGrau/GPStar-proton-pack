@@ -61,9 +61,7 @@ void animateLights() {
   static uint16_t wavePosition = 0; // Tracks the position of the wave
   
   if (ms_anim_change.justFinished()) {
-    // Map power level (1-5) to animation duration (slow -> fast)
-    uint16_t i_timer = map(i_power, 1, 5, 80, 10);
-    ms_anim_change.start(i_timer);
+    ms_anim_change.start(i_animation_time);
 
     // Iterate through all LEDs
     for (uint16_t i = 0; i < DEVICE_NUM_LEDS; i++) {
@@ -77,7 +75,7 @@ void animateLights() {
     }
 
     // Increment the palette index and wave position for the next frame
-    paletteIndex += (i_animation_step / 2); // Adjust this step size for smoother or faster transitions
-    wavePosition += i_animation_step; // Adjust this step size to control wave speed
+    paletteIndex += (i_animation_step / 2) * i_power; // Adjust this step size for smoother or faster transitions
+    wavePosition += i_animation_step * i_power; // Adjust this step size to control wave speed
   }
 }
