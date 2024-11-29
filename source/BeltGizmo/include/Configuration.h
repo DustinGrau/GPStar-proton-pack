@@ -43,7 +43,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "20241128194039";
+String build_date = "20241128195754";
 
 /*
  * Parent WiFi Network Defaults

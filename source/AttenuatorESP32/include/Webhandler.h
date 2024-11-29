@@ -139,6 +139,9 @@ String getWandMode() {
     case SPECTRAL_CUSTOM:
       return "Custom Stream";
     break;
+    case SETTINGS:
+      return "Settings";
+    break;
     default:
       return "Unknown";
     break;

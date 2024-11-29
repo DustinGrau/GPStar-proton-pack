@@ -36,7 +36,6 @@ const char NETWORK_page[] PROGMEM = R"=====(
   <div class="block left">
     <p>
       Configure and enable a parent device external WiFi network for this device to join when in range (eg. a Proton Pack).
-      Enabling this feature allows you to make use of a preferred WiFi network such as those used by your mobile device(s).
       <br/>
       You may optionally configure a static IP address along with a subnet and gateway for that network, if desired.
       Once joined, you may return to this screen to view the IP address assigned by the external WiFi network.
