@@ -317,7 +317,14 @@ void setup() {
     CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, CRGB::Blue, CRGB::Indigo, CRGB::Violet, CRGB::Black
   );
 
-  paletteHoliday = CRGBPalette16(
+  paletteHalloween = CRGBPalette16(
+    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Purple, CRGB::Purple, CRGB::Purple, CRGB::Purple,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
+  );
+
+  paletteChristmas = CRGBPalette16(
     CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
     CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
     CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,

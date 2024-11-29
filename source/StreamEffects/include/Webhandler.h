@@ -524,8 +524,11 @@ void updateStreamPalette() {
     case SPECTRAL:
       cp_StreamPalette = paletteSpectral;
       break;
-    case HOLIDAY:
-      cp_StreamPalette = paletteHoliday;
+    case HOLIDAY_HALLOWEEN:
+      cp_StreamPalette = paletteHalloween;
+      break;
+    case HOLIDAY_CHRISTMAS:
+      cp_StreamPalette = paletteChristmas;
       break;
     default:
       cp_StreamPalette = paletteWhite;
@@ -605,8 +608,11 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         else if(data_wandMode == "Spectral Stream") {
           STREAM_MODE = SPECTRAL;
         }
-        else if(data_wandMode == "Holiday Stream") {
-          STREAM_MODE = HOLIDAY;
+        else if(data_wandMode == "Halloween") {
+          STREAM_MODE = HOLIDAY_HALLOWEEN;
+        }
+        else if(data_wandMode == "Christmas") {
+          STREAM_MODE = HOLIDAY_CHRISTMAS;
         }
         else if(data_wandMode == "Settings") {
           STREAM_MODE = SETTINGS;

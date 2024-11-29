@@ -40,7 +40,8 @@ CRGBPalette16 paletteSlime;
 CRGBPalette16 paletteStasis;
 CRGBPalette16 paletteMeson;
 CRGBPalette16 paletteSpectral;
-CRGBPalette16 paletteHoliday;
+CRGBPalette16 paletteHalloween;
+CRGBPalette16 paletteChristmas;
 CRGBPalette16 paletteWhite;
 
 /*
@@ -65,7 +66,7 @@ uint8_t i_max_brightness = 255; // Maximum brightness
  */
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
 enum POWER_LEVELS POWER_LEVEL;
-enum STREAM_MODES { PROTON, SLIME, STASIS, MESON, SPECTRAL, HOLIDAY, SPECTRAL_CUSTOM, SETTINGS };
+enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
 enum STREAM_MODES STREAM_MODE;
 bool b_firing = false;
 uint8_t i_power = 1;
