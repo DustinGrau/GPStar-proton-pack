@@ -91,6 +91,12 @@ void animateLights() {
         case SPECTRAL:
           i_color = C_RAINBOW;
         break;
+        case HOLIDAY_HALLOWEEN:
+          i_color = C_ORANGEPURPLE;
+        break;
+        case HOLIDAY_CHRISTMAS:
+          i_color = C_REDGREEN;
+        break;
         default:
           i_color = C_WHITE;
         break;

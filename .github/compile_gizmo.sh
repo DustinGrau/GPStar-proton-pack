@@ -32,14 +32,14 @@ pio run --project-dir "$PROJECT_DIR"
 
 rm -f ${PROJECT_DIR}/include/*.h-e
 
-if [ -f ${PROJECT_DIR}/.pio/build/esp32dev/firmware.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32dev/firmware.bin ${BINDIR}/gizmo/BeltGizmo-ESP32.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ${BINDIR}/gizmo/BeltGizmo-ESP32.bin
 fi
-if [ -f ${PROJECT_DIR}/.pio/build/esp32dev/bootloader.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32dev/bootloader.bin ${BINDIR}/gizmo/extras/BeltGizmo-ESP32-Bootloader.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ${BINDIR}/gizmo/extras/BeltGizmo-ESP32-Bootloader.bin
 fi
-if [ -f ${PROJECT_DIR}/.pio/build/esp32dev/partitions.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32dev/partitions.bin ${BINDIR}/gizmo/extras/BeltGizmo-ESP32-Partitions.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ${BINDIR}/gizmo/extras/BeltGizmo-ESP32-Partitions.bin
 fi
 echo "Done."
 echo ""

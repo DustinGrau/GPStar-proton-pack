@@ -157,7 +157,7 @@ void WiFiManagementTask(void *parameter) {
     #endif
 
     // Handle reconnection to external WiFi when necessary.
-    if (b_ap_started) {
+    if(b_ap_started) {
       if(b_ws_started && ms_cleanup.remaining() < 1) {
         // Clean up oldest WebSocket connections.
         ws.cleanupClients();
@@ -209,8 +209,18 @@ void WiFiSetupTask(void *parameter) {
     Serial.println(xPortGetCoreID());
   #endif
 
+  // Set a visual indicator that WiFi is being configured.
+  device_leds[0] = getHueAsRGB(PRIMARY_LED, C_RED, 255);
+  FastLED.show();
+
   // Begin by setting up WiFi as a prerequisite to all else.
   if(startWiFi()) {
+    if(b_ap_started) {
+      // Indicate we've established the private network.
+      device_leds[0] = getHueAsRGB(PRIMARY_LED, C_BLUE, 255);
+      FastLED.show();
+    }
+
     // Start the local web server.
     startWebServer();
 
@@ -219,6 +229,12 @@ void WiFiSetupTask(void *parameter) {
     ms_apclient.start(i_apClientCount);
     ms_otacheck.start(i_otaCheck);
   }
+
+  vTaskDelay(200 / portTICK_PERIOD_MS); // 200ms delay
+
+  // Clear LED once we have the AP and web server started.
+  device_leds[0] = CRGB::Black;
+  FastLED.show();
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
