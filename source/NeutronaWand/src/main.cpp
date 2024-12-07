@@ -3992,7 +3992,7 @@ void wandHeatUp() {
     break;
 
     case HOLIDAY_HALLOWEEN:
-      playEffect(S_FIRE_START_SPARK);
+      //playEffect(S_FIRE_START_SPARK);
 
       if(b_gpstar_benchtest) {
         playEffect(S_HALLOWEEN_MODE_VOICE);
@@ -4000,7 +4000,7 @@ void wandHeatUp() {
     break;
 
     case HOLIDAY_CHRISTMAS:
-      playEffect(S_FIRE_START_SPARK);
+      //playEffect(S_FIRE_START_SPARK);
 
       if(b_gpstar_benchtest) {
         playEffect(S_CHRISTMAS_MODE_VOICE);
