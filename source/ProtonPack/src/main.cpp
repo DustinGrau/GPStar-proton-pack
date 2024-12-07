@@ -4605,6 +4605,13 @@ void modeFireStartSounds() {
       }
     }
   }
+
+  if(STREAM_MODE == HOLIDAY_HALLOWEEN) {
+    playEffect(S_HALLOWEEN_FIRING_EXTRA, false, i_volume_effects, true, 100, false);
+  }
+  if(STREAM_MODE == HOLIDAY_CHRISTMAS) {
+    playEffect(S_CHRISTMAS_FIRING_EXTRA, false, i_volume_effects, true, 100, false);
+  }
 }
 
 void wandFiring() {
@@ -4916,6 +4923,13 @@ void wandStopFiringSounds() {
 
   b_sound_firing_intensify_trigger = false;
   b_sound_firing_alt_trigger = false;
+
+  if(STREAM_MODE == HOLIDAY_HALLOWEEN) {
+    stopEffect(S_HALLOWEEN_FIRING_EXTRA);
+  }
+  if(STREAM_MODE == HOLIDAY_CHRISTMAS) {
+    stopEffect(S_CHRISTMAS_FIRING_EXTRA);
+  }
 }
 
 void stopMashErrorSounds() {
@@ -5477,6 +5491,13 @@ void wandExtraSoundsStop() {
   stopEffect(S_AFTERLIFE_WAND_RAMP_DOWN_2);
   stopEffect(S_AFTERLIFE_WAND_RAMP_2_FADE_IN);
   stopEffect(S_AFTERLIFE_WAND_RAMP_DOWN_2_FADE_OUT);
+
+  if(STREAM_MODE == HOLIDAY_HALLOWEEN) {
+    stopEffect(S_HALLOWEEN_FIRING_EXTRA);
+  }
+  if(STREAM_MODE == HOLIDAY_CHRISTMAS) {
+    stopEffect(S_CHRISTMAS_FIRING_EXTRA);
+  }
 
   stopEffect(S_WAND_BOOTUP);
   stopEffect(S_WAND_BOOTUP_SHORT);
