@@ -4114,7 +4114,7 @@ void innerCyclotronCavityUpdate(uint16_t iRampDelay) {
     i_led_cyclotron_cavity = i_ic_cavity_start;
   }
 
-  if(SYSTEM_YEAR != SYSTEM_FROZEN_EMPIRE || STREAM_MODE != PROTON) {
+  if(SYSTEM_YEAR != SYSTEM_FROZEN_EMPIRE || !(STREAM_MODE == PROTON || STREAM_MODE == HOLIDAY_CHRISTMAS)) {
     // This produces the "sparking" effect as seen in GB:FE only for the Proton stream,
     // so the effect is essentially disabled for all other themes and firing modes.
     i_colour_scheme = C_BLACK;
@@ -4124,8 +4124,13 @@ void innerCyclotronCavityUpdate(uint16_t iRampDelay) {
       i_colour_scheme = C_YELLOW; // Always keep the lower half of LEDs yellow.
     }
     else {
-      // Light spiraling higher than the lower half will have variable colours.
-      i_colour_scheme = getDeviceColour(CYCLOTRON_CAVITY, STREAM_MODE, false);
+      if(STREAM_MODE == HOLIDAY_CHRISTMAS) {
+        i_colour_scheme = C_WHITE; // Always keep the upper half of LEDs white.
+      }
+      else {
+        // Light spiraling higher than the lower half will have variable colours.
+        i_colour_scheme = getDeviceColour(CYCLOTRON_CAVITY, STREAM_MODE, false);
+      }
     }
   }
 
