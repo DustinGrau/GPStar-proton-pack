@@ -97,12 +97,6 @@ const char DEVICE_page[] PROGMEM = R"=====(
     }
 
     function saveSettings() {
-      // Do not allow saving if track list is too large for allowed storage space.
-      if (getValue("songList").length > 2000) {
-        alert("Error: Unable to save track listing (exceeds allowed bytes).");
-        return;
-      }
-
       // Do not allow saving if the new SSID is too short/long, or illegal.
       var wifiName = getText("wifiName");
       if (wifiName.length < 8) {
