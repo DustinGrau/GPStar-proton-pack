@@ -51,7 +51,7 @@ Preferences preferences;
 
 // Set up values for the SSID and password for the built-in WiFi access point (AP).
 const uint8_t i_max_attempts = 3; // Max attempts to establish a external WiFi connection.
-const String ap_ssid_prefix = "ProtonPack"; // This will be the base of the SSID name.
+const String ap_ssid_prefix = "GhostTrap"; // This will be the base of the SSID name.
 String ap_default_passwd = "555-2368"; // This will be the default password for the AP.
 String ap_ssid; // Reserved for holding the full, private AP name for this device.
 bool b_ap_started = false; // Denotes the softAP network has been started.
@@ -398,7 +398,7 @@ bool startWiFi() {
     b_ap_started = startAccesPoint();
   }
 
-  // Set the mDNS hostname to "ProtonPack_NNNN.local" just like the private AP name.
+  // Set the mDNS hostname to "GhostTrap_NNNN.local" just like the private AP name.
   bool b_mdns_started = MDNS.begin(ap_ssid.c_str());
   #if defined(DEBUG_WIRELESS_SETUP)
     if (b_mdns_started) {
