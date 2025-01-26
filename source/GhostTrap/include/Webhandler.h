@@ -157,7 +157,7 @@ void handleEquipSvg(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Equipment SVG");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", EQUIP_svg, sizeof(EQUIP_svg));
-  response->addHeader("Content-Encoding", "gzip");
+  //response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
 
@@ -183,6 +183,7 @@ String getDeviceConfig() {
   jsonBody.clear();
 
   // Provide current values for the device.
+  jsonBody["displayType"] = DISPLAY_TYPE; 
   jsonBody["buildDate"] = build_date;
   jsonBody["wifiName"] = ap_ssid;
   jsonBody["wifiNameExt"] = wifi_ssid;
@@ -312,6 +313,20 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
         jsonBody["status"] = "Error: Network name must be between 8 and 32 characters in length.";
         serializeJson(jsonBody, result); // Serialize to string.
         request->send(200, "application/json", result);
+      }
+    }
+
+    if(jsonBody["displayType"].is<unsigned short>()) {
+      switch(jsonBody["displayType"].as<unsigned short>()) {
+        case 0:
+          DISPLAY_TYPE = STATUS_TEXT;
+        break;
+        case 1:
+          DISPLAY_TYPE = STATUS_GRAPHIC;
+        break;
+        case 2:
+          DISPLAY_TYPE = STATUS_BOTH;
+        break;
       }
     }
 

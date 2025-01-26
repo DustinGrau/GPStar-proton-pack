@@ -142,11 +142,24 @@ void PreferencesTask(void *parameter) {
    */
   bool b_namespace_opened = preferences.begin("device", true);
   if(b_namespace_opened) {
+    switch(preferences.getShort("display_type", 0)) {
+      case 0:
+        DISPLAY_TYPE = STATUS_TEXT;
+      break;
+      case 1:
+        DISPLAY_TYPE = STATUS_GRAPHIC;
+      break;
+      case 2:
+      default:
+        DISPLAY_TYPE = STATUS_BOTH;
+      break;
+    }
     preferences.end();
   }
   else {
     // If namespace is not initialized, open in read/write mode and set defaults.
     if(preferences.begin("device", false)) {
+      preferences.putShort("display_type", DISPLAY_TYPE);
       preferences.end();
     }
   }
