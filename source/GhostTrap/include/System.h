@@ -80,5 +80,14 @@ void checkUserInputs() {
  * Execute a smoke sequence for a given duration.
  */
 void startSmoke(uint16_t i_duration) {
+  // Begin setting timers for the various devices (LED, blower, and smoke).
+  if(i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
+    ms_blower.start(i_duration);
+    ms_centerled.start(i_duration);
+    ms_smoke.start(i_duration);
+  }
 
+  ledcWrite(CENTER_LED, i_max_power);
+  digitalWrite(BLOWER_PIN, HIGH);
+  digitalWrite(SMOKE_PIN, HIGH);
 }

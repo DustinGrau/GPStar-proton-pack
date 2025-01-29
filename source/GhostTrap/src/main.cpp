@@ -280,12 +280,21 @@ void setup() {
 
   // RGB LEDs for effects (upper/lower) and user status (top).
   FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
+  // Set the LED to green to indicate the device is ready.
+  device_leds[0] = getHueAsGRB(0, C_GREEN, 128);
 
   // Get initial switch/button states.
   switchLoops();
 
   // Delay before configuring and running tasks.
   delay(200);
+
+  // Use the combined method for the arduino-esp32 platform, using the esp-idf v5.3+
+  ledcAttachChannel(CENTER_LED, 5000, 8, 5); // Uses 5 kHz frequency, 8-bit resolution, channel 5
+
+  // Configure devices for signalling.
+  pinMode(BLOWER_PIN, OUTPUT);
+  pinMode(SMOKE_PIN, OUTPUT);
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.

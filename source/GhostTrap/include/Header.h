@@ -30,10 +30,22 @@ CRGB device_leds[DEVICE_NUM_LEDS];
 /*
  * Pins for Devices
  */
-#define WHITE_LED 5
-#define BLOWER_PIN 6
+#define BLOWER_PIN 5
+#define CENTER_LED 6
 #define SMOKE_PIN 7
 
+/*
+ * Timers for Devices
+ */
+millisDelay ms_blower;
+millisDelay ms_centerled;
+millisDelay ms_smoke;
+
+/*
+ * Limits for Operation
+ */
+const uint8_t i_min_power = 0; // Essentially a "low" state (off).
+const uint8_t i_max_power = 255; // Essentially a "high" state (on).
 const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke.
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
 
