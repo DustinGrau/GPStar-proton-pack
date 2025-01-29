@@ -29,10 +29,9 @@
  */
 //#define DEBUG_WIRELESS_SETUP   // Output debugs related to the WiFi/network setup.
 //#define DEBUG_PERFORMANCE      // Send debug messages for CPU/memory to the (USB) console.
-//#define DEBUG_SERIAL_COMMS     // Output debugs related to the serial communications.
-//#define DEBUG_SEND_TO_CONSOLE  // Send any general messages to the serial (USB) console.
+#define DEBUG_SEND_TO_CONSOLE  // Send any general messages to the serial (USB) console.
 //#define DEBUG_TASK_TO_CONSOLE  // Send any task messages to the serial (USB) console.
-//#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
+#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
 
 /*
  * Force the use of default SSID and password for wireless capabilities.
@@ -53,24 +52,3 @@ String build_date = "20250126161853";
  */
 String user_wifi_ssid = ""; // Preferred network SSID for external WiFi
 String user_wifi_pass = ""; // Preferred network password for external WiFi
-
-/*
- * Enable Physical Feedback Effects (Sound + Vibration)
- */
-bool b_enable_buzzer = true; // Enable/disable all buzzing via the local piezo buzzer
-bool b_enable_vibration = true; // Enable/disable all effects via the vibration motor
-bool b_overheat_feedback = true; // Enable/disable buzzing/vibration on pack overheat
-bool b_firing_feedback = false; // Enable/disable vibration when throwing a stream
-
-/*
- * Wait for pack communication or operate without pack integration.
- */
-bool b_wait_for_pack = true;
-
-/*
- * Custom values from pack EEPROM.
- *
- * Override as desired if b_wait_for_pack is false.
- */
-uint8_t i_spectral_custom_colour = 0;
-uint8_t i_spectral_custom_saturation = 254;

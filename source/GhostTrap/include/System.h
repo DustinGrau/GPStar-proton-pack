@@ -75,3 +75,10 @@ void switchLoops() {
 void checkUserInputs() {
 
 }
+
+/*
+ * Execute a smoke sequence for a given duration.
+ */
+void startSmoke(uint16_t i_duration) {
+
+}

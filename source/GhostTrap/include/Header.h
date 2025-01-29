@@ -23,10 +23,19 @@
 /*
  * Pin for Addressable LEDs
  */
-#define BUILT_IN_LED 2
-#define DEVICE_LED_PIN 4
+#define BUILT_IN_LED 21 // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
 #define DEVICE_NUM_LEDS 1
 CRGB device_leds[DEVICE_NUM_LEDS];
+
+/*
+ * Pins for Devices
+ */
+#define WHITE_LED 5
+#define BLOWER_PIN 6
+#define SMOKE_PIN 7
+
+const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke.
+const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
 
 /*
  * UI Status Display Type

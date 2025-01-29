@@ -183,4 +183,8 @@ function sendCommand(apiUri) {
   xhttp.open("PUT", apiUri, true);
   xhttp.send();
 }
+
+function runSmoke(msDuration) {
+  sendCommand("/smoke?duration=" + parseInt(msDuration, 10));
+}
 )=====";

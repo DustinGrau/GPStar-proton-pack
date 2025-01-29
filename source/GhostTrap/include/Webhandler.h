@@ -33,6 +33,7 @@
 
 // Forward function declarations.
 void setupRouting();
+void startSmoke(uint16_t i_duration);
 
 /*
  * Web Handler Functions - Performs actions or returns data for web UI
@@ -507,6 +508,31 @@ void handleNotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not Found");
 }
 
+void handleSmoke(AsyncWebServerRequest *request) {
+  String c_smoke_duration = "";
+  uint16_t i_smoke_duration = 0;
+
+  if(request->hasParam("duration")) {
+    // Make sure the duration is a sane value (in milliseconds).
+    c_smoke_duration = request->getParam("duration")->value();
+    debug("Web: Run Smoke, Duration: " + c_smoke_duration);
+    i_smoke_duration = c_smoke_duration.toInt();
+  }
+
+  if(i_smoke_duration >= i_smoke_duration_min && i_smoke_duration <= i_smoke_duration_max) {
+    startSmoke(i_smoke_duration);
+    request->send(200, "application/json", status);
+  }
+  else {
+    // Tell the user why the requested action failed.
+    String result;
+    jsonBody.clear();
+    jsonBody["status"] = "Invalid duration specified";
+    serializeJson(jsonBody, result); // Serialize to string.
+    request->send(200, "application/json", result);
+  }
+}
+
 void setupRouting() {
   // Define the endpoints for the web server.
 
@@ -528,6 +554,7 @@ void setupRouting() {
   httpServer.on("/status", HTTP_GET, handleGetStatus);
   httpServer.on("/restart", HTTP_DELETE, handleRestart);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
+  httpServer.on("/smoke", HTTP_PUT, handleSmoke);
 
   // Body Handlers
   httpServer.addHandler(handleSaveDeviceConfig); // /config/device/save
