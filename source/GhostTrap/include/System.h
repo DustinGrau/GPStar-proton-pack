@@ -57,7 +57,48 @@ void printPartitions() {
  * Determine the current state of any LEDs before next FastLED refresh.
  */
 void updateLEDs() {
+  if(b_ap_started && b_ws_started) {
+    // Set the built-in LED to green to indicate the device is fully ready.
+    device_leds[0] = getHueAsGRB(0, C_GREEN, 128);
+  } else {
+    // Set the built-in LED to red while the WiFi and WebSocket are not ready.
+    device_leds[0] = getHueAsGRB(0, C_RED, 128);
+  }
 
+  if (ms_centerled.isRunning()) {
+    // While the timer is active, keep the center LED lit.
+    ledcWrite(CENTER_LED, i_max_power);
+  }
+
+  if (ms_centerled.justFinished()) {
+    ledcWrite(CENTER_LED, i_min_power);
+  }
+}
+
+/*
+ * Determine the current state of the blower.
+ */
+void checkBlower() {
+  if (ms_blower.isRunning()) {
+    digitalWrite(BLOWER_PIN, HIGH);
+  }
+
+  if (ms_blower.justFinished()) {
+    digitalWrite(BLOWER_PIN, LOW);
+  }
+}
+
+/*
+ * Determine the current state of the smoke device.
+ */
+void checkSmoke() {
+  if (ms_smoke.isRunning()) {
+    digitalWrite(SMOKE_PIN, HIGH);
+  }
+
+  if (ms_smoke.justFinished()) {
+    digitalWrite(SMOKE_PIN, LOW);
+  }
 }
 
 /*
@@ -80,14 +121,20 @@ void checkUserInputs() {
  * Execute a smoke sequence for a given duration.
  */
 void startSmoke(uint16_t i_duration) {
+  // Stop any existing timers before proceeding.
+  ms_blower.stop();
+  ms_centerled.stop();
+  ms_smoke.stop();
+
+  // Shut down any running devices.
+  ledcWrite(CENTER_LED, i_min_power);
+  digitalWrite(BLOWER_PIN, HIGH);
+  digitalWrite(SMOKE_PIN, LOW);
+
   // Begin setting timers for the various devices (LED, blower, and smoke).
   if(i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
-    ms_blower.start(i_duration);
-    ms_centerled.start(i_duration);
-    ms_smoke.start(i_duration);
+    ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
+    ms_centerled.start(i_duration * 1.5); // Keep the LED lit only 1.5x the smoke duration.
+    ms_smoke.start(i_duration); // Only run smoke for as long as the system will allow.
   }
-
-  ledcWrite(CENTER_LED, i_max_power);
-  digitalWrite(BLOWER_PIN, HIGH);
-  digitalWrite(SMOKE_PIN, HIGH);
 }

@@ -91,8 +91,12 @@ void AnimationTask(void *parameter) {
     // Update LEDs using appropriate colour scheme and environment vars.
     updateLEDs();
 
-    // Update the device LEDs and restart the timer.
+    // Update the state of any LEDs.
     FastLED.show();
+
+    // Verify the state of any other devices which need updating.
+    checkBlower();
+    checkSmoke();
 
     vTaskDelay(8 / portTICK_PERIOD_MS); // 8ms delay
   }
@@ -280,8 +284,6 @@ void setup() {
 
   // RGB LEDs for effects (upper/lower) and user status (top).
   FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
-  // Set the LED to green to indicate the device is ready.
-  device_leds[0] = getHueAsGRB(0, C_GREEN, 128);
 
   // Get initial switch/button states.
   switchLoops();
