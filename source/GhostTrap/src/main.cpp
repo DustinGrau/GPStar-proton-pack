@@ -293,10 +293,15 @@ void setup() {
 
   // Use the combined method for the arduino-esp32 platform, using the esp-idf v5.3+
   ledcAttachChannel(CENTER_LED, 5000, 8, 5); // Uses 5 kHz frequency, 8-bit resolution, channel 5
+  ledcWrite(CENTER_LED, i_min_power); // Ensure the device is off
 
   // Configure devices for signalling.
   pinMode(BLOWER_PIN, OUTPUT);
   pinMode(SMOKE_PIN, OUTPUT);
+
+  // Set an explicit state for devices.
+  digitalWrite(BLOWER_PIN, LOW);
+  digitalWrite(SMOKE_PIN, LOW);
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.

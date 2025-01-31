@@ -65,12 +65,14 @@ void updateLEDs() {
     device_leds[0] = getHueAsGRB(0, C_RED, 128);
   }
 
-  if (ms_centerled.isRunning()) {
+  if (ms_centerled.isRunning() && ledcRead(CENTER_LED) > 0) {
     // While the timer is active, keep the center LED lit.
+    debug(F("LED On"));
     ledcWrite(CENTER_LED, i_max_power);
   }
 
   if (ms_centerled.justFinished()) {
+    debug(F("LED Off"));
     ledcWrite(CENTER_LED, i_min_power);
   }
 }
@@ -79,11 +81,13 @@ void updateLEDs() {
  * Determine the current state of the blower.
  */
 void checkBlower() {
-  if (ms_blower.isRunning()) {
+  if (ms_blower.isRunning() && digitalRead(BLOWER_PIN) == LOW) {
+    debug(F("Blower On"));
     digitalWrite(BLOWER_PIN, HIGH);
   }
 
   if (ms_blower.justFinished()) {
+    debug(F("Blower Off"));
     digitalWrite(BLOWER_PIN, LOW);
   }
 }
@@ -92,11 +96,13 @@ void checkBlower() {
  * Determine the current state of the smoke device.
  */
 void checkSmoke() {
-  if (ms_smoke.isRunning()) {
+  if (ms_smoke.isRunning() && digitalRead(SMOKE_PIN) == LOW) {
+    debug(F("Smoke On"));
     digitalWrite(SMOKE_PIN, HIGH);
   }
 
   if (ms_smoke.justFinished()) {
+    debug(F("Smoke Off"));
     digitalWrite(SMOKE_PIN, LOW);
   }
 }
