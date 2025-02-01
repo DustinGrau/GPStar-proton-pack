@@ -65,7 +65,7 @@ void updateLEDs() {
     device_leds[0] = getHueAsGRB(0, C_RED, 128);
   }
 
-  if (ms_centerled.isRunning() && ledcRead(CENTER_LED) > 0) {
+  if (ms_centerled.isRunning() && ledcRead(CENTER_LED) == i_min_power) {
     // While the timer is active, keep the center LED lit.
     debug(F("LED On"));
     ledcWrite(CENTER_LED, i_max_power);
@@ -134,7 +134,7 @@ void startSmoke(uint16_t i_duration) {
 
   // Shut down any running devices.
   ledcWrite(CENTER_LED, i_min_power);
-  digitalWrite(BLOWER_PIN, HIGH);
+  digitalWrite(BLOWER_PIN, LOW);
   digitalWrite(SMOKE_PIN, LOW);
 
   // Begin setting timers for the various devices (LED, blower, and smoke).
