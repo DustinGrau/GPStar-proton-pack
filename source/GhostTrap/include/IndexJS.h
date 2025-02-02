@@ -98,12 +98,49 @@ function onMessage(event) {
   }
 }
 
-function updateGraphics(jObj){
+function setButtonStates(smokeEnabled) {
+  // Assume all functions are not possible, override as necessary.
+  getEl("btnSmoke2").disabled = true;
+  getEl("btnSmoke5").disabled = true;
+  getEl("btnSmokeEnable").disabled = true;
+  getEl("btnSmokeDisable").disabled = true;
 
+  if (smokeEnabled) {
+    // Enable specific buttons only when smoke is enabled.
+    getEl("btnSmoke2").disabled = false;
+    getEl("btnSmoke5").disabled = false;
+    getEl("btnSmokeDisable").disabled = false;
+  }
+}
+
+function updateGraphics(jObj){ 
+  // Update display if we have the expected data (containing door state at a minimum).
+  if (jObj && jObj.doorState) {
+    if (jObj.doorState == "Opened") {
+      colorEl("doorOverlay", 0, 150, 0);
+    } else {
+      colorEl("doorOverlay", 255, 0, 0);
+    }
+  } else {
+    // Reset all screen elements to their defaults to indicate no data available.
+    colorEl("doorOverlay", 100, 100, 100);
+  }
 }
 
 function updateEquipment(jObj) {
+  // Update display if we have the expected data (containing door state at a minimum).
+  if (jObj && jObj.doorState) {
+    // Current Pack Status
+    setHtml("doorState", jObj.doorState || "...");
 
+    // Update special UI elements based on the latest data values.
+    setButtonStates(jObj.smokeEnabled);
+
+    // Connected Wifi Clients - Private AP vs. WebSocket
+    setHtml("clientInfo", "AP Clients: " + (jObj.apClients || 0) + " / WebSocket Clients: " + (jObj.wsClients || 0));
+
+    updateGraphics(jObj);
+  }
 }
 
 function getStatus() {
@@ -185,6 +222,14 @@ function sendCommand(apiUri) {
 }
 
 function runSmoke(msDuration) {
-  sendCommand("/smoke?duration=" + parseInt(msDuration, 10));
+  sendCommand("/smoke/run?duration=" + parseInt(msDuration, 10));
+}
+
+function enableSmoke() {
+  sendCommand("/smoke/enable");
+}
+
+function disableSmoke() {
+  sendCommand("/smoke/disable");
 }
 )=====";

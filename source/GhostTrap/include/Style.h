@@ -168,6 +168,15 @@ p {
   position:absolute
 }
 
+.door-state {
+  border-radius:2px;
+  left:118px;
+  height:306px;
+  top:96px;
+  width:140px;
+  z-index:2
+}
+
 button {
   background-color:#555;
   border:2px solid #333;

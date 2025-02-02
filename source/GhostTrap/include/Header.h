@@ -53,6 +53,11 @@ const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke.
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
 
 /*
+ * Global flag to enable/disable smoke.
+ */
+bool b_smoke_enabled = true;
+
+/*
  * UI Status Display Type
  */
 enum DISPLAY_TYPES : uint8_t {
@@ -62,6 +67,9 @@ enum DISPLAY_TYPES : uint8_t {
 };
 enum DISPLAY_TYPES DISPLAY_TYPE;
 
+/*
+ * Device States
+ */
 enum DOOR_STATES : uint8_t {
   DOORS_UNKNOWN = 0,
   DOORS_CLOSED = 1,

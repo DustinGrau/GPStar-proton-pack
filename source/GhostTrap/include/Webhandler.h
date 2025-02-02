@@ -202,7 +202,8 @@ String getEquipmentStatus() {
   String equipStatus;
   jsonBody.clear();
 
-  jsonBody["doorState"] = DOOR_STATE;
+  jsonBody["smokeEnabled"] = b_smoke_enabled;
+  jsonBody["doorState"] = (DOOR_STATE == DOORS_OPENED) ? "Opened" : "Closed";
   jsonBody["apClients"] = i_ap_client_count;
   jsonBody["wsClients"] = i_ws_client_count;
 
@@ -509,7 +510,17 @@ void handleNotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not Found");
 }
 
-void handleSmoke(AsyncWebServerRequest *request) {
+void handleSmokeEnable(AsyncWebServerRequest *request) {
+  b_smoke_enabled = true;
+  request->send(200, "application/json", status);
+}
+
+void handleSmokeDisable(AsyncWebServerRequest *request) {
+  b_smoke_enabled = false;
+  request->send(200, "application/json", status);
+}
+
+void handleSmokeRun(AsyncWebServerRequest *request) {
   String c_smoke_duration = "";
   uint16_t i_smoke_duration = 0;
 
@@ -555,7 +566,9 @@ void setupRouting() {
   httpServer.on("/status", HTTP_GET, handleGetStatus);
   httpServer.on("/restart", HTTP_DELETE, handleRestart);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
-  httpServer.on("/smoke", HTTP_PUT, handleSmoke);
+  httpServer.on("/smoke/enable", HTTP_PUT, handleSmokeEnable);
+  httpServer.on("/smoke/disable", HTTP_PUT, handleSmokeDisable);
+  httpServer.on("/smoke/run", HTTP_PUT, handleSmokeRun);
 
   // Body Handlers
   httpServer.addHandler(handleSaveDeviceConfig); // /config/device/save

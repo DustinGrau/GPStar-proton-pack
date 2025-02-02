@@ -44,17 +44,18 @@ const char INDEX_page[] PROGMEM = R"=====(
 
   <div id="tab1" class="tab">
     <div id="equipCRT" class="equipment">
-      <div id="equipTitle" class="infoState equip-title centered"></div>
+      <div id="doorOverlay" class="overlay door-state"></div>
     </div>
 
     <div id="equipTXT" class="card">
+      <p><span class="infoLabel">Door State:</span> <span class="infoState" id="doorState">&mdash;</span></p>
     </div>
   </div>
 
   <div id="tab2" class="tab">
     <div>
       <div class="volume-container">
-
+ 
       </div>
     </div>
   </div>
@@ -62,7 +63,15 @@ const char INDEX_page[] PROGMEM = R"=====(
   <div id="tab3" class="tab">
     <div class="card" style="text-align:center;">
       <br/>
+      <button type="button" class="orange" onclick="runSmoke(2000)" id="btnSmoke2">Smoke 2sec.</button>
+      &nbsp;&nbsp;
       <button type="button" class="orange" onclick="runSmoke(5000)" id="btnSmoke5">Smoke 5sec.</button>
+      <br/>
+      <br/>
+      <button type="button" class="green" onclick="enableSmoke()" id="btnSmokeEnable">Enable</button>
+      &nbsp;&nbsp;
+      <button type="button" class="red" onclick="disableSmoke()" id="btnSmokeDisable">Disable</button>
+      <br/>
       <br/>
       <br/>
     </div>
