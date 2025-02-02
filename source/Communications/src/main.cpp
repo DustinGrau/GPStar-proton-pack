@@ -41,23 +41,23 @@ void IRAM_ATTR onClockEdge() {
 // Process and send SPI data
 void processSPIData() {
     if (newByteAvailable) {
-        bool csActive = !digitalRead(PIN_CS);
+        bool csActive = !digitalRead(PIN_CS); // Active = CS is LOW (Master is actively communicating to Slave)
         String message = "";
 
         if (csActive) {
-            message += "[TRANSACTION START]\n";
+            message = "[TRANSACTION START]\n";
         }
 
         char mosiChar = (byteBufferMOSI >= 32 && byteBufferMOSI <= 126) ? (char)byteBufferMOSI : '?';
         char misoChar = (byteBufferMISO >= 32 && byteBufferMISO <= 126) ? (char)byteBufferMISO : '?';
 
-        message += "MOSI -> 0x" + String(byteBufferMOSI, HEX) + " ('" + String(mosiChar) + "') ";
+        message += "M.Send: 0x" + String(byteBufferMOSI, HEX) + " ('" + String(mosiChar) + "')";
         if (byteBufferMISO != 0) {
-            message += "| MISO <- 0x" + String(byteBufferMISO, HEX) + " ('" + String(misoChar) + "')";
+            message += " | M.Resp: 0x" + String(byteBufferMISO, HEX) + " ('" + String(misoChar) + "')";
         }
 
         ws.textAll(message);
-        //Serial.println(message);
+        Serial.println(message);
         newByteAvailable = false;
     }
 }
@@ -70,12 +70,18 @@ void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsE
 
 void setup() {
     Serial.begin(115200);
+
+    // Set pins as input so we can snoop on the bus data.
     pinMode(PIN_MOSI, INPUT);
     pinMode(PIN_MISO, INPUT);
     pinMode(PIN_SCLK, INPUT);
     pinMode(PIN_CS, INPUT);
 
+    // SPI Mode 0 (CPOL=0, CPHA=0)
     attachInterrupt(digitalPinToInterrupt(PIN_SCLK), onClockEdge, RISING);
+
+    // SPI Mode 1 (CPOL=0, CPHA=1)
+    //attachInterrupt(digitalPinToInterrupt(PIN_SCLK), onClockEdge, FALLING);
 
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
