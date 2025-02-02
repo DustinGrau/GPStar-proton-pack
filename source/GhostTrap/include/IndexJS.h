@@ -1,7 +1,6 @@
 /**
  *   GPStar Ghost Trap - Ghostbusters Props, Mods, and Kits.
- *   Copyright (C) 2025 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
- *                    & Dustin Grau <dustin.grau@gmail.com>
+ *   Copyright (C) 2025 Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -116,7 +115,7 @@ function setButtonStates(smokeEnabled) {
   }
 }
 
-function updateGraphics(jObj){ 
+function updateGraphics(jObj){
   // Update display if we have the expected data (containing door state at a minimum).
   if (jObj && jObj.doorState) {
     if (jObj.doorState == "Opened") {

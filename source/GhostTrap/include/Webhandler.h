@@ -1,7 +1,6 @@
 /**
  *   GPStar Ghost Trap - Ghostbusters Props, Mods, and Kits.
- *   Copyright (C) 2025 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
- *                    & Dustin Grau <dustin.grau@gmail.com>
+ *   Copyright (C) 2025 Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -186,7 +185,7 @@ String getDeviceConfig() {
   jsonBody.clear();
 
   // Provide current values for the device.
-  jsonBody["displayType"] = DISPLAY_TYPE; 
+  jsonBody["displayType"] = DISPLAY_TYPE;
   jsonBody["buildDate"] = build_date;
   jsonBody["wifiName"] = ap_ssid;
   jsonBody["wifiNameExt"] = wifi_ssid;
