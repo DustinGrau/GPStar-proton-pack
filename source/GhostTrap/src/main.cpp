@@ -193,6 +193,11 @@ void UserInputTask(void *parameter) {
 
     checkUserInputs(); // Check for any user interactions.
 
+    if (DOOR_STATE == DOORS_OPENED) {
+      // We need to call this once when necessary, and avoid repeated calls.
+      //startSmoke(5000);
+    }
+
     vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
   }
 }

@@ -32,6 +32,7 @@
 #include "Icon.h" // FAVICON_ico, FAVICON_svg
 
 // Forward function declarations.
+void notifyWSClients();
 void setupRouting();
 void startSmoke(uint16_t i_duration);
 
@@ -513,11 +514,13 @@ void handleNotFound(AsyncWebServerRequest *request) {
 void handleSmokeEnable(AsyncWebServerRequest *request) {
   b_smoke_enabled = true;
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleSmokeDisable(AsyncWebServerRequest *request) {
   b_smoke_enabled = false;
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleSmokeRun(AsyncWebServerRequest *request) {

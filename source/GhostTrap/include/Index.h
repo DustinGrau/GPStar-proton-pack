@@ -63,14 +63,14 @@ const char INDEX_page[] PROGMEM = R"=====(
   <div id="tab3" class="tab">
     <div class="card" style="text-align:center;">
       <br/>
-      <button type="button" class="orange" onclick="runSmoke(2000)" id="btnSmoke2">Smoke 2sec.</button>
-      &nbsp;&nbsp;
-      <button type="button" class="orange" onclick="runSmoke(5000)" id="btnSmoke5">Smoke 5sec.</button>
-      <br/>
-      <br/>
       <button type="button" class="green" onclick="enableSmoke()" id="btnSmokeEnable">Enable</button>
       &nbsp;&nbsp;
       <button type="button" class="red" onclick="disableSmoke()" id="btnSmokeDisable">Disable</button>
+      <br/>
+      <br/>
+      <button type="button" class="orange" onclick="runSmoke(2000)" id="btnSmoke2">Smoke 2sec.</button>
+      &nbsp;&nbsp;
+      <button type="button" class="orange" onclick="runSmoke(5000)" id="btnSmoke5">Smoke 5sec.</button>
       <br/>
       <br/>
       <br/>

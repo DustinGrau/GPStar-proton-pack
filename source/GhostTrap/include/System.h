@@ -98,7 +98,7 @@ void checkBlower() {
 void checkSmoke() {
   if (ms_smoke.isRunning() && ledcRead(SMOKE_PIN) == i_min_power) {
     debug(F("Smoke On"));
-    ledcWrite(SMOKE_PIN, i_mid_power);
+    ledcWrite(SMOKE_PIN, i_max_power);
   }
 
   if (ms_smoke.justFinished()) {
@@ -138,9 +138,9 @@ void checkUserInputs() {
 }
 
 /*
- * Execute a smoke sequence for a given duration.
+ * Stop a running smoke sequence.
  */
-void startSmoke(uint16_t i_duration) {
+void stopSmoke() {
   // Stop any existing timers before proceeding.
   ms_blower.stop();
   ms_centerled.stop();
@@ -150,11 +150,19 @@ void startSmoke(uint16_t i_duration) {
   ledcWrite(BLOWER_PIN, i_min_power);
   ledcWrite(CENTER_LED, i_min_power);
   ledcWrite(SMOKE_PIN, i_min_power);
+}
 
-  // Begin setting timers for the various devices (LED, blower, and smoke).
+/*
+ * Execute a smoke sequence for a given duration.
+ */
+void startSmoke(uint16_t i_duration) {
+  // Stop any running smoke.
+  stopSmoke();
+
+  // If enabled, begin setting timers for the various devices (LED, blower, and smoke).
   if (b_smoke_enabled && i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
-    ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
     ms_centerled.start(i_duration * 1.5); // Keep the LED lit only 1.5x the smoke duration.
+    ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
     ms_smoke.start(i_duration); // Only run smoke for as long as the system will allow.
   }
 }

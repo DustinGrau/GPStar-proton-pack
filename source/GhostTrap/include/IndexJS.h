@@ -110,6 +110,9 @@ function setButtonStates(smokeEnabled) {
     getEl("btnSmoke2").disabled = false;
     getEl("btnSmoke5").disabled = false;
     getEl("btnSmokeDisable").disabled = false;
+  } else {
+    // Otherwise, make sure the user can re-enable smoke.
+    getEl("btnSmokeEnable").disabled = false;
   }
 }
 
