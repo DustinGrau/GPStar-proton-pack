@@ -202,6 +202,7 @@ String getEquipmentStatus() {
   String equipStatus;
   jsonBody.clear();
 
+  jsonBody["doorState"] = DOOR_STATE;
   jsonBody["apClients"] = i_ap_client_count;
   jsonBody["wsClients"] = i_ws_client_count;
 

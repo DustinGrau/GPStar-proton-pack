@@ -33,6 +33,8 @@ CRGB device_leds[DEVICE_NUM_LEDS];
 #define BLOWER_PIN 5
 #define CENTER_LED 6
 #define SMOKE_PIN 7
+#define DOOR_CLOSED_PIN 8
+#define DOOR_OPENED_PIN 9
 
 /*
  * Timers for Devices
@@ -45,6 +47,7 @@ millisDelay ms_smoke;
  * Limits for Operation
  */
 const uint8_t i_min_power = 0; // Essentially a "low" state (off).
+const uint8_t i_mid_power = 192; // Essentially a "75%" duty cycle.
 const uint8_t i_max_power = 255; // Essentially a "high" state (on).
 const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke.
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
@@ -58,6 +61,13 @@ enum DISPLAY_TYPES : uint8_t {
   STATUS_BOTH = 2
 };
 enum DISPLAY_TYPES DISPLAY_TYPE;
+
+enum DOOR_STATES : uint8_t {
+  DOORS_UNKNOWN = 0,
+  DOORS_CLOSED = 1,
+  DOORS_OPENED = 2
+};
+enum DOOR_STATES DOOR_STATE;
 
 // Forward declarations.
 void debug(String message);

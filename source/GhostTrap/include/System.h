@@ -81,14 +81,14 @@ void updateLEDs() {
  * Determine the current state of the blower.
  */
 void checkBlower() {
-  if (ms_blower.isRunning() && digitalRead(BLOWER_PIN) == LOW) {
+  if (ms_blower.isRunning() && ledcRead(BLOWER_PIN) == i_min_power) {
     debug(F("Blower On"));
-    digitalWrite(BLOWER_PIN, HIGH);
+    ledcWrite(BLOWER_PIN, i_max_power);
   }
 
   if (ms_blower.justFinished()) {
     debug(F("Blower Off"));
-    digitalWrite(BLOWER_PIN, LOW);
+    ledcWrite(BLOWER_PIN, i_min_power);
   }
 }
 
@@ -96,14 +96,14 @@ void checkBlower() {
  * Determine the current state of the smoke device.
  */
 void checkSmoke() {
-  if (ms_smoke.isRunning() && digitalRead(SMOKE_PIN) == LOW) {
+  if (ms_smoke.isRunning() && ledcRead(SMOKE_PIN) == i_min_power) {
     debug(F("Smoke On"));
-    digitalWrite(SMOKE_PIN, HIGH);
+    ledcWrite(SMOKE_PIN, i_max_power);
   }
 
   if (ms_smoke.justFinished()) {
     debug(F("Smoke Off"));
-    digitalWrite(SMOKE_PIN, LOW);
+    ledcWrite(SMOKE_PIN, i_min_power);
   }
 }
 
@@ -120,7 +120,21 @@ void switchLoops() {
  * Monitor for interactions by user input.
  */
 void checkUserInputs() {
+  enum DOOR_STATES LAST_DOOR_STATE;
+  LAST_DOOR_STATE = DOOR_STATE;
 
+  // Determine whether the trap doors are currently opened or closed.
+  if (digitalRead(DOOR_CLOSED_PIN) == 1 && digitalRead(DOOR_OPENED_PIN) == 0) {
+    DOOR_STATE = DOORS_CLOSED;
+  }
+  if (digitalRead(DOOR_CLOSED_PIN) == 0 && digitalRead(DOOR_OPENED_PIN) == 1) {
+    DOOR_STATE = DOORS_OPENED;
+  }
+
+  // Trigger an update to the user that the doors have changed state.
+  if (LAST_DOOR_STATE != DOOR_STATE) {
+    notifyWSClients();
+  }
 }
 
 /*

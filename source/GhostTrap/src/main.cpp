@@ -291,17 +291,22 @@ void setup() {
   // Delay before configuring and running tasks.
   delay(200);
 
-  // Use the combined method for the arduino-esp32 platform, using the esp-idf v5.3+
-  ledcAttachChannel(CENTER_LED, 5000, 8, 5); // Uses 5 kHz frequency, 8-bit resolution, channel 5
+  // Configure the center (white) LED inside the trap.
+  ledcAttachChannel(CENTER_LED, 1000, 8, CENTER_LED); // Uses 1 kHz frequency, 8-bit resolution, channel 5
   ledcWrite(CENTER_LED, i_min_power); // Ensure the device is off
 
-  // Configure devices for signalling.
-  pinMode(BLOWER_PIN, OUTPUT);
-  pinMode(SMOKE_PIN, OUTPUT);
+  // Configure the blower fan.
+  ledcAttachChannel(BLOWER_PIN, 15000, 8, BLOWER_PIN); // Uses 15 kHz frequency, 8-bit resolution, channel 6
+  ledcWrite(BLOWER_PIN, i_min_power); // Ensure the device is off
 
-  // Set an explicit state for devices.
-  digitalWrite(BLOWER_PIN, LOW);
-  digitalWrite(SMOKE_PIN, LOW);
+  // Configure the smoke (coil + pump) device.
+  ledcAttachChannel(SMOKE_PIN, 7500, 8, SMOKE_PIN); // Uses 7.5 kHz frequency, 8-bit resolution, channel 7
+  ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
+
+  // Set up for reading the switches to determine door state.
+  pinMode(DOOR_CLOSED_PIN, INPUT);
+  pinMode(DOOR_OPENED_PIN, INPUT);
+  DOOR_STATE = DOORS_UNKNOWN; // Default until we first read the pins.
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.
