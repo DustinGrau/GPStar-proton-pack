@@ -10,6 +10,9 @@
       "path": "AttenuatorNano"
     },
     {
+      "path": "Communications"
+    },
+    {
       "path": "GhostTrap"
     },
     {
