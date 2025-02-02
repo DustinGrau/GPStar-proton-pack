@@ -33,8 +33,8 @@ CRGB device_leds[DEVICE_NUM_LEDS];
 #define BLOWER_PIN 5
 #define CENTER_LED 6
 #define SMOKE_PIN 7
-#define DOOR_CLOSED_PIN 8
-#define DOOR_OPENED_PIN 9
+#define DOOR_CLOSED_PIN 8 // Green Socket
+#define DOOR_OPENED_PIN 9 // Red Socket
 
 /*
  * Timers for Devices
