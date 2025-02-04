@@ -21,6 +21,8 @@ volatile uint8_t byteBufferMOSI = 0;
 volatile uint8_t byteBufferMISO = 0;
 volatile uint8_t bitCount = 0;
 volatile bool newByteAvailable = false;
+volatile bool csActive = false;
+volatile uint32_t byteCount = 0; // Tracks number of bytes in a transaction
 
 // Interrupt on SPI clock signal
 void IRAM_ATTR onClockEdge() {
@@ -47,6 +49,15 @@ void IRAM_ATTR onClockEdge() {
     if (bitCount == 8) {
         bitCount = 0;
         newByteAvailable = true;
+        byteCount++; // Increment byte count during an active transaction
+    }
+}
+
+// Interrupt on CS pin to detect transaction start and end
+void IRAM_ATTR onCSEdge() {
+    csActive = !digitalRead(PIN_CS); // LOW means active, HIGH means inactive
+    if (csActive) {
+        byteCount = 0; // Reset byte counter at start of transaction
     }
 }
 
@@ -54,23 +65,28 @@ void IRAM_ATTR onClockEdge() {
 enum OUT_Format { OUT_HEX, OUT_DECIMAL, OUT_ASCII };
 void processSPIData(OUT_Format format = OUT_HEX) {
     if (newByteAvailable) {
-        bool csActive = !digitalRead(PIN_CS);
-        String message = (csActive ? "SEND" : "IDLE");
-        message += " | ";
+        String message = "";
 
-        switch (format) {
-            case OUT_HEX:
-                message += "M.Send: 0x" + String(byteBufferMOSI, HEX) + " | S.Resp: 0x" + String(byteBufferMISO, HEX);
-                break;
-            case OUT_DECIMAL:
-                message += "M.Send: " + String(byteBufferMOSI) + " | S.Resp: " + String(byteBufferMISO);
-                break;
-            case OUT_ASCII:
-                message += "M.Send: '" + String((char)byteBufferMOSI) + "' | S.Resp: '" + String((char)byteBufferMISO) + "'";
-                break;
+        if (csActive) {
+            message += "--> ";
+
+            switch (format) {
+                case OUT_HEX:
+                    message += "M.Send: 0x" + String(byteBufferMOSI, HEX) + " | S.Resp: 0x" + String(byteBufferMISO, HEX);
+                    break;
+                case OUT_DECIMAL:
+                    message += "M.Send: " + String(byteBufferMOSI) + " | S.Resp: " + String(byteBufferMISO);
+                    break;
+                case OUT_ASCII:
+                    message += "M.Send: '" + String((char)byteBufferMOSI) + "' | S.Resp: '" + String((char)byteBufferMISO) + "'";
+                    break;
+            }
+
+            Serial.println(message);
+        } else {
+            Serial.println("===");
         }
 
-        Serial.println(message);
         newByteAvailable = false;
     }
 }
@@ -83,6 +99,8 @@ void setup() {
     pinMode(PIN_CS, INPUT);
 
     attachInterrupt(digitalPinToInterrupt(PIN_SCLK), onClockEdge, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_CS), onCSEdge, CHANGE);
+
     Serial.println("SPI Monitor Initialized.");
 }
 
