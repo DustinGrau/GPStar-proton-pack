@@ -24,49 +24,46 @@ enum BitOrder {
 
 BitOrder currentBitOrder = MSB_FIRST; // Default: MSB-first
 
-// SPI monitoring variables
-volatile uint8_t byteBufferMOSI = 0;
-volatile uint8_t byteBufferMISO = 0;
-volatile uint8_t bitCount = 0;
-volatile bool newByteAvailable = false;
+// Circular buffer settings
+const int BUFFER_SIZE = 128;
+volatile uint16_t circularBufferMOSI[BUFFER_SIZE];
+volatile uint16_t circularBufferMISO[BUFFER_SIZE];
 volatile bool csActive = false;
-volatile bool transactionComplete = false;
+volatile int bufferHead = 0;
+volatile int bufferTail = 0;
 
-// Buffer for transaction data
-const int MAX_TRANSACTION_SIZE = 64;
-volatile uint8_t transactionMOSI[MAX_TRANSACTION_SIZE];
-volatile uint8_t transactionMISO[MAX_TRANSACTION_SIZE];
-volatile uint8_t transactionLength = 0;
+#define TRANSACTION_END_MARKER 0xFFF
 
 enum OUT_Format { OUT_HEX, OUT_DECIMAL, OUT_ASCII, OUT_BINARY };
 
 // Process and send SPI data with format options
 void processSPIData(OUT_Format format = OUT_HEX) {
-    if (transactionLength == 0) {
-        Serial.println(); // Print newline if no data
-        return;
-    }
+    if (bufferHead == bufferTail) return; // No data
     
     String message = "";
-    for (int i = 0; i < transactionLength; i++) {
-        if (transactionMOSI[i] == 0 && transactionMISO[i] == 0) {
-          Serial.println(); // Print newline if no data
+    while (bufferHead != bufferTail) {
+        uint16_t mosiData = circularBufferMOSI[bufferTail];
+        uint16_t misoData = circularBufferMISO[bufferTail];
+        bufferTail = (bufferTail + 1) % BUFFER_SIZE;
+        
+        if (mosiData == TRANSACTION_END_MARKER && misoData == TRANSACTION_END_MARKER) {
+            Serial.println(); // Transaction boundary
+            continue;
         }
-        else {
-          switch (format) {
-              case OUT_HEX:
-                  message += "0x" + String(transactionMOSI[i], HEX) + " --> <-- 0x" + String(transactionMISO[i], HEX) + "\n";
-                  break;
-              case OUT_DECIMAL:
-                  message += String(transactionMOSI[i]) + " --> <-- " + String(transactionMISO[i]) + "\n";
-                  break;
-              case OUT_ASCII:
-                  message += "'" + String((char)transactionMOSI[i]) + "' --> <-- '" + String((char)transactionMISO[i]) + "'\n";
-                  break;
-              case OUT_BINARY:
-                  message += "0b" + String(transactionMOSI[i], BIN) + " --> <-- 0b" + String(transactionMISO[i], BIN) + "\n";
-                  break;
-          }
+        
+        switch (format) {
+            case OUT_HEX:
+                message += "0x" + String(mosiData, HEX) + " --> <-- 0x" + String(misoData, HEX) + "\n";
+                break;
+            case OUT_DECIMAL:
+                message += String(mosiData) + " --> <-- " + String(misoData) + "\n";
+                break;
+            case OUT_ASCII:
+                message += "'" + String((char)mosiData) + "' --> <-- '" + String((char)misoData) + "'\n";
+                break;
+            case OUT_BINARY:
+                message += "0b" + String(mosiData, BIN) + " --> <-- 0b" + String(misoData, BIN) + "\n";
+                break;
         }
     }
     Serial.print(message);
@@ -74,17 +71,20 @@ void processSPIData(OUT_Format format = OUT_HEX) {
 
 // Interrupt on SPI clock signal
 void IRAM_ATTR onClockEdge() {
-    bool clockRising = digitalRead(PIN_SCLK); // True if clock transitions from LOW to HIGH
-
-    // Determine data capture based on SPI mode
+    bool clockRising = digitalRead(PIN_SCLK);
     bool captureData = false;
+    
     switch (currentMode) {
-        case MODE0: captureData = clockRising; break;  // Capture on rising edge
-        case MODE1: captureData = !clockRising; break; // Capture on falling edge
-        case MODE2: captureData = !clockRising; break; // Capture on falling edge
-        case MODE3: captureData = clockRising; break;  // Capture on rising edge
+        case MODE0: captureData = clockRising; break;
+        case MODE1: captureData = !clockRising; break;
+        case MODE2: captureData = !clockRising; break;
+        case MODE3: captureData = clockRising; break;
     }
-
+    
+    static uint8_t byteBufferMOSI = 0;
+    static uint8_t byteBufferMISO = 0;
+    static uint8_t bitCount = 0;
+    
     if (captureData) {
         if (currentBitOrder == MSB_FIRST) {
             byteBufferMOSI <<= 1;
@@ -99,17 +99,15 @@ void IRAM_ATTR onClockEdge() {
         }
     }
     
-    bitCount++;  
+    bitCount++;
     if (bitCount == 8) {
         bitCount = 0;
-        newByteAvailable = true;
-        if (transactionLength < MAX_TRANSACTION_SIZE) {
-            transactionMOSI[transactionLength] = byteBufferMOSI;
-            transactionMISO[transactionLength] = byteBufferMISO;
-            transactionLength++;
+        int nextHead = (bufferHead + 1) % BUFFER_SIZE;
+        if (nextHead != bufferTail) { // Ensure space in buffer
+            circularBufferMOSI[bufferHead] = byteBufferMOSI;
+            circularBufferMISO[bufferHead] = byteBufferMISO;
+            bufferHead = nextHead;
         }
-        byteBufferMOSI = 0;
-        byteBufferMISO = 0;
     }
 }
 
@@ -117,9 +115,12 @@ void IRAM_ATTR onClockEdge() {
 void IRAM_ATTR onCSEdge() {
     csActive = !digitalRead(PIN_CS);
     if (!csActive) {
-        transactionComplete = true;
-    } else {
-        transactionLength = 0; // Reset buffer on new transaction
+        int nextHead = (bufferHead + 1) % BUFFER_SIZE;
+        if (nextHead != bufferTail) {
+            circularBufferMOSI[bufferHead] = TRANSACTION_END_MARKER;
+            circularBufferMISO[bufferHead] = TRANSACTION_END_MARKER;
+            bufferHead = nextHead;
+        }
     }
 }
 
@@ -129,16 +130,13 @@ void setup() {
     pinMode(PIN_MISO, INPUT);
     pinMode(PIN_SCLK, INPUT);
     pinMode(PIN_CS, INPUT);
-
+    
     attachInterrupt(digitalPinToInterrupt(PIN_SCLK), onClockEdge, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_CS), onCSEdge, CHANGE);
-
+    
     Serial.println("SPI Monitor Initialized.");
 }
 
 void loop() {    
-    if (transactionComplete) {
-        processSPIData(OUT_HEX);
-        transactionComplete = false;
-    }
-}
+    processSPIData(OUT_HEX);
+} 
