@@ -47,7 +47,11 @@ void processSPIData(OUT_Format format = OUT_HEX) {
         bufferTail = (bufferTail + 1) % BUFFER_SIZE;
         
         if (mosiData == TRANSACTION_END_MARKER && misoData == TRANSACTION_END_MARKER) {
-            Serial.println(); // Transaction boundary
+            static unsigned long lastPrintTime = 0;
+            if (millis() - lastPrintTime >= 100) {
+                Serial.println(); // Transaction boundary, limited to once per 100ms
+                lastPrintTime = millis();
+            }
             continue;
         }
         
@@ -139,4 +143,4 @@ void setup() {
 
 void loop() {    
     processSPIData(OUT_HEX);
-} 
+}
