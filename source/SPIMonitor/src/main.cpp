@@ -14,7 +14,7 @@ enum SPIMode {
     MODE3  // CPOL = 1, CPHA = 1 (Clock idle HIGH, data captured on rising edge, output on falling edge)
 };
 
-SPIMode currentMode = MODE0; // Default SPI mode
+SPIMode currentMode = MODE1; // Default: SPI Mode 0
 
 // Enum for bit order
 enum BitOrder {
@@ -22,7 +22,7 @@ enum BitOrder {
     LSB_FIRST
 };
 
-BitOrder currentBitOrder = MSB_FIRST; // Default to MSB-first
+BitOrder currentBitOrder = MSB_FIRST; // Default: MSB-first
 
 // SPI monitoring variables
 volatile uint8_t byteBufferMOSI = 0;
@@ -32,51 +32,49 @@ volatile bool newByteAvailable = false;
 volatile bool csActive = false;
 volatile bool transactionComplete = false;
 
+// Buffer for transaction data
+const int MAX_TRANSACTION_SIZE = 64;
+volatile uint8_t transactionMOSI[MAX_TRANSACTION_SIZE];
+volatile uint8_t transactionMISO[MAX_TRANSACTION_SIZE];
+volatile uint8_t transactionLength = 0;
+
 enum OUT_Format { OUT_HEX, OUT_DECIMAL, OUT_ASCII, OUT_BINARY };
-
-// Transaction buffer
-String transactionBuffer = "";
-
-// Timing variables for clock frequency estimation
-volatile unsigned long lastClockTime = 0;
-volatile unsigned long clockPeriodSum = 0;
-volatile uint8_t clockEdgeCount = 0;
-float estimatedClockFreq = 0.0;
 
 // Process and send SPI data with format options
 void processSPIData(OUT_Format format = OUT_HEX) {
-    if (newByteAvailable) {
-        String message = "";
-        switch (format) {
-            case OUT_HEX:
-                message = "0x" + String(byteBufferMOSI, HEX) + " --> <-- 0x" + String(byteBufferMISO, HEX);
-                break;
-            case OUT_DECIMAL:
-                message = String(byteBufferMOSI) + " --> <-- " + String(byteBufferMISO);
-                break;
-            case OUT_ASCII:
-                message = "'" + String((char)byteBufferMOSI) + "' --> <-- '" + String((char)byteBufferMISO) + "'";
-                break;
-            case OUT_BINARY:
-                message = "0b" + String(byteBufferMOSI, BIN) + " --> <-- 0b" + String(byteBufferMISO, BIN);
-                break;
-        }
-        transactionBuffer += message + "\n";
-        newByteAvailable = false;
+    if (transactionLength == 0) {
+        Serial.println(); // Print newline if no data
+        return;
     }
+    
+    String message = "";
+    for (int i = 0; i < transactionLength; i++) {
+        if (transactionMOSI[i] == 0 && transactionMISO[i] == 0) {
+          Serial.println(); // Print newline if no data
+        }
+        else {
+          switch (format) {
+              case OUT_HEX:
+                  message += "0x" + String(transactionMOSI[i], HEX) + " --> <-- 0x" + String(transactionMISO[i], HEX) + "\n";
+                  break;
+              case OUT_DECIMAL:
+                  message += String(transactionMOSI[i]) + " --> <-- " + String(transactionMISO[i]) + "\n";
+                  break;
+              case OUT_ASCII:
+                  message += "'" + String((char)transactionMOSI[i]) + "' --> <-- '" + String((char)transactionMISO[i]) + "'\n";
+                  break;
+              case OUT_BINARY:
+                  message += "0b" + String(transactionMOSI[i], BIN) + " --> <-- 0b" + String(transactionMISO[i], BIN) + "\n";
+                  break;
+          }
+        }
+    }
+    Serial.print(message);
 }
 
 // Interrupt on SPI clock signal
 void IRAM_ATTR onClockEdge() {
-    unsigned long currentTime = micros();
     bool clockRising = digitalRead(PIN_SCLK); // True if clock transitions from LOW to HIGH
-
-    // Estimate clock frequency
-    // if (lastClockTime > 0) {
-    //     clockPeriodSum += (currentTime - lastClockTime);
-    //     clockEdgeCount++;
-    // }
-    // lastClockTime = currentTime;
 
     // Determine data capture based on SPI mode
     bool captureData = false;
@@ -105,7 +103,11 @@ void IRAM_ATTR onClockEdge() {
     if (bitCount == 8) {
         bitCount = 0;
         newByteAvailable = true;
-        processSPIData(OUT_HEX);
+        if (transactionLength < MAX_TRANSACTION_SIZE) {
+            transactionMOSI[transactionLength] = byteBufferMOSI;
+            transactionMISO[transactionLength] = byteBufferMISO;
+            transactionLength++;
+        }
         byteBufferMOSI = 0;
         byteBufferMISO = 0;
     }
@@ -116,12 +118,8 @@ void IRAM_ATTR onCSEdge() {
     csActive = !digitalRead(PIN_CS);
     if (!csActive) {
         transactionComplete = true;
-
-        // if (clockEdgeCount > 0) {
-        //     estimatedClockFreq = 1e6 / (clockPeriodSum / (float)clockEdgeCount);
-        //     clockPeriodSum = 0;
-        //     clockEdgeCount = 0;
-        // }
+    } else {
+        transactionLength = 0; // Reset buffer on new transaction
     }
 }
 
@@ -140,13 +138,7 @@ void setup() {
 
 void loop() {    
     if (transactionComplete) {
-        if (transactionBuffer.length() > 0) {
-            Serial.println(transactionBuffer);
-            Serial.print("Estimated Clock Frequency: ");
-            Serial.print(estimatedClockFreq);
-            Serial.println(" Hz");
-            transactionBuffer = "";
-        }
+        processSPIData(OUT_HEX);
         transactionComplete = false;
     }
 }
