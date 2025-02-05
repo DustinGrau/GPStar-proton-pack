@@ -14,7 +14,7 @@ enum SPIMode {
     MODE3  // CPOL = 1, CPHA = 1 (Clock idle HIGH, data captured on rising edge, output on falling edge)
 };
 
-SPIMode currentMode = MODE1; // Default: SPI Mode 0
+SPIMode currentMode = MODE0; // Default: SPI Mode 0
 
 // Enum for bit order
 enum BitOrder {
