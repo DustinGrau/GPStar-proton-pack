@@ -302,11 +302,11 @@ void setup() {
   ledcWrite(CENTER_LED, i_min_power); // Ensure the device is off
 
   // Configure the blower fan.
-  ledcAttachChannel(BLOWER_PIN, 10000, 8, BLOWER_PIN); // Uses 10 kHz frequency, 8-bit resolution, channel 6
+  ledcAttachChannel(BLOWER_PIN, 8000, 8, BLOWER_PIN); // Uses 8 kHz frequency, 8-bit resolution, channel 6
   ledcWrite(BLOWER_PIN, i_min_power); // Ensure the device is off
 
   // Configure the smoke (coil + pump) device.
-  ledcAttachChannel(SMOKE_PIN, 1500, 8, SMOKE_PIN); // Uses 1.5 kHz frequency, 8-bit resolution, channel 7
+  ledcAttachChannel(SMOKE_PIN, 2000, 8, SMOKE_PIN); // Uses 2 kHz frequency, 8-bit resolution, channel 7
   ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
 
   // Set up for reading the switches to determine door state.
