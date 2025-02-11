@@ -64,13 +64,13 @@ void updateLEDs() {
     device_leds[0] = getHueAsGRB(0, C_RED, 128);
   }
 
-  if (ms_centerled.isRunning() && ledcRead(CENTER_LED) == i_min_power) {
+  if (ms_light.isRunning() && ledcRead(CENTER_LED) == i_min_power) {
     // While the timer is active, keep the center LED lit.
     debug(F("LED On"));
     ledcWrite(CENTER_LED, i_max_power);
   }
 
-  if (ms_centerled.justFinished()) {
+  if (ms_light.justFinished()) {
     debug(F("LED Off"));
     ledcWrite(CENTER_LED, i_min_power);
   }
@@ -116,23 +116,29 @@ void switchLoops() {
 }
 
 /*
+ * Returns true when doors are closed.
+ */
+bool doorsClosed() {
+  return (digitalRead(DOOR_CLOSED_PIN) == 1 && digitalRead(DOOR_OPENED_PIN) == 0);
+}
+
+/*
+ * Returns true when doors are opened.
+ */
+bool doorsOpened() {
+  return (digitalRead(DOOR_CLOSED_PIN) == 0 && digitalRead(DOOR_OPENED_PIN) == 1);
+}
+
+/*
  * Monitor for interactions by user input.
  */
-void checkUserInputs() {
-  enum DOOR_STATES LAST_DOOR_STATE;
-  LAST_DOOR_STATE = DOOR_STATE;
-
+void checkDoors() {
   // Determine whether the trap doors are currently opened or closed.
-  if (digitalRead(DOOR_CLOSED_PIN) == 1 && digitalRead(DOOR_OPENED_PIN) == 0) {
+  if (doorsClosed()) {
     DOOR_STATE = DOORS_CLOSED;
   }
-  if (digitalRead(DOOR_CLOSED_PIN) == 0 && digitalRead(DOOR_OPENED_PIN) == 1) {
+  if (doorsOpened()) {
     DOOR_STATE = DOORS_OPENED;
-  }
-
-  // Trigger an update to the user that the doors have changed state.
-  if (LAST_DOOR_STATE != DOOR_STATE) {
-    notifyWSClients();
   }
 }
 
@@ -142,7 +148,7 @@ void checkUserInputs() {
 void stopSmoke() {
   // Stop any existing timers before proceeding.
   ms_blower.stop();
-  ms_centerled.stop();
+  ms_light.stop();
   ms_smoke.stop();
 
   // Shut down any running devices.
@@ -155,13 +161,12 @@ void stopSmoke() {
  * Execute a smoke sequence for a given duration.
  */
 void startSmoke(uint16_t i_duration) {
-  // Stop any running smoke.
-  stopSmoke();
-
-  // If enabled, begin setting timers for the various devices (LED, blower, and smoke).
-  if (b_smoke_enabled && i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
-    ms_centerled.start(i_duration * 1.5); // Keep the LED lit only 1.5x the smoke duration.
-    ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
-    ms_smoke.start(i_duration); // Only run smoke for as long as the system will allow.
+  if (!ms_smoke.isRunning()) {
+    // If enabled, begin setting timers for the various devices (LED, blower, and smoke).
+    if (b_smoke_enabled && i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
+      ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
+      ms_light.start(i_duration * 1.5); // Keep the LED lit only 1.5x the smoke duration.
+      ms_smoke.start(i_duration); // Only run smoke for as long as the system will allow.
+    }
   }
 }

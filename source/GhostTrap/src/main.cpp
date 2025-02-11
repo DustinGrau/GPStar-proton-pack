@@ -190,12 +190,14 @@ void UserInputTask(void *parameter) {
       Serial.println(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
-    checkUserInputs(); // Check for any user interactions.
+    checkDoors(); // Check for door state (open/close).
 
-    if (DOOR_STATE == DOORS_OPENED) {
-      // We need to call this once when necessary, and avoid repeated calls.
-      //startSmoke(5000);
+    // Trigger an update to the user that the doors have changed state.
+    if (LAST_DOOR_STATE != DOORS_UNKNOWN && LAST_DOOR_STATE != DOOR_STATE) {
+      notifyWSClients(); // Alert connected clients that the doors changed.
+      startSmoke(3000); // Run smoke for 3 seconds after door state change.
     }
+    LAST_DOOR_STATE = DOOR_STATE; // Remember the latest door state.
 
     vTaskDelay(14 / portTICK_PERIOD_MS); // 14ms delay
   }
@@ -311,6 +313,7 @@ void setup() {
   pinMode(DOOR_CLOSED_PIN, INPUT);
   pinMode(DOOR_OPENED_PIN, INPUT);
   DOOR_STATE = DOORS_UNKNOWN; // Default until we first read the pins.
+  LAST_DOOR_STATE = DOOR_STATE; // Keep setting in sync until read.
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.

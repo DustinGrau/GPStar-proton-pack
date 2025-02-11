@@ -234,4 +234,12 @@ function enableSmoke() {
 function disableSmoke() {
   sendCommand("/smoke/disable");
 }
+
+function lightOn() {
+  sendCommand("/light/on");
+}
+
+function lightOff() {
+  sendCommand("/light/off");
+}
 )=====";

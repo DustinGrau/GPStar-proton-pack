@@ -34,6 +34,7 @@
 void notifyWSClients();
 void setupRouting();
 void startSmoke(uint16_t i_duration);
+void stopSmoke();
 
 /*
  * Web Handler Functions - Performs actions or returns data for web UI
@@ -534,7 +535,12 @@ void handleSmokeRun(AsyncWebServerRequest *request) {
   }
 
   if(i_smoke_duration >= i_smoke_duration_min && i_smoke_duration <= i_smoke_duration_max) {
+    // Stop any running smoke.
+    stopSmoke();
+
+    // Run smoke for some duration.
     startSmoke(i_smoke_duration);
+
     request->send(200, "application/json", status);
   }
   else {
@@ -545,6 +551,18 @@ void handleSmokeRun(AsyncWebServerRequest *request) {
     serializeJson(jsonBody, result); // Serialize to string.
     request->send(200, "application/json", result);
   }
+}
+
+void handleLightOn(AsyncWebServerRequest *request) {
+  ms_light.stop();
+  ms_light.start(20000); // Turn on for 20 seconds steady.
+  request->send(200, "application/json", status);
+}
+
+void handleLightOff(AsyncWebServerRequest *request) {
+  ms_light.stop();
+  ms_light.start(1); // Set a short timer to force light off.
+  request->send(200, "application/json", status);
 }
 
 void setupRouting() {
@@ -571,6 +589,8 @@ void setupRouting() {
   httpServer.on("/smoke/enable", HTTP_PUT, handleSmokeEnable);
   httpServer.on("/smoke/disable", HTTP_PUT, handleSmokeDisable);
   httpServer.on("/smoke/run", HTTP_PUT, handleSmokeRun);
+  httpServer.on("/light/on", HTTP_PUT, handleLightOn);
+  httpServer.on("/light/off", HTTP_PUT, handleLightOff);
 
   // Body Handlers
   httpServer.addHandler(handleSaveDeviceConfig); // /config/device/save

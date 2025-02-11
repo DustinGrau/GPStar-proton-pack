@@ -39,7 +39,7 @@ CRGB device_leds[DEVICE_NUM_LEDS];
  * Timers for Devices
  */
 millisDelay ms_blower;
-millisDelay ms_centerled;
+millisDelay ms_light;
 millisDelay ms_smoke;
 
 /*
@@ -74,6 +74,7 @@ enum DOOR_STATES : uint8_t {
   DOORS_OPENED = 2
 };
 enum DOOR_STATES DOOR_STATE;
+enum DOOR_STATES LAST_DOOR_STATE;
 
 // Forward declarations.
 void debug(String message);

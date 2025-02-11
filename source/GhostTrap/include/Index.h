@@ -72,6 +72,11 @@ const char INDEX_page[] PROGMEM = R"=====(
       <button type="button" class="orange" onclick="runSmoke(5000)" id="btnSmoke5">Smoke 5sec.</button>
       <br/>
       <br/>
+      <button type="button" class="blue" onclick="lightOn()" id="btnLightOn">LED On</button>
+      &nbsp;&nbsp;
+      <button type="button" class="blue" onclick="lightOff()" id="btnLightOff">LED Off</button>
+      <br/>
+      <br/>
       <br/>
     </div>
   </div>
