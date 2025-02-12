@@ -354,11 +354,11 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
     }
 
     if(jsonBody["openedSmokeDuration"].is<uint8_t>()) {
-      i_smoke_opened_duration = jsonBody["openedSmokeDuration"].as<uint8_t>() * 1000; // Conver to MS.
+      i_smoke_opened_duration = jsonBody["openedSmokeDuration"].as<uint8_t>() * 1000; // Convert to MS.
     }
 
     if(jsonBody["closedSmokeDuration"].is<uint8_t>()) {
-      i_smoke_closed_duration = jsonBody["closedSmokeDuration"].as<uint8_t>() * 1000; // Conver to MS.
+      i_smoke_closed_duration = jsonBody["closedSmokeDuration"].as<uint8_t>() * 1000; // Convert to MS.
     }
 
     // Accesses namespace in read/write mode.
