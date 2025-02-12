@@ -192,6 +192,10 @@ String getDeviceConfig() {
   jsonBody["wifiNameExt"] = wifi_ssid;
   jsonBody["extAddr"] = wifi_address;
   jsonBody["extMask"] = wifi_subnet;
+  jsonBody["openedSmokeEnabled"] = b_smoke_opened_enabled;
+  jsonBody["closedSmokeEnabled"] = b_smoke_closed_enabled;
+  jsonBody["openedSmokeDuration"] = i_smoke_opened_duration;
+  jsonBody["closedSmokeDuration"] = i_smoke_closed_duration;
 
   // Serialize JSON object to string.
   serializeJson(jsonBody, equipSettings);
@@ -333,6 +337,28 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
           DISPLAY_TYPE = STATUS_BOTH;
         break;
       }
+    }
+
+    if(jsonBody["openedSmokeEnabled"].is<bool>()) {
+      b_smoke_opened_enabled = jsonBody["openedSmokeEnabled"].as<bool>();
+    }
+    else {
+      b_smoke_opened_enabled = false;
+    }
+
+    if(jsonBody["closedSmokeEnabled"].is<bool>()) {
+      b_smoke_closed_enabled = jsonBody["closedSmokeEnabled"].as<bool>();
+    }
+    else {
+      b_smoke_closed_enabled = false;
+    }
+
+    if(jsonBody["openedSmokeDuration"].is<uint16_t>()) {
+      i_smoke_opened_duration = jsonBody["openedSmokeDuration"].as<uint16_t>();
+    }
+
+    if(jsonBody["closedSmokeDuration"].is<uint16_t>()) {
+      i_smoke_closed_duration = jsonBody["closedSmokeDuration"].as<uint16_t>();
     }
 
     // Accesses namespace in read/write mode.

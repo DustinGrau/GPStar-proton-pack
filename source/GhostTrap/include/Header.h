@@ -47,7 +47,7 @@ millisDelay ms_smoke;
  */
 const uint8_t i_min_power = 0; // Essentially a "low" state (off).
 const uint8_t i_max_power = 255; // Essentially a "high" state (on).
-const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke.
+const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke (1 second).
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
 
 /*
@@ -75,6 +75,14 @@ enum DOOR_STATES : uint8_t {
 };
 enum DOOR_STATES DOOR_STATE;
 enum DOOR_STATES LAST_DOOR_STATE;
+
+/*
+ * Smoke Control
+ */
+bool b_smoke_opened_enabled = true;
+bool b_smoke_closed_enabled = true;
+uint16_t i_smoke_opened_duration = 2000;
+uint16_t i_smoke_closed_duration = 3000;
 
 // Forward declarations.
 void debug(String message);

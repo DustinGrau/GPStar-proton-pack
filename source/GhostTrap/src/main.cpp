@@ -195,7 +195,14 @@ void UserInputTask(void *parameter) {
     // Trigger an update to the user that the doors have changed state.
     if (LAST_DOOR_STATE != DOORS_UNKNOWN && LAST_DOOR_STATE != DOOR_STATE) {
       notifyWSClients(); // Alert connected clients that the doors changed.
-      startSmoke(3000); // Run smoke for 3 seconds after door state change.
+
+      if (DOOR_STATE == DOORS_OPENED && b_smoke_opened_enabled) {
+        startSmoke(i_smoke_opened_duration); // Run smoke for X seconds after doors open.
+        ms_light.start(i_smoke_opened_duration * 2); // Override light timer to double duration.
+      }
+      if (DOOR_STATE == DOORS_CLOSED && b_smoke_closed_enabled) {
+        startSmoke(i_smoke_closed_duration); // Run smoke for X seconds after doors close.
+      }
     }
     LAST_DOOR_STATE = DOOR_STATE; // Remember the latest door state.
 

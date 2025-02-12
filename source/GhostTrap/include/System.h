@@ -162,6 +162,14 @@ void stopSmoke() {
  */
 void startSmoke(uint16_t i_duration) {
   if (!ms_smoke.isRunning()) {
+    // Check lower/upper limits for duration.
+    if (i_duration < i_smoke_duration_min) {
+      i_duration = i_smoke_duration_min;
+    }
+    if (i_duration > i_smoke_duration_max) {
+      i_duration = i_smoke_duration_max;
+    }
+
     // If enabled, begin setting timers for the various devices (LED, blower, and smoke).
     if (b_smoke_enabled && i_duration >= i_smoke_duration_min && i_duration <= i_smoke_duration_max) {
       ms_blower.start(i_duration * 2); // Run the blower twice as long as the smoke duration.
