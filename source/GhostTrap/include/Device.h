@@ -58,6 +58,32 @@ const char DEVICE_page[] PROGMEM = R"=====(
         <option value="2">Both</option>
       </select>
     </div>
+    <div class="setting">
+      <b class="labelSwitch">Smoke on Trap Open:</b>
+      <label class="switch">
+        <input id="openedSmokeEnabled" name="openedSmokeEnabled" type="checkbox">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    <div class="setting">
+      <b>Smoke Duration Opened (Seconds):</b><br/>
+      <input type="range" id="openedSmokeDuration" name="openedSmokeDuration" min="1" max="10" value="1" step="1"
+       oninput="durationOpenedOut.value=openedSmokeDuration.value"/>
+      <output class="labelSlider" id="durationOpenedOut" for="openedSmokeDuration"></output>
+    </div>
+    <div class="setting">
+      <b class="labelSwitch">Smoke on Trap Close:</b>
+      <label class="switch">
+        <input id="closedSmokeEnabled" name="closedSmokeEnabled" type="checkbox">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    <div class="setting">
+      <b>Smoke Duration Closed (Seconds):</b><br/>
+      <input type="range" id="closedSmokeDuration" name="closedSmokeDuration" min="1" max="10" value="1" step="1"
+       oninput="durationClosedOut.value=closedSmokeDuration.value"/>
+      <output class="labelSlider" id="durationClosedOut" for="closedSmokeDuration"></output>
+    </div>
   </div>
 
   <div class="block">
@@ -88,6 +114,16 @@ const char DEVICE_page[] PROGMEM = R"=====(
             // Update fields with the current values, or supply an expected default as necessary.
             setValue("wifiName", settings.wifiName || "");
             setValue("displayType", settings.displayType || 0); // Default: 0 [Text]
+
+            // Smoke settings for doors opening.
+            setToggle("openedSmokeEnabled", settings.openedSmokeEnabled);
+            setValue("openedSmokeDuration", settings.openedSmokeDuration || 1);
+            setHtml("durationOpenedOut", getText("openedSmokeDuration"));
+
+            // Smoke settings for doors closing.
+            setToggle("closedSmokeEnabled", settings.closedSmokeEnabled);
+            setValue("closedSmokeDuration", settings.closedSmokeDuration || 1);
+            setHtml("durationClosedOut", getText("closedSmokeDuration"));
           }
         }
       };
@@ -117,7 +153,11 @@ const char DEVICE_page[] PROGMEM = R"=====(
       // Saves current settings to attenuator, updating runtime variables and making changes immediately effective.
       var settings = {
         wifiName: wifiName,
-        displayType: getInt("displayType")
+        displayType: getInt("displayType"),
+        openedSmokeEnabled: getToggle("openedSmokeEnabled"),
+        closedSmokeEnabled: getToggle("closedSmokeEnabled"),
+        openedSmokeDuration: getInt("openedSmokeDuration") || 1,
+        closedSmokeDuration: getInt("closedSmokeDuration") || 1
       };
       var body = JSON.stringify(settings);
 
