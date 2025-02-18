@@ -58,28 +58,32 @@ const char DEVICE_page[] PROGMEM = R"=====(
         <option value="2">Both</option>
       </select>
     </div>
+  </div>
+
+  <h1>Door Triggers</h1>
+  <div class="block left">
     <div class="setting">
-      <b class="labelSwitch">Smoke on Trap Open:</b>
+      <b class="labelSwitch">Enable Smoke on Trap Open:</b>
       <label class="switch">
         <input id="openedSmokeEnabled" name="openedSmokeEnabled" type="checkbox">
         <span class="slider round"></span>
       </label>
     </div>
     <div class="setting">
-      <b>Smoke Duration Opened (Seconds):</b><br/>
+      <b>Duration when Opened (Seconds):</b><br/>
       <input type="range" id="openedSmokeDuration" name="openedSmokeDuration" min="1" max="10" value="1" step="1"
        oninput="durationOpenedOut.value=openedSmokeDuration.value"/>
       <output class="labelSlider" id="durationOpenedOut" for="openedSmokeDuration"></output>
     </div>
     <div class="setting">
-      <b class="labelSwitch">Smoke on Trap Close:</b>
+      <b class="labelSwitch">Enable Smoke on Trap Close:</b>
       <label class="switch">
         <input id="closedSmokeEnabled" name="closedSmokeEnabled" type="checkbox">
         <span class="slider round"></span>
       </label>
     </div>
     <div class="setting">
-      <b>Smoke Duration Closed (Seconds):</b><br/>
+      <b>Duration when Closed (Seconds):</b><br/>
       <input type="range" id="closedSmokeDuration" name="closedSmokeDuration" min="1" max="10" value="1" step="1"
        oninput="durationClosedOut.value=closedSmokeDuration.value"/>
       <output class="labelSlider" id="durationClosedOut" for="closedSmokeDuration"></output>

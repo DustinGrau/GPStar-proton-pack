@@ -339,14 +339,14 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
       }
     }
 
-    if(jsonBody["openedSmokeEnabled"].is<bool>()) {
+    if(jsonBody["openedSmokeEnabled"].is<unsigned short>()) {
       b_smoke_opened_enabled = jsonBody["openedSmokeEnabled"].as<bool>();
     }
     else {
       b_smoke_opened_enabled = false; // Default to off if value is invalid.
     }
 
-    if(jsonBody["closedSmokeEnabled"].is<bool>()) {
+    if(jsonBody["closedSmokeEnabled"].is<unsigned short>()) {
       b_smoke_closed_enabled = jsonBody["closedSmokeEnabled"].as<bool>();
     }
     else {
@@ -364,6 +364,10 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
     // Accesses namespace in read/write mode.
     if(preferences.begin("device", false)) {
       preferences.putShort("display_type", DISPLAY_TYPE);
+      preferences.putBool("smoke_opened", b_smoke_opened_enabled);
+      preferences.putBool("smoke_closed", b_smoke_closed_enabled);
+      preferences.putShort("smoke_op_dur", i_smoke_opened_duration);
+      preferences.putShort("smoke_cl_dur", i_smoke_closed_duration);
       preferences.end();
     }
 

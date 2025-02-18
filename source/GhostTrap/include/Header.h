@@ -79,8 +79,8 @@ enum DOOR_STATES LAST_DOOR_STATE;
 /*
  * Smoke Control
  */
-bool b_smoke_opened_enabled = true;
-bool b_smoke_closed_enabled = true;
+bool b_smoke_opened_enabled = false;
+bool b_smoke_closed_enabled = false;
 uint16_t i_smoke_opened_duration = 2000;
 uint16_t i_smoke_closed_duration = 3000;
 

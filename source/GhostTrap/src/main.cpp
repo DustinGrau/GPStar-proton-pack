@@ -157,12 +157,23 @@ void PreferencesTask(void *parameter) {
         DISPLAY_TYPE = STATUS_BOTH;
       break;
     }
+
+    // Preferences for smoke (enabled, duration) on doors opened/closed.
+    b_smoke_opened_enabled = preferences.getBool("smoke_opened", false);
+    b_smoke_closed_enabled = preferences.getBool("smoke_closed", false);
+    i_smoke_opened_duration = preferences.getShort("smoke_op_dur", 2000);
+    i_smoke_closed_duration = preferences.getShort("smoke_cl_dur", 3000);
+
     preferences.end();
   }
   else {
     // If namespace is not initialized, open in read/write mode and set defaults.
     if(preferences.begin("device", false)) {
       preferences.putShort("display_type", DISPLAY_TYPE);
+      preferences.putBool("smoke_opened", b_smoke_opened_enabled);
+      preferences.putBool("smoke_closed", b_smoke_closed_enabled);
+      preferences.putShort("smoke_op_dur", i_smoke_opened_duration);
+      preferences.putShort("smoke_cl_dur", i_smoke_closed_duration);
       preferences.end();
     }
   }
