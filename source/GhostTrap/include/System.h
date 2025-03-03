@@ -81,8 +81,11 @@ void updateLEDs() {
  */
 void checkBlower() {
   if (ms_blower.isRunning() && ledcRead(BLOWER_PIN) == i_min_power) {
-    debug(F("Blower On"));
-    ledcWrite(BLOWER_PIN, i_max_power);
+    // If timer is active but power is not applied, turn on the device AFTER the delay period has elapsed.
+    if ((millis() - ms_blower.getStartTime()) >= i_blower_start_delay) {
+      debug(F("Blower On"));
+      ledcWrite(BLOWER_PIN, i_max_power);
+    }
   }
 
   if (ms_blower.justFinished()) {
@@ -96,6 +99,7 @@ void checkBlower() {
  */
 void checkSmoke() {
   if (ms_smoke.isRunning() && ledcRead(SMOKE_PIN) == i_min_power) {
+    // If timer is active but power is not applied, turn on the device immediately.
     debug(F("Smoke On"));
     ledcWrite(SMOKE_PIN, i_max_power);
   }

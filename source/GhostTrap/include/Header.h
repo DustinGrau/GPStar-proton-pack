@@ -49,6 +49,7 @@ const uint8_t i_min_power = 0; // Essentially a "low" state (off).
 const uint8_t i_max_power = 255; // Essentially a "high" state (on).
 const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke (1 second).
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
+const uint16_t i_blower_start_delay = 1500; // Time to delay start of the blower for smoke, allowing built-up (1.5 second).
 
 /*
  * Global flag to enable/disable smoke.
