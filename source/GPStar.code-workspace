@@ -35,13 +35,6 @@
     "editor.detectIndentation": false,
     "editor.indentSize": "2",
     "editor.insertSpaces": true,
-    "editor.tabSize": 2,
-    "files.associations": {
-      "__locale": "cpp",
-      "regex": "cpp",
-      "string": "cpp",
-      "string_view": "cpp",
-      "bitset": "cpp"
-    }
+    "editor.tabSize": 2
   }
 }
