@@ -4,7 +4,7 @@ This document provides guidelines and instructions for using GitHub Copilot effe
 
 ## Project Overview
 
-This project is structured for development with PlatformIO, targeting ATMega and ESP32-based boards. The key components of the project include:
+This project is structured for development with PlatformIO, targeting ESP32-based boards. The key components of the project include:
 
 - **PlatformIO Configuration**: The `platformio.ini` file defines the build environment and dependencies.
 - **Source Code**: The main application logic resides in `src/main.cpp`.
@@ -50,27 +50,32 @@ This project is structured for development with PlatformIO, targeting ATMega and
    - Add unit tests in the `test/` directory.
    - Use PlatformIO's built-in testing framework to run tests.
 
-## Using GitHub Copilot
+## Commenting and Editing Styles
 
-To make the most of GitHub Copilot in this project:
+1. **Thought Process and Plan of Action**:
+   - When making recommendations or edits, clearly lay out the thought process and the plan of action.
+   - Provide a "before" and "after" comparison for edits, allowing for review and approval before changes are finalized.
 
-1. **Context Awareness**:
-   - Ensure that Copilot has access to relevant files by keeping them open in the editor.
-   - Use meaningful function and variable names to guide Copilot's suggestions.
+2. **Commenting Code**:
+   - Functions and methods should include comments explaining their purpose, inputs, outputs, and any side effects.
+   - Objects and classes should be documented to describe their role in the system and their key attributes or methods.
+   - For code involving complex math or algorithms, provide detailed comments explaining the logic and purpose of the calculations.
 
-2. **Code Completion**:
-   - Start typing a function or class name, and Copilot will suggest completions based on the project's existing patterns.
+   Example:
+   ````cpp
+   // Function: calculateTrajectory
+   // Purpose: Computes the trajectory of a projectile based on initial velocity and angle.
+   // Inputs:
+   //   - float velocity: The initial velocity of the projectile (m/s).
+   //   - float angle: The launch angle of the projectile (degrees).
+   // Outputs:
+   //   - float: The computed trajectory distance (meters).
+   float calculateTrajectory(float velocity, float angle) {
+       // Convert angle to radians for trigonometric calculations
+       float angleRadians = angle * (PI / 180.0);
 
-3. **Documentation**:
-   - Write clear comments and docstrings to help Copilot generate accurate suggestions.
+       // Use the physics formula: distance = (velocity^2 * sin(2 * angle)) / gravity
+       float distance = (pow(velocity, 2) * sin(2 * angleRadians)) / GRAVITY;
 
-4. **Custom Functions**:
-   - When creating new functions, follow the naming conventions and patterns used in existing files.
-
-## Additional Notes
-
-- Refer to the `platformio.ini` file for build configurations and dependencies.
-- Use the `.vscode/` directory for editor-specific settings, such as debugging configurations.
-- Keep the `lib/` directory organized and document any custom libraries in the `README` file.
-
-By following these guidelines, you can ensure consistency and maintainability in your codebase while leveraging GitHub Copilot effectively.
+       return distance;
+   }
