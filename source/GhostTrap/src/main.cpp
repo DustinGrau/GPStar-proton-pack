@@ -308,6 +308,9 @@ void setup() {
 
   // RGB LEDs for effects (upper/lower) and user status (top).
   FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
+  
+  // RGB LEDs for the top of the trap (Frutto Technology).
+  FastLED.addLeds<NEOPIXEL, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
 
   // Get initial switch/button states.
   switchLoops();
@@ -326,6 +329,10 @@ void setup() {
   // Configure the smoke (coil + pump) device.
   ledcAttachChannel(SMOKE_PIN, 2000, 8, SMOKE_PIN); // Uses 2 kHz frequency, 8-bit resolution, channel 7
   ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
+
+  // Configure the top (white) LEDs.
+  ledcAttachChannel(TOP_2WHITE, 1000, 8, TOP_2WHITE); // Uses 1 kHz frequency, 8-bit resolution, channel 10
+  ledcWrite(TOP_2WHITE, i_min_power); // Ensure the device is off
 
   // Set up for reading the switches to determine door state.
   pinMode(DOOR_CLOSED_PIN, INPUT);
