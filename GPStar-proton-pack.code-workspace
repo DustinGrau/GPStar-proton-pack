@@ -1,9 +1,45 @@
 {
 	"folders": [
-		{
-			"path": "."
-		}
-	],
+    {
+      "path": "."
+    },
+    {
+      "name": "Animations",
+      "path": "source/Animations"
+    },
+    {
+      "name": "AttenuatorESP32",
+      "path": "source/AttenuatorESP32"
+    },
+    {
+      "name": "AttenuatorNano",
+      "path": "source/AttenuatorNano"
+    },
+    {
+      "name": "BeltGizmo",
+      "path": "source/BeltGizmo"
+    },
+    {
+      "name": "GhostTrap",
+      "path": "source/GhostTrap"
+    },
+    {
+      "name": "NeutronaWand",
+      "path": "source/NeutronaWand"
+    },
+    {
+      "name": "ProtonPack",
+      "path": "source/ProtonPack"
+    },
+    {
+      "name": "SingleShot",
+      "path": "source/SingleShot"
+    },
+    {
+      "name": "StreamEffects",
+      "path": "source/StreamEffects"
+    }
+  ],
 	"settings": {
 	  "editor.detectIndentation": false,
 	  "editor.indentSize": "2",
