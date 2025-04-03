@@ -1,34 +1,37 @@
 {
   "folders": [
     {
-      "path": "BeltGizmo"
+      "path": "source/Animations"
     },
     {
-      "path": "AttenuatorESP32"
+      "path": "source/BeltGizmo"
     },
     {
-      "path": "AttenuatorNano"
+      "path": "source/AttenuatorESP32"
     },
     {
-      "path": "SPIMonitor"
+      "path": "source/AttenuatorNano"
     },
     {
-      "path": "Communications"
+      "path": "source/SPIMonitor"
     },
     {
-      "path": "GhostTrap"
+      "path": "source/Communications"
     },
     {
-      "path": "ProtonPack"
+      "path": "source/GhostTrap"
     },
     {
-      "path": "NeutronaWand"
+      "path": "source/ProtonPack"
     },
     {
-      "path": "SingleShot"
+      "path": "source/NeutronaWand"
     },
     {
-      "path": "StreamEffects"
+      "path": "source/SingleShot"
+    },
+    {
+      "path": "source/StreamEffects"
     }
   ],
   "settings": {
