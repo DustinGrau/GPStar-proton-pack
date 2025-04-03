@@ -330,8 +330,8 @@ void setup() {
   ledcAttachChannel(SMOKE_PIN, 2000, 8, SMOKE_PIN); // Uses 2 kHz frequency, 8-bit resolution, channel 7
   ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
 
-  // Configure the top (white) LEDs.
-  ledcAttachChannel(TOP_2WHITE, 1000, 8, TOP_2WHITE); // Uses 1 kHz frequency, 8-bit resolution, channel 10
+  // Set pin for the top 2 white lights LOW (off).
+  ledcAttachChannel(TOP_2WHITE, 8000, 8, TOP_2WHITE); // Uses 8 kHz frequency, 8-bit resolution, channel 10
   ledcWrite(TOP_2WHITE, i_min_power); // Ensure the device is off
 
   // Set up for reading the switches to determine door state.

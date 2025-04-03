@@ -78,9 +78,9 @@ void updateLEDs() {
   // For testing, always keep the top LEDs lit.
   ledcWrite(TOP_2WHITE, i_max_power);
 
-  // Set the top LEDs to white.
+  // For testing, set the top LEDs to white.
   for (int i = 0; i < NUM_TOP_PIXELS; i++) {
-    top_leds[i] = getHueAsGRB(i, C_WHITE, 255);
+    top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
   }
 }
 
