@@ -23,7 +23,7 @@ void setup() {
     whitePinDelay.start(WHITE_TOGGLE_DELAY);
 }
 
-void loop() {
+void updateColorAnimation() {
     static uint8_t hue = 0;
 
     if (colorChangeDelay.justFinished()) {
@@ -32,11 +32,18 @@ void loop() {
         FastLED.show();
         hue += 10; // Increment hue for next cycle
     }
+}
 
+void toggleWhitePin() {
     if (whitePinDelay.justFinished()) {
         whitePinDelay.repeat(); // Restart the delay
         static bool whitePinState = LOW;
         whitePinState = !whitePinState; // Toggle state
         digitalWrite(WHITE_PIN, whitePinState);
     }
+}
+
+void loop() {
+    updateColorAnimation();
+    toggleWhitePin();
 }
