@@ -19,6 +19,14 @@
 
 #pragma once
 
+// Reserved for I2C Bus
+// SDA -> GPIO21
+// SLC -> GPIO22
+
+// Reserved for Serial2
+// RX2 -> GPIO16
+// TX2 -> GPIO17
+
 /*
  * Pin for Addressable LEDs
  */
@@ -32,8 +40,8 @@ CRGB device_leds[DEVICE_NUM_LEDS];
 #define BLOWER_PIN 18
 #define CENTER_LED 19
 #define SMOKE_PIN 23
-#define DOOR_CLOSED_PIN 34 // Green Socket
-#define DOOR_OPENED_PIN 35 // Red Socket
+#define DOOR_CLOSED_PIN 34 // Green Socket (Input Only)
+#define DOOR_OPENED_PIN 35 // Red Socket (Input Only)
 #define TOP_2WHITE 32 // Frutto top panel (2 white LEDs)
 #define TOP_PIXELS 33 // Frutto top panel (12 RGB pixels)
 
