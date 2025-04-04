@@ -39,7 +39,6 @@ CRGB device_leds[DEVICE_NUM_LEDS];
  * Pins for Devices
  */
 #define BLOWER_PIN 18
-#define CENTER_LED 19
 #define SMOKE_PIN 23
 #define TOP_2WHITE 32 // Frutto top panel (2 white LEDs)
 #define TOP_PIXELS 33 // Frutto top panel (12 RGB pixels)

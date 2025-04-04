@@ -66,23 +66,23 @@ void updateLEDs() {
     digitalWrite(BUILT_IN_LED, LOW);
   }
 
-  if (ms_light.isRunning() && ledcRead(CENTER_LED) == i_min_power) {
+  if (ms_light.isRunning() && digitalRead(TOP_2WHITE) == LOW) {
     // While the timer is active, keep the center LED lit.
     debug(F("LED On"));
-    ledcWrite(CENTER_LED, i_max_power);
+    digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
+
+    // Set the top LEDs to some color.
+    for (int i = 0; i < NUM_TOP_PIXELS; i++) {
+      top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
+    }
   }
 
   if (ms_light.justFinished()) {
     debug(F("LED Off"));
-    ledcWrite(CENTER_LED, i_min_power);
-  }
+    digitalWrite(TOP_2WHITE, LOW); // Set to LOW (off)
 
-  // For testing, always keep the top LEDs lit.
-  digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
-
-  // For testing, set the top LEDs to some color.
-  for (int i = 0; i < NUM_TOP_PIXELS; i++) {
-    top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
+    // Turn off the LEDs (set to black) using FastLED.
+    fill_solid(top_leds, NUM_TOP_PIXELS, CRGB::Black);
   }
 }
 
@@ -167,8 +167,11 @@ void stopSmoke() {
 
   // Shut down any running devices.
   ledcWrite(BLOWER_PIN, i_min_power);
-  ledcWrite(CENTER_LED, i_min_power);
   ledcWrite(SMOKE_PIN, i_min_power);
+  digitalWrite(TOP_2WHITE, LOW);
+
+  // Turn off the LEDs (set to black) using FastLED.
+  fill_solid(top_leds, NUM_TOP_PIXELS, CRGB::Black);
 }
 
 /*

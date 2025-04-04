@@ -318,10 +318,6 @@ void setup() {
   // Delay before configuring and running tasks.
   delay(200);
 
-  // Configure the center (white) LED inside the trap.
-  ledcAttachChannel(CENTER_LED, 1000, 8, CENTER_LED); // Uses 1 kHz frequency, 8-bit resolution, channel 5
-  ledcWrite(CENTER_LED, i_min_power); // Ensure the device is off
-
   // Configure the blower fan.
   ledcAttachChannel(BLOWER_PIN, 8000, 8, BLOWER_PIN); // Uses 8 kHz frequency, 8-bit resolution, channel 6
   ledcWrite(BLOWER_PIN, i_min_power); // Ensure the device is off
