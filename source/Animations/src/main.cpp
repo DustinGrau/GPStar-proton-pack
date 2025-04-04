@@ -6,10 +6,10 @@
 #include <millisDelay.h>
 
 // Pin and LED configuration
+#define WHITE_PIN 32
 #define PIXEL_PIN 33
-#define WHITE_PIN 34
 #define NUM_LEDS 12
-#define COLOR_CHANGE_DELAY 500 // milliseconds
+#define COLOR_CHANGE_DELAY 200 // milliseconds
 #define WHITE_TOGGLE_DELAY 1000 // milliseconds
 
 CRGB pixels[NUM_LEDS];
@@ -40,6 +40,8 @@ void toggleWhitePin() {
         static bool whitePinState = LOW;
         whitePinState = !whitePinState; // Toggle state
         digitalWrite(WHITE_PIN, whitePinState);
+        Serial.print("WHITE_PIN state: ");
+        Serial.println(whitePinState ? "HIGH" : "LOW");
     }
 }
 

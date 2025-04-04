@@ -58,10 +58,12 @@ void printPartitions() {
 void updateLEDs() {
   if(b_ap_started && b_ws_started) {
     // Set the built-in LED to green to indicate the device is fully ready.
-    device_leds[0] = getHueAsGRB(0, C_GREEN, 128);
+    //device_leds[0] = getHueAsRGB(0, C_GREEN, 128);
+    digitalWrite(BUILT_IN_LED, HIGH);
   } else {
     // Set the built-in LED to red while the WiFi and WebSocket are not ready.
-    device_leds[0] = getHueAsGRB(0, C_RED, 128);
+    //device_leds[0] = getHueAsRGB(0, C_RED, 128);
+    digitalWrite(BUILT_IN_LED, LOW);
   }
 
   if (ms_light.isRunning() && ledcRead(CENTER_LED) == i_min_power) {
@@ -76,9 +78,9 @@ void updateLEDs() {
   }
 
   // For testing, always keep the top LEDs lit.
-  ledcWrite(TOP_2WHITE, i_max_power);
+  digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
 
-  // For testing, set the top LEDs to white.
+  // For testing, set the top LEDs to some color.
   for (int i = 0; i < NUM_TOP_PIXELS; i++) {
     top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
   }

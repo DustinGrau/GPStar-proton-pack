@@ -30,7 +30,8 @@
 /*
  * Pin for Addressable LEDs
  */
-#define BUILT_IN_LED 21 // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
+//#define BUILT_IN_LED 21 // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
+#define BUILT_IN_LED 2 // GPIO2 for ESP32-S3 (Blue LED)
 #define DEVICE_NUM_LEDS 1
 CRGB device_leds[DEVICE_NUM_LEDS];
 

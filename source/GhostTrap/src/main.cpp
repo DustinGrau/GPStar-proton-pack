@@ -307,10 +307,10 @@ void setup() {
   #endif
 
   // RGB LEDs for effects (upper/lower) and user status (top).
-  FastLED.addLeds<NEOPIXEL, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
+  //FastLED.addLeds<WS2812, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
   
   // RGB LEDs for the top of the trap (Frutto Technology).
-  FastLED.addLeds<NEOPIXEL, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
+  FastLED.addLeds<WS2812, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
 
   // Get initial switch/button states.
   switchLoops();
@@ -331,14 +331,18 @@ void setup() {
   ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
 
   // Set pin for the top 2 white lights LOW (off).
-  ledcAttachChannel(TOP_2WHITE, 8000, 8, TOP_2WHITE); // Uses 8 kHz frequency, 8-bit resolution, channel 10
-  ledcWrite(TOP_2WHITE, i_min_power); // Ensure the device is off
+  pinMode(TOP_2WHITE, OUTPUT);
+  digitalWrite(TOP_2WHITE, LOW); // Set to LOW (off)
 
   // Set up for reading the switches to determine door state.
   pinMode(DOOR_CLOSED_PIN, INPUT);
   pinMode(DOOR_OPENED_PIN, INPUT);
   DOOR_STATE = DOORS_UNKNOWN; // Default until we first read the pins.
   LAST_DOOR_STATE = DOOR_STATE; // Keep setting in sync until read.
+
+  // Prepare the on-board (non-power) LED to be used as an output pin for indication.
+  pinMode(BUILT_IN_LED, OUTPUT);
+  digitalWrite(BUILT_IN_LED, LOW);
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.
