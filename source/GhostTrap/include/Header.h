@@ -41,10 +41,10 @@ CRGB device_leds[DEVICE_NUM_LEDS];
 #define BLOWER_PIN 18
 #define CENTER_LED 19
 #define SMOKE_PIN 23
-#define DOOR_CLOSED_PIN 34 // Green Socket (Input Only)
-#define DOOR_OPENED_PIN 35 // Red Socket (Input Only)
 #define TOP_2WHITE 32 // Frutto top panel (2 white LEDs)
 #define TOP_PIXELS 33 // Frutto top panel (12 RGB pixels)
+#define DOOR_CLOSED_PIN 34 // Green Socket (Input Only)
+#define DOOR_OPENED_PIN 35 // Red Socket (Input Only)
 
 /*
  * Frutto Trap Top (Pixels)
