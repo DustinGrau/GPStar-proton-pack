@@ -60,9 +60,6 @@
 #include "System.h"
 #include "Serial.h"
 
-// Forward Declarations
-void systemPOST();
-
 void setup() {
   // Setup i2c.
   Wire.begin();
