@@ -33,27 +33,30 @@
  * Pin for Addressable LEDs
  */
 #if defined(USE_ESP32_S3)
-  #define BUILT_IN_LED 21 // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
+  // GPIO21 for Waveshare ESP32-S3 Mini (RGB LED)
+  #define BUILT_IN_LED 21
   #define DEVICE_NUM_LEDS 1
   CRGB device_leds[DEVICE_NUM_LEDS];
 #else
-  #define BUILT_IN_LED 2 // GPIO2 for ESP-WROOM-32 (Blue LED)
+  // GPIO2 for ESP-WROOM-32 (Blue LED)
+  #define BUILT_IN_LED 2
 #endif
 
 /*
  * Pins for Devices
  */
-// ESP32
 #if defined(USE_ESP32_S3)
-  #define BLOWER_PIN 5
-  #define SMOKE_PIN 7
+  // ESP32-S3 Mini
+  #define BLOWER_PIN 5 // 30mm blower fan for smoke
+  #define SMOKE_PIN 7 // MOSFET for smoke (coil + pump)
   #define TOP_2WHITE 10 // Frutto top panel (2 white LEDs)
   #define TOP_PIXELS 11 // Frutto top panel (12 RGB pixels)
   #define DOOR_CLOSED_PIN 8 // Green Socket (Input Only)
   #define DOOR_OPENED_PIN 9 // Red Socket (Input Only)
 #else
-  #define BLOWER_PIN 18
-  #define SMOKE_PIN 23
+  // ESP-WROOM-32
+  #define BLOWER_PIN 18 // 30mm blower fan for smoke
+  #define SMOKE_PIN 23 // MOSFET for smoke (coil + pump)
   #define TOP_2WHITE 32 // Frutto top panel (2 white LEDs)
   #define TOP_PIXELS 33 // Frutto top panel (12 RGB pixels)
   #define DOOR_CLOSED_PIN 34 // Green Socket (Input Only)
