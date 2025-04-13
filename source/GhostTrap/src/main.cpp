@@ -306,9 +306,6 @@ void setup() {
     Serial.println(getCpuFrequencyMhz());
   #endif
 
-  // RGB LEDs for effects (upper/lower) and user status (top).
-  //FastLED.addLeds<WS2812, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
-  
   // RGB LEDs for the top of the trap (Frutto Technology).
   FastLED.addLeds<WS2812, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
 
@@ -319,14 +316,14 @@ void setup() {
   delay(200);
 
   // Configure the blower fan.
-  ledcAttachChannel(BLOWER_PIN, 8000, 8, BLOWER_PIN); // Uses 8 kHz frequency, 8-bit resolution, channel 6
-  ledcWrite(BLOWER_PIN, i_min_power); // Ensure the device is off
+  pinMode(BLOWER_PIN, OUTPUT);
+  digitalWrite(BLOWER_PIN, LOW); // Set to LOW (off)
 
   // Configure the smoke (coil + pump) device.
-  ledcAttachChannel(SMOKE_PIN, 2000, 8, SMOKE_PIN); // Uses 2 kHz frequency, 8-bit resolution, channel 7
-  ledcWrite(SMOKE_PIN, i_min_power); // Ensure the device is off
+  pinMode(SMOKE_PIN, OUTPUT);
+  digitalWrite(SMOKE_PIN, LOW); // Set to LOW (off)
 
-  // Set pin for the top 2 white lights LOW (off).
+  // Configure the the top 2 white lights.
   pinMode(TOP_2WHITE, OUTPUT);
   digitalWrite(TOP_2WHITE, LOW); // Set to LOW (off)
 

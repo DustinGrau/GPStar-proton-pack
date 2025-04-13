@@ -71,7 +71,7 @@ void updateLEDs() {
     debug(F("LED On"));
     digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
 
-    // Set the top LEDs to some color.
+    // Set the top LEDs to some color, randomizing with flashes of white.
     for (int i = 0; i < NUM_TOP_PIXELS; i++) {
       top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
     }
@@ -90,17 +90,17 @@ void updateLEDs() {
  * Determine the current state of the blower.
  */
 void checkBlower() {
-  if (ms_blower.isRunning() && ledcRead(BLOWER_PIN) == i_min_power) {
+  if (ms_blower.isRunning() && digitalRead(BLOWER_PIN) == LOW) {
     // If timer is active but power is not applied, turn on the device AFTER the delay period has elapsed.
     if ((millis() - ms_blower.getStartTime()) >= i_blower_start_delay) {
       debug(F("Blower On"));
-      ledcWrite(BLOWER_PIN, i_max_power);
+      digitalWrite(BLOWER_PIN, HIGH); // Set to HIGH (on)
     }
   }
 
   if (ms_blower.justFinished()) {
     debug(F("Blower Off"));
-    ledcWrite(BLOWER_PIN, i_min_power);
+    digitalWrite(BLOWER_PIN, LOW); // Set to LOW (off)
   }
 }
 
@@ -108,15 +108,15 @@ void checkBlower() {
  * Determine the current state of the smoke device.
  */
 void checkSmoke() {
-  if (ms_smoke.isRunning() && ledcRead(SMOKE_PIN) == i_min_power) {
+  if (ms_smoke.isRunning() && digitalRead(SMOKE_PIN) == LOW) {
     // If timer is active but power is not applied, turn on the device immediately.
     debug(F("Smoke On"));
-    ledcWrite(SMOKE_PIN, i_max_power);
+    digitalWrite(SMOKE_PIN, HIGH); // Set to HIGH (on)
   }
 
   if (ms_smoke.justFinished()) {
     debug(F("Smoke Off"));
-    ledcWrite(SMOKE_PIN, i_min_power);
+    digitalWrite(SMOKE_PIN, LOW); // Set to LOW (off)
   }
 }
 
@@ -166,8 +166,8 @@ void stopSmoke() {
   ms_smoke.stop();
 
   // Shut down any running devices.
-  ledcWrite(BLOWER_PIN, i_min_power);
-  ledcWrite(SMOKE_PIN, i_min_power);
+  digitalWrite(BLOWER_PIN, LOW);
+  digitalWrite(SMOKE_PIN, LOW);
   digitalWrite(TOP_2WHITE, LOW);
 
   // Turn off the LEDs (set to black) using FastLED.
