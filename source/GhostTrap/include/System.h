@@ -76,13 +76,21 @@ void updateTopLEDs() {
  */
 void updateLEDs() {  // Static variable to use for choice of LED color.
   if(b_ap_started && b_ws_started) {
-    // Set the built-in LED to green to indicate the device is fully ready.
-    //device_leds[0] = getHueAsRGB(0, C_GREEN, 128);
-    digitalWrite(BUILT_IN_LED, HIGH);
+    #if defined(USE_ESP32_S3)
+      // Set the built-in LED to green to indicate the device is fully ready.
+      device_leds[0] = getHueAsRGB(0, C_GREEN, 128);
+    #else
+      // Turn on the LED to indicate the device is fully ready.
+      digitalWrite(BUILT_IN_LED, HIGH);
+    #endif
   } else {
-    // Set the built-in LED to red while the WiFi and WebSocket are not ready.
-    //device_leds[0] = getHueAsRGB(0, C_RED, 128);
-    digitalWrite(BUILT_IN_LED, LOW);
+    #if defined(USE_ESP32_S3)
+      // Set the built-in LED to red while the WiFi and WebSocket are not ready.
+      device_leds[0] = getHueAsRGB(0, C_RED, 128);
+    #else
+      // Keep the LED off to indicate the device is not ready.
+      digitalWrite(BUILT_IN_LED, LOW);
+    #endif
   }
 
   if (ms_light.isRunning()) {

@@ -306,6 +306,11 @@ void setup() {
     Serial.println(getCpuFrequencyMhz());
   #endif
 
+  #if defined(USE_ESP32_S3)
+    // RGB LED on the ESP32 device itself.
+    FastLED.addLeds<WS2812, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
+  #endif
+
   // RGB LEDs for the top of the trap (Frutto Technology).
   FastLED.addLeds<WS2812, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
 
