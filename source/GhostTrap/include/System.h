@@ -52,10 +52,29 @@ void printPartitions() {
   esp_partition_iterator_release(iterator);  // Release the iterator once done
 }
 
+void updateTopLEDs() {
+  static uint8_t i_random = 0;
+
+  // First black out all pixels to make the changes more obvious.
+  fill_solid(top_leds, NUM_TOP_PIXELS, CRGB::Black);
+
+  // Set the top RGB LEDs to some color, randomizing with flashes of white.
+  for (int i = 0; i < NUM_TOP_PIXELS; i++) {
+    i_random = random(0, 2);
+    switch (i_random) {
+      case 0:
+        top_leds[i] = getHueAsGRB(i, C_GREEN);
+      break;
+      case 1:
+        top_leds[i] = getHueAsGRB(i, C_WHITE);
+      break;
+    }
+  }
+}
 /*
  * Determine the current state of any LEDs before next FastLED refresh.
  */
-void updateLEDs() {
+void updateLEDs() {  // Static variable to use for choice of LED color.
   if(b_ap_started && b_ws_started) {
     // Set the built-in LED to green to indicate the device is fully ready.
     //device_leds[0] = getHueAsRGB(0, C_GREEN, 128);
@@ -66,14 +85,17 @@ void updateLEDs() {
     digitalWrite(BUILT_IN_LED, LOW);
   }
 
-  if (ms_light.isRunning() && digitalRead(TOP_2WHITE) == LOW) {
-    // While the timer is active, keep the center LED lit.
-    debug(F("LED On"));
-    digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
+  if (ms_light.isRunning()) {
+    if (digitalRead(TOP_2WHITE) == LOW) {
+      // While the timer is active, keep the top 2 white LEDs lit.
+      debug(F("LED On"));
+      digitalWrite(TOP_2WHITE, HIGH); // Set to HIGH (on)
+      ms_top_leds.start(i_top_leds_delay); // Start the delay for top LEDs.
+    }
 
-    // Set the top LEDs to some color, randomizing with flashes of white.
-    for (int i = 0; i < NUM_TOP_PIXELS; i++) {
-      top_leds[i] = getHueAsGRB(i, C_GREEN, 128);
+    if (ms_top_leds.justFinished()) {
+      ms_top_leds.repeat(); // Restart the delay
+      updateTopLEDs(); // Call the function to alter LEDs
     }
   }
 

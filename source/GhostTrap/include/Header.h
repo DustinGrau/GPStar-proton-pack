@@ -57,6 +57,7 @@ CRGB top_leds[NUM_TOP_PIXELS];
 millisDelay ms_blower;
 millisDelay ms_light;
 millisDelay ms_smoke;
+millisDelay ms_top_leds;
 
 /*
  * Limits for Operation
@@ -66,6 +67,7 @@ const uint8_t i_max_power = 255; // Essentially a "high" state (on).
 const uint16_t i_smoke_duration_min = 1000; // Minimum "sane" time to run smoke (1 second).
 const uint16_t i_smoke_duration_max = 10000; // Do not allow smoke to run more than 10 seconds.
 const uint16_t i_blower_start_delay = 1500; // Time to delay start of the blower for smoke, allowing built-up (1.5 second).
+const uint16_t i_top_leds_delay = 60; // Delay for top LEDs (100ms).
 
 /*
  * Global flag to enable/disable smoke.
