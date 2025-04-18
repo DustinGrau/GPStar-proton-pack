@@ -42,10 +42,11 @@ After connecting your GPStar Proton Pack or Neutrona Wand board to your computer
 
 **GPStar Audio MacOS Intel/M1:** [GPStar Audio Firmware Flasher (Mac OSX)](extras/sound/GPStar%20Audio/GPStar-Audio-Firmware-Flasher-Mac.dmg?raw=1)
 
-The latest pre-compiled firmware binaries can be found in the binaries folder of this repository.\
+The latest pre-compiled firmware binaries can be found in the binaries folder of this repository.
+
 [Binaries Folder](binaries/)
 
-The GPStar Audio firmware binary can be found in the extras/sound/GPStar Audio folder.\
+The GPStar Audio firmware binary can be found in the extras/sound/GPStar Audio folder.
 [GPStar Audio Folder](extras/sound/GPStar%20Audio/)
 
 When downloading the binaries via GitHub, click on the file then on the **`Download raw file`** button.
