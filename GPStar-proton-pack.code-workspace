@@ -8,6 +8,10 @@
       "path": "source/Animations"
     },
     {
+      "name": "ATtinyTesting",
+      "path": "source/ATtinyTesting"
+    },
+    {
       "name": "AttenuatorESP32",
       "path": "source/AttenuatorESP32"
     },
