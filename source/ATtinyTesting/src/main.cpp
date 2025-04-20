@@ -23,8 +23,14 @@
 
 // Local Files
 #include "Configuration.h"
+#include "MusicSounds.h"
+#include "Communication.h"
 #include "Header.h"
+#include "Colours.h"
 #include "Audio.h"
+#include "Preferences.h"
+#include "System.h"
+#include "Serial.h"
 
 void setup() {
   // Initialize serial communication at 9600 baud
