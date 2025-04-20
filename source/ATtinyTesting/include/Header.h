@@ -4,9 +4,9 @@
  * All input and output pin definitions go here.
  */
 
-// Pin definitions for SoftwareSerial
-const uint8_t SOFT_TX_PIN = 0; // Example: PA0
-const uint8_t SOFT_RX_PIN = 1; // Example: PA1
+// Pin definitions for SoftwareSerial for GPStar Audio
+const uint8_t SOFT_TX_PIN = 0; // TX
+const uint8_t SOFT_RX_PIN = 1; // RX
 
 // Create a SoftwareSerial object
 SoftwareSerial Serial3(SOFT_RX_PIN, SOFT_TX_PIN);

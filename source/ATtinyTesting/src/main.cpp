@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // Debug macros
 #if DEBUG == 1
@@ -50,17 +50,21 @@ void setup() {
 
   // Turn the LED off initially (active low)
   digitalWrite(LED_PIN, HIGH);
+
+  // Setup the audio device for this controller.
+  setupAudioDevice();
 }
 
 void loop() {
-  // Turn the LED on (active low)
-  digitalWrite(LED_PIN, LOW);
-  delay(500); // Wait for 500 milliseconds
+  delay(4000); // Wait for 4 seconds.
 
-  // Turn the LED off
-  digitalWrite(LED_PIN, HIGH);
-  delay(500); // Wait for 500 milliseconds
+  if (AUDIO_DEVICE == A_GPSTAR_AUDIO || AUDIO_DEVICE == A_GPSTAR_AUDIO_ADV) {
+    digitalWrite(LED_PIN, LOW); // Turn on the LED to indicate we found an audio device.
 
-  // Send a message every loop
-  debugln("Hello, ATtiny816!");
+    updateAudio(); // Update the state of the available sound board.
+
+    updateMasterVolume(true); // Reset our master volume manually.
+
+    playEffect(S_BOOTUP);
+  }
 }
