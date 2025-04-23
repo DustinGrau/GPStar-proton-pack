@@ -19,8 +19,8 @@ const uint8_t SDA_PIN = 14; // PA3
 const uint8_t SCL_PIN = 15; // PA4
 
 // Pin definitions for serial communication
-const uint8_t TX_PIN = 17; // PA1
-const uint8_t RX_PIN = 18; // PA2
+const uint8_t TX_PIN = 6; // PB3
+const uint8_t RX_PIN = 7; // PB2
 
 /*
  * Delay for fastled to update the addressable LEDs.

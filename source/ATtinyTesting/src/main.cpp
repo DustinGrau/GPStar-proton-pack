@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -34,7 +34,7 @@
 
 void setup() {
   // Initialize serial communication at 9600 baud
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Optional: Print a message to confirm initialization
   debugln("Serial communication initialized.");
@@ -64,6 +64,8 @@ void loop() {
     updateAudio(); // Update the state of the available sound board.
 
     updateMasterVolume(true); // Reset our master volume manually.
+
+    debugln("Using GPStar Audio");
 
     playEffect(S_BOOTUP);
   }
