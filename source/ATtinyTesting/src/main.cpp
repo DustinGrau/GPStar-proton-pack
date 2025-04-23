@@ -15,7 +15,6 @@
 
 // 3rd-Party Libraries
 #include <millisDelay.h>
-#include <FastLED.h>
 #include <ezButton.h>
 #include <SoftwareSerial.h>
 #include <SerialTransfer.h>
@@ -34,16 +33,10 @@
 
 void setup() {
   // Initialize serial communication at 9600 baud
-  Serial.begin(115200);
-
-  // Optional: Print a message to confirm initialization
-  debugln("Serial communication initialized.");
+  Serial.begin(9600);
 
   // Initialize I2C as master
   Wire.begin();
-
-  // Optional: Print a message to confirm initialization
-  debugln("I2C initialized.");
 
   // Set the LED pin as an output
   pinMode(LED_PIN, OUTPUT);
@@ -53,6 +46,11 @@ void setup() {
 
   // Setup the audio device for this controller.
   setupAudioDevice();
+
+  if (AUDIO_DEVICE == A_GPSTAR_AUDIO || AUDIO_DEVICE == A_GPSTAR_AUDIO_ADV) {
+    updateAudio(); // Update the state of the available sound board.
+    updateMasterVolume(true); // Reset the master volume manually.
+  }
 }
 
 void loop() {
@@ -63,9 +61,7 @@ void loop() {
 
     updateAudio(); // Update the state of the available sound board.
 
-    updateMasterVolume(true); // Reset our master volume manually.
-
-    debugln("Using GPStar Audio");
+    debugln(F("Playing audio effect..."));
 
     playEffect(S_BOOTUP);
   }

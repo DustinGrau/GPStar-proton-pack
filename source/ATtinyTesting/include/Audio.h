@@ -17,8 +17,7 @@ uint16_t i_current_music_track = 0; // Sets the ID number for the music track to
 const uint16_t i_music_track_start = 500; // Music tracks start on file named 500_ and higher.
 const int8_t i_volume_abs_min = -70; // System (absolute) minimum volume possible.
 const int8_t i_volume_abs_max = 0; // System (absolute) maximum volume possible.
-uint8_t i_volume_min_adj = 0; // Adjustment factor for minimum volume. 0 for WAV Trigger, 10 for GPStar Audio.
-const uint8_t i_wand_idle_level = 20; // This adjusts the volume of certain Afterlife / Frozen Empire Neutrona Wand idle sounds that the Proton pack can play.
+uint8_t i_volume_min_adj = 0; // Adjustment factor for minimum volume.
 bool b_playing_music = false; // Sets whether a music track is currently playing or not.
 bool b_music_paused = false; // Sets whether a music track is currently paused or not.
 bool b_repeat_track = false; // Sets whether to repeat one music track or loop through all music tracks.
@@ -633,9 +632,9 @@ bool setupAudioDevice() {
 
   char gVersion[VERSION_STRING_LEN];
 
-  Serial3.begin(57600);
+  AudioSerial.begin(57600);
 
-  audio.start(Serial3);
+  audio.start(AudioSerial);
 
   // Ask for some Wav Trigger information.
   audio.requestVersionString();
@@ -660,23 +659,6 @@ bool setupAudioDevice() {
   // Allow time for hello command and other data to return back.
   delay(350);
 
-  if(audio.getVersion(gVersion)) {
-    // We found a WAV Trigger. Build the music track count.
-    if(audio.wasSysInfoRcvd()) {
-      // Only attempt to build a music track count if the WAV Trigger responded with RSP_SYSTEM_INFO.
-      buildMusicCount((uint16_t) audio.getNumTracks());
-    }
-    else {
-      debugln(F("Warning: RSP_SYSTEM_INFO not received!"));
-    }
-
-    AUDIO_DEVICE = A_NONE;
-
-    debugln(F("No Audio Device"));
-
-    return true;
-  }
-
   audio.hello();
 
   delay(350);
@@ -698,7 +680,7 @@ bool setupAudioDevice() {
     debug(F("Version: "));
     debugln(audio.getVersionNumber());
 
-    buildMusicCount((uint16_t) audio.getNumTracks());
+    //buildMusicCount((uint16_t) audio.getNumTracks());
 
     return true;
   }
