@@ -212,7 +212,7 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
     <div class="setting">
       <b>Panel Brightness %:</b><br/>
       <input type="range" id="ledCycPanLum" name="ledCycPanLum" min="10" max="100" value="100" step="10"
-     oninput="panLumOut.value=ledCycPanLum.value"/>
+       oninput="panLumOut.value=ledCycPanLum.value"/>
       <output class="labelSlider" id="panLumOut" for="ledCycPanLum"></output>
     </div>
     <div class="setting">
@@ -250,7 +250,7 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
     <div class="setting">
       <b>Brightness %:</b><br/>
       <input type="range" id="ledCycCakeLum" name="ledCycCakeLum" min="10" max="100" value="100" step="10"
-     oninput="cakeLumOut.value=ledCycCakeLum.value"/>
+       oninput="cakeLumOut.value=ledCycCakeLum.value"/>
       <output class="labelSlider" id="cakeLumOut" for="ledCycCakeLum"></output>
     </div>
     <div class="setting">
@@ -295,7 +295,7 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
     <div class="setting">
       <b>Brightness %:</b><br/>
       <input type="range" id="ledPowercellLum" name="ledPowercellLum" min="10" max="100" value="100" step="10"
-     oninput="pcLumOut.value=ledPowercellLum.value"/>
+       oninput="pcLumOut.value=ledPowercellLum.value"/>
       <output class="labelSlider" id="pcLumOut" for="ledPowercellLum"></output>
     </div>
     <div class="setting">
@@ -486,15 +486,15 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4) {
-          if (this.status != 200) {
-            handleStatus(this.responseText);
-          } else {
+          if (this.status == 200) {
             handleStatus(this.responseText);
             getSettings(); // Get latest settings.
 
             if (confirm("Settings successfully updated. Do you want to store the latest settings to the pack EEPROM?")) {
               saveEEPROM(); // Perform action only if the user answers OK to the confirmation.
             }
+          } else {
+            handleStatus(this.responseText);
           }
         }
       };

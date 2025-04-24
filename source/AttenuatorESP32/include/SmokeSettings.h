@@ -344,15 +344,15 @@ const char SMOKE_SETTINGS_page[] PROGMEM = R"=====(
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4) {
-          if (this.status != 200) {
-            handleStatus(this.responseText);
-          } else {
+          if (this.status == 200) {
             handleStatus(this.responseText);
             getSettings(); // Get latest settings.
 
             if (confirm("Settings successfully updated. Do you want to store the latest settings to the pack/wand EEPROM?")) {
               saveEEPROM(); // Perform action only if the user answers OK to the confirmation.
             }
+          } else {
+            handleStatus(this.responseText);
           }
         }
       };

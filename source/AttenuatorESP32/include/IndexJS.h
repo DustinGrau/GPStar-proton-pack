@@ -141,7 +141,7 @@ function updateTrackListing() {
 }
 
 function setDefaultOverlays() {
-  // Reset colors on all graphic overlay elements to a default state. 
+  // Reset colors on all graphic overlay elements to a default state.
   colorEl("ionOverlay", 255, 0, 0);
   colorEl("boostOverlay", 100, 100, 100);
   colorEl("pcellOverlay", 100, 100, 100);
