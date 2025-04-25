@@ -159,7 +159,7 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
     <div class="setting">
       <b>Brightness %:</b><br/>
       <input type="range" id="ledCycLidLum" name="ledCycLidLum" min="10" max="100" value="100" step="10"
-     oninput="cycLumOut.value=ledCycLidLum.value"/>
+       oninput="cycLumOut.value=ledCycLidLum.value"/>
       <output class="labelSlider" id="cycLumOut" for="ledCycLidLum"></output>
     </div>
     <div class="setting">
@@ -488,7 +488,7 @@ const char PACK_SETTINGS_page[] PROGMEM = R"=====(
         if (this.readyState == 4) {
           if (this.status == 200) {
             handleStatus(this.responseText);
-            getSettings(); // Get latest settings.
+            setTimeout(getSettings, 400); // Get latest settings.
 
             if (confirm("Settings successfully updated. Do you want to store the latest settings to the pack EEPROM?")) {
               saveEEPROM(); // Perform action only if the user answers OK to the confirmation.
