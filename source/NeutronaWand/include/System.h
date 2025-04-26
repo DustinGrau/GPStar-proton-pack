@@ -1523,7 +1523,7 @@ void soundIdleLoopStop(bool stopAlts) {
     break;
   }
 
-  if(stopAlts == true && b_gpstar_benchtest) {
+  if(stopAlts && b_gpstar_benchtest) {
     switch(STREAM_MODE) {
       case SLIME:
         stopEffect(S_WAND_SLIME_IDLE_LOOP);
@@ -10493,20 +10493,13 @@ void ventLightControl(uint8_t i_intensity) {
   if(i_intensity <= 1) {
     // Turn off if not off already.
     if(vent_leds[0]) {
-      digitalWrite(VENT_LED_PIN, HIGH);
+      analogWrite(VENT_LED_PIN, 255);
       vent_leds[0] = getHueAsRGB(C_BLACK);
       b_vent_lights_changed = true;
     }
   }
   else {
-    if(!b_rgb_vent_light) {
-      if(i_intensity == 255) {
-        digitalWrite(VENT_LED_PIN, LOW);
-      }
-      else {
-        analogWrite(VENT_LED_PIN, 255 - i_intensity);
-      }
-    }
+    analogWrite(VENT_LED_PIN, 255 - ledLookupTable[i_intensity]);
 
     switch(STREAM_MODE) {
       case STASIS:
@@ -10518,7 +10511,7 @@ void ventLightControl(uint8_t i_intensity) {
           vent_leds[0] = getHueAsRGB(C_PASTEL_PINK, i_intensity);
         }
         else {
-          vent_leds[0] = getHueAsRGB(C_DARK_GREEN, i_intensity);
+          vent_leds[0] = getHueAsRGB(C_GREEN, i_intensity);
         }
       break;
 
