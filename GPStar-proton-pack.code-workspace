@@ -4,14 +4,6 @@
       "path": "."
     },
     {
-      "name": "Animations",
-      "path": "source/Animations"
-    },
-    {
-      "name": "ATtinyTesting",
-      "path": "source/ATtinyTesting"
-    },
-    {
       "name": "AttenuatorESP32",
       "path": "source/AttenuatorESP32"
     },
@@ -22,10 +14,6 @@
     {
       "name": "BeltGizmo",
       "path": "source/BeltGizmo"
-    },
-    {
-      "name": "GhostTrap",
-      "path": "source/GhostTrap"
     },
     {
       "name": "NeutronaWand",
