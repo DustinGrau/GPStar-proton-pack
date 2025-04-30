@@ -27,9 +27,6 @@ jobs:
       - name: Compile Ghost Trap Project
         working-directory: source/GhostTrap
         run: pio run
-      - name: Compile Attenuator for Nano
-        working-directory: source/AttenuatorNano
-        run: pio run
       - name: Compile Attenuator for ESP32
         working-directory: source/AttenuatorESP32
         run: pio run
