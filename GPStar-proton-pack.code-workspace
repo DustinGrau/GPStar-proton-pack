@@ -8,12 +8,16 @@
       "path": "source/AttenuatorESP32"
     },
     {
-      "name": "AttenuatorNano",
-      "path": "source/AttenuatorNano"
+      "name": "ATtinyTesting",
+      "path": "source/ATtinyTesting"
     },
     {
       "name": "BeltGizmo",
       "path": "source/BeltGizmo"
+    },
+    {
+      "name": "GhostTrap",
+      "path": "source/GhostTrap"
     },
     {
       "name": "NeutronaWand",
