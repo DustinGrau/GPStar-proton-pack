@@ -8,6 +8,10 @@
       "path": "source/AttenuatorESP32"
     },
     {
+      "name": "ATmegaEEPROM",
+      "path": "source/ATmegaEEPROM"
+    },
+    {
       "name": "ATtinyTesting",
       "path": "source/ATtinyTesting"
     },
