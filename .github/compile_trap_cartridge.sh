@@ -26,8 +26,8 @@ pio run --project-dir "$PROJECT_DIR" --target clean
 # Compile the PlatformIO project
 pio run --project-dir "$PROJECT_DIR"
 
-if [ -f ${PROJECT_DIR}/.pio/build/attiny1616/firmware.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/attiny1616/firmware.bin ${BINDIR}/trap/GhostTrap-ATtiny.bin
+if [ -f ${PROJECT_DIR}/.pio/build/attiny1616/firmware.elf ]; then
+  mv ${PROJECT_DIR}/.pio/build/attiny1616/firmware.elf ${BINDIR}/trap/GhostTrap-ATtiny.bin
 fi
 echo "Done."
 echo ""

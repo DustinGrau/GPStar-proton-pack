@@ -37,10 +37,11 @@
 #include <nvs_flash.h>
 
 // Local Files
-#include "Audio.h"
 #include "Configuration.h"
 #include "Header.h"
 #include "Colours.h"
+#include "MusicSounds.h"
+#include "Audio.h"
 #include "Wireless.h"
 #include "System.h"
 
