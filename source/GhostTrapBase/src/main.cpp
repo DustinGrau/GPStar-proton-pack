@@ -37,6 +37,7 @@
 #include <nvs_flash.h>
 
 // Local Files
+#include "Audio.h"
 #include "Configuration.h"
 #include "Header.h"
 #include "Colours.h"

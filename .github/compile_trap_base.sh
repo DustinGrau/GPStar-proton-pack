@@ -15,7 +15,7 @@ TIMESTAMP=$(date +"%Y%m%d%H%M%S")
 echo ""
 
 # Set the project directory based on the source folder
-PROJECT_DIR="$SRCDIR/GhostTrap"
+PROJECT_DIR="$SRCDIR/GhostTrapBase"
 
 # Update date of compilation
 echo "Updating Build Timestamp:" $TIMESTAMP

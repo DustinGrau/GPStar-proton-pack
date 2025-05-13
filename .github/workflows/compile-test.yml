@@ -27,8 +27,11 @@ jobs:
       - name: Compile SingleShot Project
         working-directory: source/SingleShot
         run: pio run
-      - name: Compile Ghost Trap Project
-        working-directory: source/GhostTrap
+      - name: Compile Ghost Trap Base
+        working-directory: source/GhostTrapBase
+        run: pio run
+      - name: Compile Ghost Trap Cartridge
+        working-directory: source/GhostTrapCartridge
         run: pio run
       - name: Compile Attenuator for ESP32
         working-directory: source/AttenuatorESP32

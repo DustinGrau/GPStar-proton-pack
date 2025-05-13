@@ -20,8 +20,12 @@
       "path": "source/BeltGizmo"
     },
     {
-      "name": "GhostTrap",
-      "path": "source/GhostTrap"
+      "name": "GhostTrapBase",
+      "path": "source/GhostTrapBase"
+    },
+    {
+      "name": "GhostTrapCartridge",
+      "path": "source/GhostTrapCartridge"
     },
     {
       "name": "NeutronaWand",
