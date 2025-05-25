@@ -838,12 +838,12 @@ bool setupAudioDevice() {
   audio.start(Serial3);
 
   uint16_t i_timeout = millis() + 1000;
-  
+
   while(!audio.gpstarAudioHello() && millis() < i_timeout) {
     audio.hello();
     delay(10);
   }
-  
+
   if(audio.gpstarAudioHello()) {
     if(audio.getVersionNumber() != 0) {
       AUDIO_DEVICE = A_GPSTAR_AUDIO_ADV;
@@ -876,7 +876,7 @@ bool setupAudioDevice() {
   // Ask for some WAV Trigger information.
   audio.requestVersionString();
   audio.requestSystemInfo();
-  
+
   // Delay to allow time for WAV Trigger to respond.
   delay(10);
 
