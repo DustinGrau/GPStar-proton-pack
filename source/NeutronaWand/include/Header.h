@@ -157,8 +157,13 @@ const uint8_t frutto_barrel[48] PROGMEM = {0, 25, 24, 48, 1, 26, 23, 47, 2, 27, 
  * Supported options: Stock (5), GPStar Neturona Barrel (48 + 2 Strobe Tips), GPStar Barrel LED Mini (2) and Frutto Technology (48 + Strobe Tip)
  */
 uint8_t i_num_barrel_leds = 5;
-enum WAND_BARREL_LED_COUNTS { LEDS_5, LEDS_48, LEDS_50, LEDS_2 };
-enum WAND_BARREL_LED_COUNTS WAND_BARREL_LED_COUNT;
+enum WAND_BARREL_LED_COUNTS : uint8_t {
+  LEDS_UNKNOWN = 0,
+  LEDS_2 = 2,
+  LEDS_5 = 5,
+  LEDS_48 = 48,
+  LEDS_50 = 50
+} WAND_BARREL_LED_COUNT;
 
 /*
  * Delay for fastled to update the addressable LEDs.
@@ -245,7 +250,6 @@ uint8_t wandSwitchedCount = 0;
 const uint8_t i_bargraph_segments_5_led = 5;
 const uint8_t i_bargraph_5_led_invert[i_bargraph_segments_5_led] PROGMEM = {BARGRAPH_LED_5_PIN, BARGRAPH_LED_4_PIN, BARGRAPH_LED_3_PIN, BARGRAPH_LED_2_PIN, BARGRAPH_LED_1_PIN};
 const uint8_t i_bargraph_5_led_normal[i_bargraph_segments_5_led] PROGMEM = {BARGRAPH_LED_1_PIN, BARGRAPH_LED_2_PIN, BARGRAPH_LED_3_PIN, BARGRAPH_LED_4_PIN, BARGRAPH_LED_5_PIN};
-bool b_bargraph_status_5[i_bargraph_segments_5_led] = {};
 
 /*
  * Afterlife/Frozen Empire wand idle ramp transition timers.
@@ -301,9 +305,13 @@ HT16K33 ht_bargraph;
  * The Frutto 28-segment bargraph is automatically detected on boot and sets this to true.
  * Part #: BL28Z-3005SA04Y
  */
-enum BARGRAPH_TYPES { SEGMENTS_5, SEGMENTS_28, SEGMENTS_30 };
-enum BARGRAPH_TYPES BARGRAPH_TYPE;
-enum BARGRAPH_TYPES BARGRAPH_TYPE_EEPROM;
+enum BARGRAPH_TYPES : uint8_t {
+  SEGMENTS_UNKNOWN = 0,
+  SEGMENTS_5 = 5,
+  SEGMENTS_28 = 28,
+  SEGMENTS_30 = 30
+} BARGRAPH_TYPE;
+BARGRAPH_TYPES BARGRAPH_TYPE_EEPROM = SEGMENTS_28;
 
 const uint8_t i_bargraph_interval = 4;
 const uint8_t i_bargraph_wait = 180;
@@ -330,14 +338,13 @@ const uint8_t i_bargraph_segments = 30;
 const uint8_t i_bargraph_invert[i_bargraph_segments - 2] PROGMEM = {54, 38, 22, 6, 53, 37, 21, 5, 52, 36, 20, 4, 51, 35, 19, 3, 50, 34, 18, 2, 49, 33, 17, 1, 48, 32, 16, 0};
 const uint8_t i_bargraph_normal[i_bargraph_segments - 2] PROGMEM = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54};
 const uint8_t i_bargraph_power_table_28[i_power_level_max + 1] PROGMEM = {0, 4, 11, 16, 22, 27};
-bool b_bargraph_status[i_bargraph_segments] = {};
 
 /*
   30 Segment bargraph mapping.
 */
 const uint8_t i_bargraph_wamco_invert[i_bargraph_segments] PROGMEM = {64, 48, 32, 16, 0, 1, 17, 33, 49, 65, 66, 50, 34, 18, 2, 3, 19, 35, 51, 67, 4, 20, 36, 52, 68, 53, 37, 21, 5, 69};
 const uint8_t i_bargraph_wamco_normal[i_bargraph_segments] PROGMEM = {69, 5, 21, 37, 53, 68, 52, 36, 20, 4, 67, 51, 35, 19, 3, 2, 18, 34, 50, 66, 65, 49, 33, 17, 1, 0, 16, 32, 48, 64};
-const uint8_t i_bargraph_power_table_wamco[i_power_level_max + 1] PROGMEM = {0, 6, 12, 18, 24, 29};
+const uint8_t i_bargraph_power_table_wamco[i_power_level_max + 1] PROGMEM = {0, 5, 11, 17, 23, 29};
 
 /*
  * (Optional) Support for Video Game Accessories (coming soon)
@@ -358,7 +365,7 @@ const uint16_t i_bargraph_beep_delay = 1600;
  * A timer to prevent the wand beep from restarting too rapidly in Afterlife & Frozen Empire modes.
  */
 millisDelay ms_reset_sound_beep;
-const uint16_t i_sound_timer = 1750;
+const uint16_t i_sound_timer = 1000;
 
 /*
  * Wand tip heatup timers (when changing firing modes).
