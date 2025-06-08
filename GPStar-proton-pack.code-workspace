@@ -48,9 +48,6 @@
 	  "editor.detectIndentation": false,
 	  "editor.indentSize": "2",
 	  "editor.insertSpaces": true,
-    "editor.tabSize": 2,
-    "files.associations": {
-      "cstdlib": "cpp"
-    }
+	  "editor.tabSize": 2
 	}
 }
