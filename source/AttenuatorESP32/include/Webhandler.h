@@ -269,7 +269,7 @@ void startWebServer() {
 void handleCommonJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index JavaScript");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", String(COMMONJS_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)COMMONJS_page, strlen(COMMONJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -277,7 +277,7 @@ void handleCommonJS(AsyncWebServerRequest *request) {
 void handleRoot(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(INDEX_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)INDEX_page, strlen(INDEX_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -285,7 +285,8 @@ void handleRoot(AsyncWebServerRequest *request) {
 void handleRootJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index JavaScript");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", String(INDEXJS_page));
+  // Serve the JS file using pointer and explicit length to avoid truncation or overflow issues.
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)INDEXJS_page, strlen(INDEXJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -293,7 +294,7 @@ void handleRootJS(AsyncWebServerRequest *request) {
 void handleNetwork(AsyncWebServerRequest *request) {
   // Used for the network page from the web server.
   debug("Sending -> Network HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(NETWORK_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)NETWORK_page, strlen(NETWORK_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -301,7 +302,7 @@ void handleNetwork(AsyncWebServerRequest *request) {
 void handlePassword(AsyncWebServerRequest *request) {
   // Used for the password page from the web server.
   debug("Sending -> Password HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(PASSWORD_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)PASSWORD_page, strlen(PASSWORD_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -309,7 +310,7 @@ void handlePassword(AsyncWebServerRequest *request) {
 void handleDeviceSettings(AsyncWebServerRequest *request) {
   // Used for the device page from the web server.
   debug("Sending -> Device Settings HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(DEVICE_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)DEVICE_page, strlen(DEVICE_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -321,7 +322,7 @@ void handlePackSettings(AsyncWebServerRequest *request) {
 
   // Used for the settings page from the web server.
   debug("Sending -> Pack Settings HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(PACK_SETTINGS_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)PACK_SETTINGS_page, strlen(PACK_SETTINGS_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -333,7 +334,7 @@ void handleWandSettings(AsyncWebServerRequest *request) {
 
   // Used for the settings page from the web server.
   debug("Sending -> Wand Settings HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(WAND_SETTINGS_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)WAND_SETTINGS_page, strlen(WAND_SETTINGS_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -345,7 +346,7 @@ void handleSmokeSettings(AsyncWebServerRequest *request) {
 
   // Used for the settings page from the web server.
   debug("Sending -> Smoke Settings HTML");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(SMOKE_SETTINGS_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)SMOKE_SETTINGS_page, strlen(SMOKE_SETTINGS_page));
   response->addHeader("Cache-Control", "public, max-age=60, must-revalidate");
   request->send(response); // Serve page content.
 }
@@ -353,7 +354,7 @@ void handleSmokeSettings(AsyncWebServerRequest *request) {
 void handleStylesheet(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Main StyleSheet");
-  AsyncWebServerResponse *response = request->beginResponse(200, "text/css", String(STYLE_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/css", (const uint8_t*)STYLE_page, strlen(STYLE_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
