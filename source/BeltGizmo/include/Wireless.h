@@ -310,6 +310,9 @@ bool startExternalWifi() {
       // Attempt to connect to a specified WiFi network.
       WiFi.begin(wifi_ssid.c_str(), wifi_pass.c_str());
 
+      // Limit Tx power to save battery and reduce interference.
+      WiFi.setTxPower(WIFI_POWER_7dBm); // Set to 7 dBm (default is ~20 dBm).
+
       // Wait for the connection to be established.
       uint8_t attempt = 0;
       while (attempt < i_max_attempts && WiFi.status() != WL_CONNECTED) {
