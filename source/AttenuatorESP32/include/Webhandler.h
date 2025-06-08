@@ -269,8 +269,8 @@ void startWebServer() {
 void handleCommonJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index JavaScript");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript", String(COMMONJS_page));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", String(COMMONJS_page));
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
 
@@ -278,15 +278,15 @@ void handleRoot(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", String(INDEX_page));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
 
 void handleRootJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
   debug("Sending -> Index JavaScript");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript", String(INDEXJS_page));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", String(INDEXJS_page));
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
 
@@ -354,7 +354,7 @@ void handleStylesheet(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Main StyleSheet");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/css", String(STYLE_page));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
 }
 
@@ -362,7 +362,7 @@ void handleEquipSvg(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Equipment SVG");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", EQUIP_svg, sizeof(EQUIP_svg));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
@@ -371,7 +371,7 @@ void handleFavIco(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/x-icon", FAVICON_ico, sizeof(FAVICON_ico));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
@@ -380,7 +380,7 @@ void handleFavSvg(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
   debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", FAVICON_svg, sizeof(FAVICON_svg));
-  response->addHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
