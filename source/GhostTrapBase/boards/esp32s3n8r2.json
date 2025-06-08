@@ -15,18 +15,18 @@
       ["0x303A", "0x1001"]
     ],
     "mcu": "esp32s3",
-    "variant": "esp32s3"
+    "variant": "esp32s3-devkitc-1"
   },
   "frameworks": ["arduino"],
-  "name": "ESP32-S3 Mini (ESP32-S3-FH4R2)",
+  "name": "ESP32-S3-WROOM-1 N8R2",
   "upload": {
-    "flash_size": "4MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 524288,
-    "maximum_size": 4194304,
+    "maximum_size": 8388608,
     "protocol": "esptool",
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "https://www.waveshare.com/esp32-s3-mini.htm",
-  "vendor": "Waveshare"
+  "url": "https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf",
+  "vendor": "Espressif"
 }
