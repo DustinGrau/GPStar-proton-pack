@@ -475,6 +475,18 @@ function updateEquipment(jObj) {
       setHtml("musicVolume", "Min");
     }
 
+    // Music Playback Status
+    if (jObj.musicPlaying && !jObj.musicPaused) {
+      // If music is playing (but not paused), show that status.
+      setHtml("playbackStatus", "Music Playing");
+    } else if (jObj.musicPaused) {
+      // If music is playing AND paused, show that status.
+      setHtml("playbackStatus", "Music Paused");
+    } else {
+      // If no music is playing or paused, show a default message.
+      setHtml("playbackStatus", "No Music Playing");
+    }
+
     // Update special UI elements based on the latest data values.
     setButtonStates(jObj.mode, jObj.pack, jObj.wandPower, jObj.cyclotron, jObj.switch, jObj.firing);
 
