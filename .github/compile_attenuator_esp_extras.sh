@@ -7,13 +7,11 @@
 BINDIR="../binaries"
 SRCDIR="../source"
 
-# Define the major version for this build
-MJVER="V6"
-
 mkdir -p ${BINDIR}/attenuator/extras
 
-# Current build timestamp to be reflected in the build for ESP32.
-TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+# Current build timestamp and major version to be reflected in the build for ESP32.
+MJVER="${MJVER:="V6"}"
+TIMESTAMP="${TIMESTAMP:=$(date +"%Y%m%d%H%M%S")}"
 
 echo ""
 
@@ -21,7 +19,7 @@ echo ""
 PROJECT_DIR="$SRCDIR/AttenuatorESP32"
 
 # Update date of compilation
-echo "Updating Build Timestamp: ${MJVER}_${TIMESTAMP}"
+echo "Setting Build Timestamp: ${MJVER}_${TIMESTAMP}"
 sed -i -e 's/\(String build_date = "\)[^"]*\(";\)/\1'"${MJVER}_${TIMESTAMP}"'\2/' ${PROJECT_DIR}/include/Configuration.h
 
 # Attenuator (ESP32 - Standalone)
@@ -34,7 +32,7 @@ sed -i -e 's/b_wait_for_pack = true/b_wait_for_pack = false/' ${PROJECT_DIR}/inc
 pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-pio run --project-dir "$PROJECT_DIR"
+pio run --project-dir "$PROJECT_DIR" | grep -iv Retrieved
 
 # Restore flag(s) from compilation
 sed -i -e 's/b_wait_for_pack = false/b_wait_for_pack = true/' ${PROJECT_DIR}/include/Configuration.h
@@ -59,7 +57,7 @@ sed -i -e 's/\/\/\#define RESET_AP_SETTINGS/\#define RESET_AP_SETTINGS/' ${PROJE
 pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-pio run --project-dir "$PROJECT_DIR"
+pio run --project-dir "$PROJECT_DIR" | grep -iv Retrieved
 
 # Restore flag(s) from compilation
 sed -i -e 's/\#define DEBUG_WIRELESS_SETUP/\/\/\#define DEBUG_WIRELESS_SETUP/' ${PROJECT_DIR}/include/Configuration.h
