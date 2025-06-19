@@ -1,3 +1,5 @@
+<h1><img src="../images/gpstar_logo.png" width="50"/>GPStar Kit Installation</h1>
+
 ## Installation Guide Video
 
 [GPStar Proton Pack & Neutrona Wand Installation Guide Video](https://www.youtube.com/watch?v=-V7wMfd21XA) (YouTube)

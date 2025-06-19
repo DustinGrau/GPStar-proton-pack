@@ -4,9 +4,21 @@ site_dir: site
 
 nav:
   - Home: README.md
+  - Component Guides:
+    - Introduction: GUIDE_LISTING.md
+    - Proton Pack: PACK_PCB.md
+    - Neutrona Wand: WAND_PCB.md
+    - Flashing Firmware: FLASHING.md
+    - GPStar Audio: GPSTAR_AUDIO_PCB.md
+    - Audio Files: AUDIO.md
+    - Serial1 Expansion: SERIAL1.md
+    - Legacy DIY: DIY_LEGACY.md
+  - Installation:
+    - Introduction: INSTALL_GUIDE.md
   - Operation Manuals:
-    - General Usage: OPERATION.md
+    - General Usage: OPERATION_USAGE.md
     - EEPROM Menus: OPERATION_EEPROM.md
+  - Troubleshooting: TROUBLESHOOTING.md
   - FAQ: FAQ.md
   - About: ABOUT.md
 
