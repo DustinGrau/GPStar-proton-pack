@@ -1,0 +1,536 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Power Requirements - GPStar Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#power-requirements" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GPStar Documentation" class="md-header__button md-logo" aria-label="GPStar Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GPStar Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Power Requirements
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GPStar Documentation" class="md-nav__button md-logo" aria-label="GPStar Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GPStar Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../FAQ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ABOUT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#voltage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Voltage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#power-draw" class="md-nav__link">
+    <span class="md-ellipsis">
+      Power Draw
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Warnings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#good" class="md-nav__link">
+    <span class="md-ellipsis">
+      Good
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#better" class="md-nav__link">
+    <span class="md-ellipsis">
+      Better
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#best" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ultimate" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ultimate
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-multiple-power-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Multiple Power Sources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#charging-switch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Charging Switch
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="power-requirements">Power Requirements</h1>
+<p>You will need a suitable power supply to run the pack controller, 2 sound boards, the wand controller, and optionally any audio amplifiers and smoke effects. If looking for configuration options for the latter, please view <a href="../SMOKE/">the SMOKE guide</a> for diagrams and references.</p>
+<h2 id="voltage">Voltage</h2>
+<p>The controller, sound boards, and all LEDs will all require 5VDC which is the standard voltage for USB devices. For this reason many simple battery packs used by the community have been using a USB to JST-XH connector for the stock HasLab equipment.</p>
+<p>For most audio amplifier choices used with the pack those devices typically require 9-12V. Meanwhile, the components required for smoke kits may use as little as 3.7V or require up to 12V.</p>
+<p><strong>Note:</strong> You will most likely be using a rechargeable lithium-ion battery or similar to power your equipment. Unlike Alkaline batteries these do not drop in voltage as they discharge, but keep up a continuous voltage until their capacity is nearly depleted--at which time the internal circuitry will simply stop providing output. As such, reading voltage is not a reliable means of estimating battery life remaining.</p>
+<p><strong>2025 Update</strong> - The new <a href="https://gpstartechnologies.com/products/gpstar-amplifier-ii">GPStar Amplifier II</a> and <a href="https://gpstartechnologies.com/products/gpstar-power-hub-ii">Power Hub II</a> devices now allow your system to be 24V compatible. These devices can take 12V or 24V source voltage as input while still providing 5V distribution for accessories.</p>
+<h2 id="power-draw">Power Draw</h2>
+<p>In addition to voltage we need to consider the amperage required for running components. You will need a power source which can deliver at least 0.6A to run the most basic kit, while additional upgrades such as the 48-LED barrel will require a minimum of 0.8A to run effectively. The 12V batteries offered by Talentcell are a popular choice as they provide up to 2A from the USB port and 3A from the 12V barrel jack.</p>
+<p>Next is the matter of how long you may wish to run your pack. For those who "troop" or will use their equipment for events, you need a long runtime which is a factor of the battery's Amp-Hour rating (typically stated in milli-Amp-hour or mAh). To estimate how long your battery will last you would need to know how many Amps are required to run your kit at a maximum, then divide the mAh rating by Amps. For example, a 3000mAh battery is equivalent to 3Ah, which at a constant 0.8A draw would run for approximately 3.75hrs.</p>
+<p><strong>June 2024 Update</strong> - Since the advent of this kit several components have been added as optional equipment, and some as alternatives to original parts. When using the pack and wand controllers with GPStar Audio boards, an ESP32 and Attenuator kit, all possible wand lighting upgrades, and the GPStar Amplifier the total power draw is around 0.35A at idle and around 0.93A while firing all effects. If adding a single smoke kit for the N-Filter during overheat/venting the maximum power draw is closer to 2.92A which is approaching the maximum rating for the Talentcell batteries.</p>
+<h2 id="warnings">Warnings</h2>
+<p><em>"I'm fuzzy on the whole good/bad thing. What do you mean, 'bad'?" -Dr. Venkman</em></p>
+<ul>
+<li>
+<p>For purposes of a DIY approach, in no case should you use the Arduino Mega's barrel jack to convert 12VDC into 5VDC for that board, nor use the 5V pin on the controller for running any other devices. The power converter on the microcontroller can become hot and may burn out over time, or you could easily draw more power than the Arduino can sustain, causing the need to replace the entire controller. Your best option is to utilize the 5V pin (and GND) to power any Arduino controllers which should come from a stable regulated 5V power source. The D-cell batteries supplied with the stock equipment may not be sufficient for the long runtimes expected by the solutions offered by these guides--furthermore, Alkaline batteries will exhibit a voltage drop as they drain which can fall below the minimum necessary to run the Arduino controllers.</p>
+</li>
+<li>
+<p>Any battery pack which uses PD (power delivery) is not recommended, nor is use of USB-C connections as these could potentially supply up to 100W of power and could destroy your equipment. Using standard USB-A connections is recommended as there are dedicated power wires which are easy to access from a modified cable and is typically limited to 2-3 Amps for output.</p>
+</li>
+<li>
+<p>Putting too high a load on a rechargeable battery is not good long-term for the battery or the components. The battery will be limited to a maximum output in terms of both voltage and camperage. In some cases this can present as degraded behavior for the component (eg. smoke air pumps run slower) or it could affect the controllers causing stuttering or other unexpected behavior. You are encouraged to put high-draw devices on their own separate battery or otherwise limit smoke effects to 1 device per battery if sharing with the pack/wand electronics.</p>
+</li>
+<li>
+<p>When using the new GPStar Amplifier in your Proton Pack, do not run more than 1 smoke device (vape coil + air pump) from any of the provided 5V JST-XH connections. The built-in voltage regulator can only provide a maximum of 3A, and when running all of the pack/wand components plus a single 5V smoke device can easily approach that maximum. Similarly, if using the GPStar Power Hub this also uses the same voltage regulator and should not be used to drive more than 2 smoke device.</p>
+</li>
+</ul>
+<h2 id="options">Options</h2>
+<h3 id="good">Good</h3>
+<p>A standard USB battery pack with a USB-to-JST cable to deliver only the +5VDC and Ground (-) for use by all components. YMMV based on the option you choose, but it MUST support at least 2A of power for the core electronics, exclusive of any smoke effects. See the next 2 options for more recommended solutions.</p>
+<h3 id="better">Better</h3>
+<p>A TalentCell<sup>1</sup> battery pack which <a href="https://a.co/d/j4m2Kff">only offers a 12VDC output</a> or <a href="https://a.co/d/8q0VcxT">both USB connections and 12VDC output</a>. For models which support USB, use of a USB-to-JST cable can provide power to the core electronics while the 12VDC barrel jack will be used for the audio amplifier in the pack.</p>
+<h3 id="best">Best</h3>
+<p>Either of the TalentCell<sup>1</sup> battery packs just mentioned in conjunction with the <a href="https://gpstartechnologies.com/products/gpstar-amplifier">GPStar Amplifier</a>. The latter device connects easily using a barrel jack, such as the splitter provided with the TalentCell battery for simultaneous charging and use. The amplifier contains a built-in power regulator and multiple 5VDC JST-XH ports for connecting your GPStar Pack Controller, sending power to the Neutrona Wand, and power for the Attenuator or wireless adapter.</p>
+<p><sup>1</sup> TalentCell batteries come in a variety of amp-hour ratings, though 3000mAh or 6000mAh are common capacities.</p>
+<h3 id="ultimate">Ultimate</h3>
+<p>With the introduction of the <a href="https://gpstartechnologies.com/products/gpstar-amplifier-ii">GPStar Amplifier II</a> and <a href="https://gpstartechnologies.com/products/gpstar-power-hub-ii">Power Hub II</a> devices your Proton Pack can be adapted to run on a 24V input voltage! This will require a suitable battery such as the <a href="https://talentcell.com/lithium-ion-battery/24v/pb240a1.html">TalentCell 24V 82.88Wh Battery, model PB240A1</a>.</p>
+<h2 id="using-multiple-power-sources">Using Multiple Power Sources</h2>
+<p>For those who wish to make use of smoke effects, the need for multiple batteries has become more apparent and recommended. Every addition and upgrade to your pack and wand comes at a cost of power, and as of 2024 the number of LEDs in use may require up to 1.2A just for the base system functionality. While most DIY and community smoke kits may require 1.5-2.5A each, which easily pushes the stated limit (3A) of a single TalentCell battery.</p>
+<p>Please follow our diagrams in the <a href="../SMOKE/">Smoke Guide</a> for more information about how to make use of multiple batteries. With the addition of the <a href="https://gpstartechnologies.com/products/gpstar-power-hub">GPStar Power Hub</a> this is much easier as you can use a single device with a standalone battery to operate up to 2 smoke kits simultaneously. Per our recommendations, smoke kits can and should be triggered by use of a relay which also makes this scenario possible, as it provides isolation between the power source to the primary electronics from the high-draw heating elements used in most smoke kits.</p>
+<h2 id="charging-switch">Charging Switch</h2>
+<p>Some users have made use of what's called the "DPDT Mod" which uses any standard "Dual-Pole, Dual-Throw" <a href="https://a.co/d/gVtXMck">toggle</a> or <a href="https://a.co/d/3EYqrDI">switch</a> to act as a master kill switch to the electronics, but allowing a Talentcell battery to be charged. Assuming you use both the 5V from the USB port and 12V from the barrel jack on a standard Talentcell battery (regardless of mAh capacity), the basic installation would look like this:</p>
+<ul>
+<li>A <a href="https://a.co/d/hxna1qj">5.5mm x 2.1mm (or 5521) female port</a> is installed on the Proton Pack as a charging port</li>
+<li>All ground connections are tied together: from the USB, Barrel Jack, and Charging Port</li>
+<li>Each positive (+) connection is attached to a post on the toggle or switch as follows:<ul>
+<li>The 12V+ and 5V+ to the Proton Pack are connected to the upper posts of the toggle/switch</li>
+<li>The Barrel Jack's 12V+ and USB's 5V+ are connected to the center posts of the toggle/switch</li>
+<li>ONLY the 12V+ from the charging port is connected to the end OPPOSITE the Proton Pack connections</li>
+</ul>
+</li>
+</ul>
+<p>For a visual aid see the ASCII drawing below for reference. The 12V is intended to go to your audio amplifier, while the 5V goes to the Proton Pack PCB. <strong>If using the GPStar Audio Amp</strong> which can supply 5V to your pack/wand PCB's you can simply use the 12V connection only and ignore all 5V connections shown/mentioned.</p>
+<p><strong>Note:</strong> In order to use the Talentcell or charge it, the battery itself must be in the ON position. If you wish to conserve power once charged, turn off the battery via its built-in switch if you intend to store or not use your equipment for a long period.</p>
+<pre><code>Proton Pack
+  -------------- Negative from Common Ground
+  |
+ Amp   PCB ----- Negative from Common Ground
+  |+    |+
+===========
+|12V+  5V+|
+| |     | |
+|12V+  5V+| == Common Center to Battery (Jack/USB)
+| |       |
+|12V+  NC*|  *No Connection for 5V+ side (USB)
+===========
+  |+
+Charging Port -- Negative from Common Ground
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

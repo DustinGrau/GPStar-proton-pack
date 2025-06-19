@@ -1,0 +1,1046 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+        <link rel="next" href="GUIDE/">
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>GPStar Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#summary" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="GPStar Documentation" class="md-header__button md-logo" aria-label="GPStar Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GPStar Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="GPStar Documentation" class="md-nav__button md-logo" aria-label="GPStar Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GPStar Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-reel-demonstration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Feature Reel Demonstration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Table of Contents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial1-expansion-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serial1 Expansion Controller
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#by-component-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      By-Component Guides
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diy-arduino-build-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      DIY Arduino Build Guides
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#walkthrough-videos" class="md-nav__link">
+    <span class="md-ellipsis">
+      Walkthrough Videos
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-md-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing MD Files
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Viewing MD Files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yes-have-somemusic" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Yes, have some"...music!
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sound-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sound files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Licensing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Acknowledgements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Acknowledgements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-thanks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Thanks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disclaimer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disclaimer
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="FAQ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ABOUT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-reel-demonstration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Feature Reel Demonstration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Table of Contents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial1-expansion-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serial1 Expansion Controller
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#by-component-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      By-Component Guides
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diy-arduino-build-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      DIY Arduino Build Guides
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#walkthrough-videos" class="md-nav__link">
+    <span class="md-ellipsis">
+      Walkthrough Videos
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-md-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing MD Files
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Viewing MD Files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yes-have-somemusic" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Yes, have some"...music!
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sound-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sound files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Licensing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Acknowledgements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Acknowledgements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-thanks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Thanks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disclaimer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disclaimer
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1><img src='images/gpstar_logo.png' width=50 align="left"/>GPStar Proton Pack and Neutrona Wand</h1>
+
+<h3 id="summary">Summary</h3>
+<p>A fully integrated Proton Pack and Neutrona Wand, packed with features and add-ons. Compatible with the HasLab Plasma Series Proton Pack and Neutrona Wand, Mack's Proton Pack and Wand, and more!</p>
+<ul>
+<li>Polyphonic sound</li>
+<li>Allows simultaneous playback of multiple audio tracks which can be layered together to create a rich experience with smoothly layered sound effects and buttery smooth transitions.</li>
+<li>While blasting away with the Proton stream you can still hear all the layers of sound effects that came before...the Pack effects, each Wand toggle effect, Music etc.</li>
+<li>Wand / Pack communication system</li>
+<li>By implementing both the pack and wand controllers with an upgraded hose connection, both devices work seamlessly together. Interactions with the wand have an immediate effect on the pack, and vice-versa.</li>
+<li>This functionality includes sound effects, alarm triggers, Cyclotron interaction, venting/overheat sequences, and proton stream effects (eg. video game colours and crossing the streams).</li>
+</ul>
+<h2 id="feature-reel-demonstration">Feature Reel Demonstration</h2>
+<p>Just see for yourself what this kit can do, and you'll be ready to believe us!
+<a href="https://www.youtube.com/watch?v=lDD9TEip7_s"><img alt="GPStar Proton Pack and Neutrona Wand feature reel demonstration" src="https://img.youtube.com/vi/lDD9TEip7_s/maxresdefault.jpg" /></a></p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<p><em>"Ray, pretend for a moment that I don't know anything about metallurgy, engineering, or physics, and just tell me what the hell is going on." -Dr. Venkman</em></p>
+<p>That's alright, this will help you study. Below you will find the various guides to build out your new electronic brains, and maybe find some cool new features to implement as part of the addendums.</p>
+<hr />
+<p><img src='images/gpstar_logo.png' width=50 align="left"/><h3>GPStar Proton Pack and Neutrona Wand PCB Guide</h3>These are the most important guides which will get you familiar with the major components and how to update them with the latest capabilities offered by software and sound effects. This includes guides to aid you in completing the connections and installation for the GPStar Proton Pack and Neutrona Wand PCB boards.</p>
+<ol>
+<li>
+<p><a href="PACK_PCB/">Pack PCB</a></p>
+</li>
+<li>
+<p><a href="WAND_PCB/">Wand PCB</a></p>
+</li>
+<li>
+<p><a href="FLASHING/">Flashing Firmware Updates</a></p>
+</li>
+<li>
+<p><a href="GPSTAR_AUDIO_PCB/">GPStar Audio PCB</a></p>
+</li>
+<li>
+<p><a href="AUDIO/">Loading The Audio Files</a></p>
+</li>
+<li>
+<p><a href="INSTALL_GUIDE/">Installation Video &amp; Guide</a></p>
+</li>
+<li>
+<p><a href="TROUBLESHOOTING/">Troubleshooting</a></p>
+</li>
+</ol>
+<p>For more information about optional upgrades please see the "Component Guides" section below.</p>
+<hr />
+<h3 id="serial1-expansion-controller">Serial1 Expansion Controller</h3>
+<p>This is a device which utilize the available expansion port on the GPStar Proton Pack controller. At present the only supported uses are as an "Pack Attenuator" or a "Wireless Adapter". Both use-cases are provided by the same software which normally drives the Attenuator device--in the case of the wireless adapter is simply used without switches or other peripherals to only provide WiFi capability to your Proton Pack. Please read the following guides for more specific details. <em>Please note that the original Attenuator DIY guide used an Arduino Nano which is no longer capable of providing the storage space required by the full range of features supported and that hardware has been deprecated in favor of the ESP32 platform.</em></p>
+<ol>
+<li>
+<p><a href="ATTENUATOR/">Pack Attenuator</a> - Full Device Implementation (w/ Switches and Inputs)</p>
+</li>
+<li>
+<p><a href="WIRELESS/">Wireless Adapter</a> - Scaled-Down Attenuator (No Physical User Inputs)</p>
+</li>
+</ol>
+<hr />
+<h3 id="by-component-guides">By-Component Guides</h3>
+<p>This section is presented in a way to offer a more complete view of what components are available (by major equipment areas), whether those components are Required<sup>R</sup> or Optional<sup>O</sup>, if choices are offerred at a specific component level. Where possible, each option will link to a related guide for more details and/or installation instructions.</p>
+<p><strong>Proton Pack</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>Option w/ Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Power Source<sup>R</sup></td>
+<td><a href="POWER/">TalentCell 3000mAh or 6000mAh</a></td>
+</tr>
+<tr>
+<td>Controller<sup>R</sup></td>
+<td><a href="PACK_PCB/">GPStar Pack Controller</a> or <a href="DIY_PACK/">Arduino 2560</a></td>
+</tr>
+<tr>
+<td>Software<sup>R</sup></td>
+<td><a href="FLASHING/">Flashing the Latest Firmware</a></td>
+</tr>
+<tr>
+<td>Audio Board<sup>R</sup></td>
+<td><a href="GPSTAR_AUDIO_PCB/">GPStar Audio</a> or <a href="WAVTRIGGER/">Robertsonics WAV Trigger</a></td>
+</tr>
+<tr>
+<td>Speakers/Amp<sup>R</sup></td>
+<td><a href="SOUND/">Audio Output Guide</a></td>
+</tr>
+<tr>
+<td>Sound Effects<sup>R</sup></td>
+<td><a href="AUDIO/">Loading The Audio Files</a></td>
+</tr>
+<tr>
+<td>Cyclotron Lid<sup>O</sup></td>
+<td><a href="CYCLOTRON_LID/">12/20/36-LED options</a></td>
+</tr>
+<tr>
+<td>Inner Cyclotron<sup>O</sup></td>
+<td><a href="CYCLOTRON_INNER/">Cake and Panel Lights</a></td>
+</tr>
+<tr>
+<td>N-Filter<sup>O</sup></td>
+<td><a href="NFILTER/">7-LED Vent Light</a></td>
+</tr>
+<tr>
+<td>Powercell<sup>O</sup></td>
+<td><a href="POWERCELL/">13 and 15-LED options</a></td>
+</tr>
+<tr>
+<td>Smoke Effects<sup>O</sup></td>
+<td><a href="SMOKE/">Various Solutions Supported</a></td>
+</tr>
+<tr>
+<td>Cyclotron Bypass<sup>R* &amp; O</sup></td>
+<td><a href="CYCLOTRON_BYPASS/">Bypass board for non Haslab Proton Packs</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectivity</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>Option w/ Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wired<sup>R</sup></td>
+<td><a href="HOSE/">Pack-Wand Hose Connections</a></td>
+</tr>
+<tr>
+<td>Wireless<sup>O</sup></td>
+<td><a href="ATTENUATOR/">Pack Attenuator</a> or <a href="WIRELESS/">Wireless Adapter</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Neutrona Wand</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>Option w/ Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Power Source<sup>R</sup></td>
+<td>Dedicated Wand Power Source (Guide TBD)</td>
+</tr>
+<tr>
+<td>Controller<sup>R</sup></td>
+<td><a href="WAND_PCB/">GPStar Wand Controller</a></td>
+</tr>
+<tr>
+<td>Software<sup>R</sup></td>
+<td><a href="FLASHING/">Flashing the Latest Firmware</a></td>
+</tr>
+<tr>
+<td>Audio Board<sup>R</sup></td>
+<td><a href="GPSTAR_AUDIO_PCB/">GPStar Audio</a> or <a href="WAVTRIGGER/">Robertsonics WAV Trigger</a></td>
+</tr>
+<tr>
+<td>Speakers<sup>R</sup></td>
+<td><a href="SOUND/">Audio Output Guide</a></td>
+</tr>
+<tr>
+<td>Sound Effects<sup>O</sup></td>
+<td><a href="AUDIO/">Loading The Audio Files</a></td>
+</tr>
+<tr>
+<td>Hat Lights<sup>O</sup></td>
+<td><a href="HATS/">Kit option by Jonogunn</a></td>
+</tr>
+<tr>
+<td>Bargraph<sup>O</sup></td>
+<td><a href="BARGRAPH/">28-Segment or 30-Segment</a></td>
+</tr>
+<tr>
+<td>Vent Light<sup>O</sup></td>
+<td><a href="VENTLIGHT/">GPStar RGB Vent Lights or High Intensity option by Frutto Technology</a></td>
+</tr>
+<tr>
+<td>Wand Barrel<sup>O</sup></td>
+<td>2, 5, 49 and 50 LED options (Guide TBD)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Installation, Operation, and Troubleshooting</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Task</strong></th>
+<th><strong>Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial Assembly</td>
+<td><a href="INSTALL_GUIDE/">Installation - Video &amp; Guide</a></td>
+</tr>
+<tr>
+<td>System Operation</td>
+<td><a href="OPERATION/">Equipment Operation Manual</a></td>
+</tr>
+<tr>
+<td>Configuration</td>
+<td><a href="OPERATION_EEPROM/">EEPROM LED/Config Menus</a></td>
+</tr>
+<tr>
+<td>I Need Help!</td>
+<td><a href="TROUBLESHOOTING/">Troubleshooting</a> and <a href="FAQ/">Frequently Asked Questions</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Software Development (Advanced Topics)</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Task</strong></th>
+<th><strong>Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compile Software</td>
+<td><a href="VSCODE/">VSCode + PlatformIO</a></td>
+</tr>
+<tr>
+<td>Modify Software</td>
+<td><a href="ADVCONFIG/">Advanced Software Configuration</a></td>
+</tr>
+<tr>
+<td>Upload Software</td>
+<td><a href="COMPILING_FLASHING/">Pack/Wand Flashing</a> or <a href="ATTENUATOR_FLASHING/">Attenuator/Wireless Flashing</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Special/Standalone Devices</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Devices</strong></th>
+<th><strong>Guide</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single-Shot Blaster</td>
+<td><a href="SINGLESHOT/">Build and Operation Guide</a></td>
+</tr>
+<tr>
+<td>Belt Gizmo</td>
+<td><em>Build Guide TBD</em></td>
+</tr>
+<tr>
+<td>Stream Effects</td>
+<td><em>Build Guide TBD</em></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="diy-arduino-build-guides">DIY Arduino Build Guides</h3>
+<p>Considered the "legacy" guide to building your own solution using the Arduino platform. <em>Please note that the original Neutrona Wand guide used an Arduino Nano which is no longer capable of providing the storage space required by the full range of features supported and that hardware has been deprecated. In order to continue with these guides, please note that a replacement board (Mega 2560 Pro Mini) has been identified for the Neutrona Wand and MUST be used with the latest software release.</em></p>
+<p>This is an advanced build-out which requires opening all devices and performing a significant amount of soldering. <strong>Proceed with caution, regardless of your skillset or abilities.</strong></p>
+<ol>
+<li>
+<p><a href="DIY_BOM/">Bill of Materials</a></p>
+</li>
+<li>
+<p><a href="POWER/">Power Requirements</a></p>
+</li>
+<li>
+<p><a href="DIY_FLASHING/">Compiling and Uploading the Code</a></p>
+</li>
+<li>
+<p><a href="GPSTAR_AUDIO_PCB/">GPStar Audio PCB</a> or <a href="WAVTRIGGER/">WAV Trigger Configuration</a></p>
+</li>
+<li>
+<p><a href="AUDIO/">Loading The Audio Files</a></p>
+</li>
+<li>
+<p><a href="SOUND/">Audio Output Guide</a></p>
+</li>
+<li>
+<p><a href="DIY_PACK/">DIY Pack Setup - Arduino Mega 2560 R3</a></p>
+</li>
+<li>
+<p><a href="DIY_WAND/">DIY Wand Setup - Mega 2560 Pro Mini</a></p>
+</li>
+<li>
+<p><a href="HOSE/">Hose Connections</a></p>
+</li>
+</ol>
+<h2 id="walkthrough-videos">Walkthrough Videos</h2>
+<p><em>"You know, it just occurred to me that we really haven't had a successful test of this equipment." -Ray Stantz</em></p>
+<p>Except that we have! Here is a <a href="https://www.youtube.com/watch?v=mnfljGd5-uU">Walkthrough Video Contributed by JustinDustin</a> (YouTube, March 2023) showcasing several of the stock features in a converted pack/wand combination. Several optional features were implemented as part of this build using the Arduino platform.
+<a href="https://www.youtube.com/watch?v=mnfljGd5-uU"><img alt="Haslab Proton Pack Arduino Powered Walkthrough Video" src="https://img.youtube.com/vi/mnfljGd5-uU/maxresdefault.jpg" /></a></p>
+<p>Additionally, this video covers several new updates in the months since, using the new GPStar controllers, as the <a href="https://www.youtube.com/watch?v=ePXz99UawLQ">Optional Features and Menu Walkthrough</a> (YouTube, July 2023).
+<a href="https://www.youtube.com/watch?v=mnfljGd5-uU"><img alt="Optional Features and Menu Walkthrough Video" src="https://img.youtube.com/vi/ePXz99UawLQ/maxresdefault.jpg" /></a></p>
+<h2 id="viewing-md-files">Viewing MD Files</h2>
+<p>GitHub should automatically display these files with basic formatting, though to view these MD (MarkDown) files linked above with full formatting including color-coding, you can use a program such as <a href="http://markdownpad.com/">MarkdownPad</a> (Windows) or <a href="https://macdown.uranusjr.com/">MacDown</a> (MacOS). Alternatively, you may copy the contents into <a href="https://markdownlivepreview.com/">an online viewer</a>.</p>
+<h3 id="yes-have-somemusic">"Yes, have some"...music!</h3>
+<p>Special thanks to Michael Klodzinksi for graciously allowing us to include his version of <a href="https://www.youtube.com/watch?v=shJslMSAxE0">Savin' The Day</a> as a bundled music file to demo your awesome Proton Pack mods! Check out his other works at <a href="https://michaelk.net">michaelk.net</a>.</p>
+<h2 id="sound-files">Sound files</h2>
+<p>The sound effects files are combination of self made files for this project to ones from within the Ghostbusters community, etc. Apologies if it is forgotten to acknowledge where some of the files originate from.</p>
+<h2 id="licensing">Licensing</h2>
+<p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License along with this program. If not, see <a href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>.</p>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>This project is made possible by Ghostbusters community makers and volunteers spanning 4 countries over 2 continents.</p>
+<ul>
+<li>Michael Rajotte (aka. "GPStar Technologies") - Director of Operations, Software Architect, Product Designer, PCB Design, 3D Modelling, EU &amp; Worldwide Distribution</li>
+<li>Jonathan Gunn (aka. "Jonogunn") - Video Instruction Guides, Install Testing.</li>
+<li>Dustin Grau (aka. "JustinDustin") - Prototyping and Testing, Documentation, 3D Modelling, Software Support</li>
+<li>Angie Rutto (aka. "Frutto Technology") - Maker and purveyor of fine add-on products, UK Distribution</li>
+<li>Nomake Wan - Software Support and Feature Development</li>
+</ul>
+<h3 id="special-thanks">Special Thanks</h3>
+<ul>
+<li>Emre Sahare (GBFans: One Time) - For the original prop mode "Mode Original" operation deciphering.</li>
+<li>Alexander Hibbs (@BeaulieuDesigns87) - For his equipment schematic as used in the WiFi web UI.</li>
+</ul>
+<p>Thank you to our supporters on <a href="https://www.gbfans.com/forum">GBFans.com</a> and the <a href="https://www.facebook.com/groups/gpstartechnologies">Facebook group</a>.</p>
+<p>For those who are curious you can view a condensed <a href="HISTORY/">history of how this project began</a>.</p>
+<h2 id="disclaimer">Disclaimer</h2>
+<p><sub>
+This community-driven project is independent and not affiliated with, endorsed by, or sponsored by Hasbro Inc., Ghost Corps, or Sony Pictures. Hasbro Inc. does not endorse or support this project, and any views or opinions expressed within the project are those of the individual contributors and not necessarily those of Hasbro Inc.
+</sub>
+<br/>
+<br/>
+<sub>
+Participants in this project should be aware that it is entirely separate from any official activities or initiatives of Hasbro Inc.. Any use of Hasbro Inc.'s name or its products within this project is purely for informative purposes and does not imply any form of partnership, endorsement, or association with Hasbro Inc.
+</sub>
+<br/>
+<br/>
+<sub>
+Individuals involved in this project are responsible for their own actions, and Hasbro Inc. bears no responsibility for the content, decisions, or outcomes related to this community-driven effort.
+</sub>
+<br/>
+<br/>
+<sub>
+By participating in this project, individuals acknowledge that it is an independent initiative and that Hasbro Inc. is not responsible for the project's development, management, or outcomes.
+</sub>
+<br/>
+<br/>
+<sub>
+This disclaimer is subject to change, and individuals are encouraged to check for updates regularly.
+</sub></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
