@@ -55,7 +55,7 @@ When using the graphical display, most components of the Proton pack and Neutron
 - The top of the display will indicate the mode (Standard = Mode Original, Upgraded = Super Hero) along with the year theme (V1.9.8x or V2.0.2x).
 - When the Ion Arm switch is engaged for Mode Original, the overlay for the Ion Arm will be green to indicate a ready state. When in Super Hero mode this overlay will be green when the Proton Pack is powered on.
 - When the Proton Pack is powered on:
-	- The Powercell, Booster Tube, and Cyclotron overlays will be green as their default state.
+	- The Power Cell, Booster Tube, and Cyclotron overlays will be green as their default state.
 	- When the Cyclotron is in a normal state the overlay will be green. It will change to yellow then red as it goes through the pre-warning and overheat states. During venting the overlay will be blue to indicate the recovery period.
 	- The color state of the Booster Tube is linked to the "Output" text value which is the voltage measured at the Proton Pack PCB (in volts, but displayed as Gev). During high power draw events such as smoke generation the voltage can drop briefly, and will be reflected as a red overlay when that value is below 4.2V
 - When the Neutrona Wand is powered on, the overlay above the Activate/Intensify portion of the gun box will indicate if the barrel is retracted (red) or extended (green).
@@ -152,7 +152,7 @@ Set options related specifically to the Attenuator, such as when the vibration m
 
 <img style="float:right;padding:10px;width:300px;" src="images/WebUI-Pack.jpg"/>
 
-Set options related specifically to the Proton Pack. Options such as the color/saturation sliders will only take effect if you have installed the Frutto Technology powercell and cyclotron lid light kits. Similarly, the Video Game mode option will have no effect on the stock Haslab LEDs.
+Set options related specifically to the Proton Pack. Options such as the color/saturation sliders will only take effect if you have installed upgrades to the RGB Power Cell and Cyclotron lid light kits. Similarly, the Video Game mode option will have no effect on the stock Haslab LEDs.
 
 **Reminder:** The ability to update settings or save to EEPROM will be disabled so long as the pack and wand are running. Turn off all physical toggles to set these devices to an idle state before adjusting settings. Refresh the page to get the latest values for preferences.
 

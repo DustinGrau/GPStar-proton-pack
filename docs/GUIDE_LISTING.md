@@ -10,13 +10,20 @@ These are the most important guides which will get you familiar with the major c
 
 1. [Wand PCB](WAND_PCB.md)
 
+1. [Pack-Wand Hose](HOSE.md)
+
 1. [GPStar Audio PCB](GPSTAR_AUDIO_PCB.md)
 
-1. [Installation Video & Guide](INSTALL_GUIDE.md)
+1. [Installation Videos](INSTALL_VIDEOS.md)
 
 1. [Troubleshooting](TROUBLESHOOTING.md)
 
+A full installation guide is available as a PDF here:
+[GPStar Proton Pack Kit Installation Manual](https://github.com/gpstar81/GPStar-proton-pack/blob/main/extras/gpstar-Haslab-Proton-Pack-Kit-Installation-Manual-V4.pdf?raw=1)
+
 ## Maintenance
+
+These guides will help you update the software and audio files as new releases become available.
 
 1. [Flashing Firmware Updates](FLASHING.md)
 
@@ -39,7 +46,7 @@ This section is presented in a way to offer a more complete view of what compone
 | Cyclotron Lid<sup>O</sup>   | [12/20/36-LED options](CYCLOTRON_LID.md) |
 | Inner Cyclotron<sup>O</sup> | [Cake and Panel Lights](CYCLOTRON_INNER.md)
 | N-Filter<sup>O</sup>        | [7-LED Vent Light](NFILTER.md) |
-| Powercell<sup>O</sup>       | [13 and 15-LED options](POWERCELL.md) |
+| Power Cell<sup>O</sup>       | [13 and 15-LED options](POWERCELL.md) |
 | Smoke Effects<sup>O</sup>   | [Various Solutions Supported](SMOKE.md) |
 | Cyclotron Bypass<sup>R* & O</sup> | [Bypass board for non Haslab Proton Packs](CYCLOTRON_BYPASS.md) |
 

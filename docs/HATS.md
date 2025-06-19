@@ -1,4 +1,4 @@
-# Hat Lights
+# Hat Lights (Optional)
 
 The hat lights are a special add-on which replace the solid orange plastic dome on the top of the wand gun box and the orange selector switch at the end of the wand barrel. Support for both lights exists as part of the Wand PCB kit.
 

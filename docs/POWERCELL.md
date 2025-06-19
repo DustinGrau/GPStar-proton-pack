@@ -1,4 +1,6 @@
-## Frutto Technology 15 LED Power Cell Replacement
+## Power Cell Replacement (Optional)
+
+This demonstrates how to replace the stock Power Cell LED array (single-color) with a 15 element RGB array.
 
 ### Installation Guide Video
 

@@ -24,7 +24,7 @@ When adding extra music to your system, many audio software tend to add Meta Dat
 
 ## Proton Pack ##
 
-Since all connections to the Proton Pack utilize standard JST-XH connections to the available devices, please re-check any connections for incorrect seating and polarity before continuing. If these are in place then at a minimum you should be able to turn on the pack using the red switch under the ion arm which should cause the Powercell lights to activate. This will be the primary means of validating that the pack controller is enabled.
+Since all connections to the Proton Pack utilize standard JST-XH connections to the available devices, please re-check any connections for incorrect seating and polarity before continuing. If these are in place then at a minimum you should be able to turn on the pack using the red switch under the ion arm which should cause the Power Cell lights to activate. This will be the primary means of validating that the pack controller is enabled.
 
 ### Pack will not power on (no lights or sounds) ###
 

@@ -1,15 +1,17 @@
-# Inner Cyclotron Lights
+# Inner Panel/Cyclotron Lights (Optional)
 
 These are *OPTIONAL* add-on additions for use within the Proton Pack.
 
 ## Light Switch Panel (Optional)
 
 ### Option 1: Standard LEDs
+
 There is a included STL file that you can 3D Print to replace the Cyclotron switch plate. You can add 5mm LEDs into the holes. See reference in the [Pack Setup (PCB)](PACK_PCB.md) for connections or [Pack Setup (DIY)](DIY_PACK.md) for wiring to the Arduino Mega. You can use cliplites to hold the LEDs in place. Refer to the [full DIY parts list](DIY_BOM.md) on where to source them.
 
 ![Panel with Cliplites](images/SwitchPanel.jpg)
 
 ### Option 2: LED Panel
+
 ![LED Panel](images/LEDPanel.jpg)
 
 Supported as an alternative to regular LEDs is the [GPStar Cyclotron LED Panel](https://gpstartechnologies.com/products/gpstar-inner-cyclotron-led-panel) and or Frutto Technology Cyclotron LED panel. These panels will change colours depending on the state of your Proton Pack system. You will want to substitute [8 clear CLF-280-CTP cliplites](https://www.digikey.com/en/products/detail/visual-communications-company-vcc/CLF-280-CTP/4515438). This panel will sit between the pack controller and the inner cyclotron "cake" lights. See below for the hookup guide:

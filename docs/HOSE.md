@@ -1,4 +1,4 @@
-# Pack Hose Replacements
+# Pack-Wand Hose Replacement
 
 In order to deliver both power and data signals to the wand, a new set of cabling is required. As wiring is typically desired to remain internal to the hose the following approaches have been used to replace the stock 2-wire (power-only) hose with a new 4-wire solution. The existing wire loom (black hose) can be reused if desired, or replaced with a more flexible brand.
 

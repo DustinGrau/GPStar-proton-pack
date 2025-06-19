@@ -1,4 +1,4 @@
-# Neutrona Wand Bargraph
+# Neutrona Wand Bargraph (Optional)
 
 This guide outlines the **optional** upgrade from the 5-LED stock bargraph to a more animated 28-segment bargraph (BL28Z-3005SA04Y) or the 28 Segment Bargraph and Power Cell from [Frutto Technology](https://fruttotechnology.com).
 

@@ -1,8 +1,8 @@
-# Cyclotron Lid Lights
+# Cyclotron Lid Lights (Optional)
 
 These are *OPTIONAL* add-on additions for use within the Proton Pack.
 
-## Cyclotron Lid Lights (Optional)
+## Overview
 
 The stock lights in the HasLab pack only supplies 12 addressable LEDs which are red-only. If you wish to be able to change the colours of these lights you will need to replace them with an addressable LED ring, [GPStar Cyclotron LEDs](https://gpstartechnologies.com/products/gpstar-cyclotron) or those made by Frutto Technology such as the [20-LED (4x 5-LED)](https://fruttotechnology.com/ols/products/cyclotron-5-leds-kit) or [36-LED (4x 9-LED)](https://fruttotechnology.com/ols/products/cyclotron-5-leds-kit-cyc-5-lds-kit1) option.
 
