@@ -8,11 +8,12 @@ nav:
     - Introduction: GUIDE_LISTING.md
     - Proton Pack: PACK_PCB.md
     - Neutrona Wand: WAND_PCB.md
-    - Flashing Firmware: FLASHING.md
     - GPStar Audio: GPSTAR_AUDIO_PCB.md
-    - Audio Files: AUDIO.md
     - Serial1 Expansion: SERIAL1.md
     - Legacy DIY: DIY_LEGACY.md
+  - Maintenance:
+    - Flashing Firmware: FLASHING.md
+    - Audio Files: AUDIO.md
   - Installation:
     - Introduction: INSTALL_GUIDE.md
   - Operation Manuals:

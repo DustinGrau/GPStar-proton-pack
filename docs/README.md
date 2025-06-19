@@ -2,7 +2,7 @@
 
 <center>For the Proton Pack, Neutrona Wand, & Accessories</center>
 
-### Summary
+## Summary
 
 A fully integrated Proton Pack and Neutrona Wand, packed with features and add-ons. Compatible with the HasLab Plasma Series Proton Pack and Neutrona Wand, Mack's Proton Pack and Wand, and more!
 
@@ -13,18 +13,12 @@ A fully integrated Proton Pack and Neutrona Wand, packed with features and add-o
    - By implementing both the pack and wand controllers with an upgraded hose connection, both devices work seamlessly together. Interactions with the wand have an immediate effect on the pack, and vice-versa.
    - This functionality includes sound effects, alarm triggers, Cyclotron interaction, venting/overheat sequences, and proton stream effects (eg. video game colours and crossing the streams).
 
-## Feature Reel Demonstration ##
+### Feature Reel Demos
 
 Just see for yourself what this kit can do, and you'll be ready to believe us!
 [![GPStar Proton Pack and Neutrona Wand feature reel demonstration](https://img.youtube.com/vi/lDD9TEip7_s/maxresdefault.jpg)](https://www.youtube.com/watch?v=lDD9TEip7_s)
 
-## Table of Contents
-
-*"Ray, pretend for a moment that I don't know anything about metallurgy, engineering, or physics, and just tell me what the hell is going on." -Dr. Venkman*
-
-That's alright, this will help you study. Start with the Guides section to find the dedicated guides to build out your new electronic brains, and maybe find some cool new features to implement as part of the addendums.
-
-## Walkthrough Videos ##
+### Walkthrough Videos
 
 *"You know, it just occurred to me that we really haven't had a successful test of this equipment." -Ray Stantz*
 
@@ -34,13 +28,21 @@ Except that we have! Here is a [Walkthrough Video Contributed by JustinDustin](h
 Additionally, this video covers several new updates in the months since, using the new GPStar controllers, as the [Optional Features and Menu Walkthrough](https://www.youtube.com/watch?v=ePXz99UawLQ) (YouTube, July 2023).
 [![Optional Features and Menu Walkthrough Video](https://img.youtube.com/vi/ePXz99UawLQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=mnfljGd5-uU)
 
+### Guides Everywhere!
+
+*"Ray, pretend for a moment that I don't know anything about metallurgy, engineering, or physics, and just tell me what the hell is going on." -Dr. Venkman*
+
+That's alright, this will help you study. Start with [the Component Guides section](GUIDE_LISTING.md) to find the dedicated guides to build out your new electronic brains, and maybe find some cool new features to implement as part of the addendums.
+
+## Movie-Accurate Audio
+
+### About our Effects files
+
+The sound effects files furnished with this project are combination of self made files to those contributed within the Ghostbusters community, etc. We do apologize if it is forgotten to acknowledge where some of the files originate from, though we do our best to share credit where due. See the [About](ABOUT.md) page for more information.
+
 ### "Yes, have some"...music!
 
 Special thanks to Michael Klodzinksi for graciously allowing us to include his version of [Savin' The Day](https://www.youtube.com/watch?v=shJslMSAxE0) as a bundled music file to demo your awesome Proton Pack mods! Check out his other works at [michaelk.net](https://michaelk.net).
-
-## Sound files
-
-The sound effects files are combination of self made files for this project to ones from within the Ghostbusters community, etc. Apologies if it is forgotten to acknowledge where some of the files originate from.
 
 ## Licensing
 

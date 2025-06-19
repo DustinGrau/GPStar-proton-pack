@@ -1,5 +1,7 @@
 # About
 
+## Team Members
+
 This project is made possible by Ghostbusters community makers and volunteers spanning 4 countries over 2 continents.
 
 * Michael Rajotte (aka. "GPStar Technologies") - Director of Operations, Software Architect, Product Designer, PCB Design, 3D Modelling, EU & Worldwide Distribution
@@ -8,10 +10,12 @@ This project is made possible by Ghostbusters community makers and volunteers sp
 * Angie Rutto (aka. "Frutto Technology") - Maker and purveyor of fine add-on products, UK Distribution
 * Nomake Wan - Software Support and Feature Development
 
-### Special Thanks
+## Special Community Thanks
 
-* Emre Sahare (GBFans: One Time) - For the original prop mode "Mode Original" operation deciphering.
-* Alexander Hibbs (@BeaulieuDesigns87) - For his equipment schematic as used in the WiFi web UI.
+* Emre Sahare (GBFans: One Time)
+	* For the original prop mode "Mode Original" operation deciphering.
+* Alexander Hibbs (@BeaulieuDesigns87)
+	* For his SVG equipment schematic as used in the WiFi web UI.
 
 Thank you to our supporters on [GBFans.com](https://www.gbfans.com/forum) and the [Facebook group](https://www.facebook.com/groups/gpstartechnologies).
 

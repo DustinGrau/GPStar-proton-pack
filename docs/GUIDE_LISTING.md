@@ -1,24 +1,28 @@
 <h1><img src="../images/gpstar_logo.png" width="50"/>GPStar System Guides</h1>
 
+# Introduction
+
 These are the most important guides which will get you familiar with the major components and how to update them with the latest capabilities offered by software and sound effects. This includes guides to aid you in completing the connections and installation for the GPStar Proton Pack and Neutrona Wand PCB boards.
+
+## Installation
 
 1. [Pack PCB](PACK_PCB.md)
 
 1. [Wand PCB](WAND_PCB.md)
 
-1. [Flashing Firmware Updates](FLASHING.md)
-
 1. [GPStar Audio PCB](GPSTAR_AUDIO_PCB.md)
-
-1. [Loading The Audio Files](AUDIO.md)
 
 1. [Installation Video & Guide](INSTALL_GUIDE.md)
 
 1. [Troubleshooting](TROUBLESHOOTING.md)
 
-For more information about optional upgrades please see the "By-Component Guides" section below.
+## Maintenance
 
-### By-Component Guides
+1. [Flashing Firmware Updates](FLASHING.md)
+
+1. [Loading The Audio Files](AUDIO.md)
+
+## By-Component Guides
 
 This section is presented in a way to offer a more complete view of what components are available (by major equipment areas), whether those components are Required<sup>R</sup> or Optional<sup>O</sup>, if choices are offerred at a specific component level. Where possible, each option will link to a related guide for more details and/or installation instructions.
 
@@ -66,7 +70,7 @@ This section is presented in a way to offer a more complete view of what compone
 | **Task**         | **Guide** |
 |------------------|---------------------------------------------|
 | Initial Assembly | [Installation - Video & Guide](INSTALL_GUIDE.md) |
-| System Operation | [Equipment Operation Manual](OPERATION.md) |
+| System Operation | [Equipment Operation Manual](OPERATION_USAGE.md) |
 | Configuration    | [EEPROM LED/Config Menus](OPERATION_EEPROM.md) |
 | I Need Help!     | [Troubleshooting](TROUBLESHOOTING.md) and [Frequently Asked Questions](FAQ.md) |
 
