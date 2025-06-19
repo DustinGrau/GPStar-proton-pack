@@ -1,7 +1,7 @@
 name: Deploy MkDocs Documentation
 on:
   push:
-    branches: [main]  # Or whatever your main branch is called
+    branches: [main]  # Only rebuild for the latest live code and docs
 permissions:
   contents: write  # Needed to push to gh-pages
 jobs:
