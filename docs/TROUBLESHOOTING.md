@@ -91,7 +91,7 @@ If your pack and wand are on default settings (you may test this by entering the
 
 ### Bench Test Mode ###
 
-If you wish to use the Neutrona Wand without a Proton Pack, flash [NeutronaWand-BenchTest.hex](binaries/wand/extras/NeutronaWand-BenchTest.hex?raw=1) from the Neutrona Wand binary extras folder to the device to enable a special mode which will allow the wand to operate without waiting for a response from the pack. As of firmware 5.3.3 you can also bridge/jumper the Proton Pack TX1 and RX1 pins on the Neutrona Wand circuit board to enable Bench Test mode without flashing the above firmware (see below image). This is useful for debugging whether an issue with your Proton Pack serial connection is the cause of your wand issues.
+If you wish to use the Neutrona Wand without a Proton Pack, flash [NeutronaWand-BenchTest.hex](https://github.com/gpstar81/GPStar-proton-pack/binaries/wand/extras/NeutronaWand-BenchTest.hex?raw=1) from the Neutrona Wand binary extras folder to the device to enable a special mode which will allow the wand to operate without waiting for a response from the pack. As of firmware 5.3.3 you can also bridge/jumper the Proton Pack TX1 and RX1 pins on the Neutrona Wand circuit board to enable Bench Test mode without flashing the above firmware (see below image). This is useful for debugging whether an issue with your Proton Pack serial connection is the cause of your wand issues.
 
 ![](images/GPStar-Wand-BenchTest.jpg)
 
@@ -141,7 +141,7 @@ Remember that a ground loop isolator is not required for this device as this is 
 
 **Startup Blinking Patterns:**
 
-- 1x (long) - 1 long blink upon startup indicates that the SD card is no good or the formatting was bad. Re-format fully using your OS or the provided [guiformat.exe](extras/sound/guiformat.exe?raw=1) utility in [extras](extras/) (for Windows only). Name brand microSD cards are highly recommended, with SanDisk having been proven the most reliable so far.
+- 1x (long) - 1 long blink upon startup indicates that the SD card is no good or the formatting was bad. Re-format fully using your OS or the provided [guiformat.exe](https://github.com/gpstar81/GPStar-proton-pack/extras/sound/guiformat.exe?raw=1) utility in [extras](https://github.com/gpstar81/GPStar-proton-pack/extras/) (for Windows only). Name brand microSD cards are highly recommended, with SanDisk having been proven the most reliable so far.
 - 3x (quick) - 3 quick blinks in succession is the normal pattern at initial power-up to indicate the device has initialized without issues.
 
 **Post Startup Blinking Patterns**
@@ -162,4 +162,4 @@ Remember that a ground loop isolator is not required for this device as this is 
 
 1. Please remove any metadata contained in the music wav files you add, as it can cause issues loading the file for playback.
 
-[Manual for the WAV Trigger [pdf]](extras/sound/WavTrigger/WT_UserGuide_20230602.pdf?raw=1)
+[Manual for the WAV Trigger [pdf]](https://github.com/gpstar81/GPStar-proton-pack/extras/sound/WavTrigger/WT_UserGuide_20230602.pdf?raw=1)

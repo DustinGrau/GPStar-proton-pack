@@ -31,33 +31,33 @@ Please refer to the table below for a list of devices and their supported softwa
 ## 📝 IMPORTANT NOTES FOR FLASHING UPDATES 📝
 
 1. The same software version should be updated to **ALL** available devices, even if the changelog does not advertise modifications for a certain component. This ensures proper serial communication between devices.
-1. If you are flashing updates to your existing setup, make sure that **BOTH** your Proton Pack and Neutrona Wand Micro SD Cards have all the latest sound effects from this repository as found in the [sounds](sounds/) directory.
+1. If you are flashing updates to your existing setup, make sure that **BOTH** your Proton Pack and Neutrona Wand Micro SD Cards have all the latest sound effects from this repository as found in the [sounds](https://github.com/gpstar81/GPStar-proton-pack/sounds/) directory.
 
 ## Flashing Updates
-After connecting your GPStar Proton Pack or Neutrona Wand board to your computer with the included FTDI to USB programming cable, download the GPStar firmware flasher from the [extras](extras/) folder and run the program.
+After connecting your GPStar Proton Pack or Neutrona Wand board to your computer with the included FTDI to USB programming cable, download the GPStar firmware flasher from the [extras](https://github.com/gpstar81/GPStar-proton-pack/extras/) folder and run the program.
 
 **As of the v5.4.4 release, new versions of the flasher utilities are available and are encouraged to be used instead of any older copies.** These provide more integity/size checks for selected files, ensuring you have selected a true binary file.
 
 **GPStar Pack/Wand Firmware Flasher**
 
-- [Windows (x86/x64)](extras/gpstarFirmwareFlasher.exe?raw=1)
-- [MacOS Intel/M1](extras/GPStar-Firmware-Flasher-Mac.dmg?raw=1)
+- [Windows (x86/x64)](https://github.com/gpstar81/GPStar-proton-pack/extras/gpstarFirmwareFlasher.exe?raw=1)
+- [MacOS Intel/M1](https://github.com/gpstar81/GPStar-proton-pack/extras/GPStar-Firmware-Flasher-Mac.dmg?raw=1)
 
 **GPStar Audio Firmware Flasher**
 
-- [Windows (x64 only)](extras/sound/GPStar%20Audio/gpstarAudioFirmwareFlasher.exe?raw=1)
-- [MacOS Intel](extras/sound/GPStar%20Audio/GPStar-Audio-Firmware-Flasher-Mac.dmg?raw=1) (Must enable Rosetta for Apple Silicon CPUs)
+- [Windows (x64 only)](https://github.com/gpstar81/GPStar-proton-pack/extras/sound/GPStar%20Audio/gpstarAudioFirmwareFlasher.exe?raw=1)
+- [MacOS Intel](https://github.com/gpstar81/GPStar-proton-pack/extras/sound/GPStar%20Audio/GPStar-Audio-Firmware-Flasher-Mac.dmg?raw=1) (Must enable Rosetta for Apple Silicon CPUs)
 
 **GPStar ESP32 Firmware Flasher**
 
-- [Windows (x64 only)](extras/gpstarESP32FirmwareFlasher.exe?raw=1)
-- [MacOS Intel/M1](extras/GPStar-ESP32-Flasher?raw=1)
+- [Windows (x64 only)](https://github.com/gpstar81/GPStar-proton-pack/extras/gpstarESP32FirmwareFlasher.exe?raw=1)
+- [MacOS Intel/M1](https://github.com/gpstar81/GPStar-proton-pack/extras/GPStar-ESP32-Flasher?raw=1)
 
 The latest pre-compiled firmware binaries can be found in the binaries folder of this repository.\
-[Binaries Folder](binaries/)
+[Binaries Folder](https://github.com/gpstar81/GPStar-proton-pack/binaries/)
 
 The GPStar Audio firmware binary can be found in the extras/sound/GPStar Audio folder.\
-[GPStar Audio Folder](extras/sound/GPStar%20Audio/)
+[GPStar Audio Folder](https://github.com/gpstar81/GPStar-proton-pack/extras/sound/GPStar%20Audio/)
 
 When downloading the binaries via GitHub, click on the file then on the **`Download raw file`** button.
 

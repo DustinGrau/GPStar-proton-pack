@@ -79,11 +79,11 @@ Connections from stock JST-XH connectors may be split to maximize use of the sma
 | LED-G# | 2x Green LED for Cyclotron switch plate (OPTIONAL) |
 | LED-MSW | 1x Green LED for mode year switch (OPTIONAL) |
 | LED-VSW | 1x Yellow LED for vibration switch (OPTIONAL) |
-| NEO-CYC | 8 NeoPixel jewels chained together (OPTIONAL) (56 LEDs total) See [Cyclotron Lights](CYCLOTRON.md) |
+| NEO-CYC | 8 NeoPixel jewels chained together (OPTIONAL) (56 LEDs total) See [Cyclotron Lights](CYCLOTRON_INNER.md) |
 | SMOKE1 | This is a standard 5V Air/Vacuum pump motor I use. (see below for more info) |
 | SMOKE2 | This is a standard 5V Air/Vacuum pump motor I use. (see below for more info) |
 
-Regarding the smoke effects, I am using [eroll mac joytech vape pen](https://www.joytech.fr/accueil/168-eroll-mac-joytech.html). I hook up with tubing the mini pump which is linked in the [parts list](BOM.md). One end of the pump creates suction and sucks the smoke in, and the other end of the pump pushes the smoke out. The vape pen itself is activating when suction is applied by the motor. The vape pens are battery powered but come with a USB cable for charging, so I can feed it 5V with a USB cable directly to the pen and not have to rely on the battery it has in it. View the [Smoke Kit Guide](SMOKE.md) for more information on optional smoke effects.
+Regarding the smoke effects, I am using [eroll mac joytech vape pen](https://www.joytech.fr/accueil/168-eroll-mac-joytech.html). I hook up with tubing the mini pump which is linked in the [parts list](DIY_BOM.md). One end of the pump creates suction and sucks the smoke in, and the other end of the pump pushes the smoke out. The vape pen itself is activating when suction is applied by the motor. The vape pens are battery powered but come with a USB cable for charging, so I can feed it 5V with a USB cable directly to the pen and not have to rely on the battery it has in it. View the [Smoke Kit Guide](SMOKE.md) for more information on optional smoke effects.
 
 When the pump is controlled with the transistor/diode setup as in the diagrams, it is the only device which draws power from the 5V rail. **CAUTION: If you implement your own smoke solution using a different design, test your setup independent of the described circuit and with adequate measurement tools to ensure you will not draw power through the Arduino!** Most designs which use a vape pen (cartomizer) and mini air pump require ~3.6V to run correctly, and while less than the 5V supplied to the circuit below some solutions can require nearly 1 Amp of current to run these devices together. This can also overwhelm the 2N2222 transistor used in this schematic.
 
@@ -93,8 +93,8 @@ By comparison, the current required for a small fan or the vibration motor are p
 |---|---|
 | BAT (+) | Positive 5V from your power source. |
 | BAT (-) | Ground from your 5V power source. |
-| WAND (+) | Runs to your wand (5V) + power rail on the ¼ board (see [DIY Wand Guide](WAND.md)) |
-| WAND (-) | Runs to your wand ground rail on the ¼ board (see [DIY Wand Guide](WAND.md)) |
+| WAND (+) | Runs to your wand (5V) + power rail on the ¼ board (see [DIY Wand Guide](DIY_WAND.md)) |
+| WAND (-) | Runs to your wand ground rail on the ¼ board (see [DIY Wand Guide](DIY_WAND.md)) |
 
 ### Protoboard Layout
 
@@ -211,7 +211,7 @@ NOTE: If you change LED colours, use an appropriate resistor based on the forwar
 
 The following are *OPTIONAL* builds for use within the Proton Pack.
 
- - [Cyclotron Lights](CYCLOTRON.md)
+ - [Cyclotron Lights](CYCLOTRON_INNER.md)
  - [N-Filter Vent Light](NFILTER.md)
 
 ## Component Fitment

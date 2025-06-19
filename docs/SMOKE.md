@@ -1,6 +1,6 @@
 # Smoke Effects
 
-Both the [GPStar Proton Pack PCB](PACK_PCB.md) and [DIY Arduino](PACK.md) approaches can support up to 2 separate smoke options for the N-Filter and Booster Tube to provide atmospheric effects while operating your Ghostbusters equipment. These effects are automatically triggered during certain interactions and typically after pre-set times through use of 5 JST-XH connections configured to provide DC power during smoke effect phases:
+Both the [GPStar Proton Pack PCB](PACK_PCB.md) and [DIY Arduino](DIY_PACK.md) approaches can support up to 2 separate smoke options for the N-Filter and Booster Tube to provide atmospheric effects while operating your Ghostbusters equipment. These effects are automatically triggered during certain interactions and typically after pre-set times through use of 5 JST-XH connections configured to provide DC power during smoke effect phases:
 
 - Smoke1 aka. N-Filter Smoke `SM-1 - GPStar Proton Pack PCB` or `Pin 39 - Arudino Mega`
 - Smoke2 aka. Booster Smoke `SM-2 - GPStar Proton Pack PCB` or `Pin 35 - Arduino Mega`
@@ -135,9 +135,9 @@ Note: For this component a fan is not necessary as the smoke will rise through u
 
 The following 3D models are provided for those able to print components for their pack. These are designed to fit perfectly within the Hasbro equipment and provide a familiar look to the end solution for getting smoke out of your pack.
 
-- [N-Filter Blower Mount](stl/pack/Haslab/N-Filter Smoke/N-Filter Blower.stl?raw=1) - Holds the 50mm blower in an upright position
-- [N-Filter Filter Cone](stl/pack/Haslab/N-Filter Smoke/N-Filter Cone.stl?raw=1) - Replaces the stock cone and allows smoke and air to exit
-- [N-Filter Template](stl/pack/Haslab/N-Filter Smoke/N-Filter Template.stl?raw=1) - Used to mark where to cut into the pack for smoke tubing and blower air hole
+- [N-Filter Blower Mount](https://github.com/gpstar81/GPStar-proton-pack/stl/pack/Haslab/N-Filter Smoke/N-Filter Blower.stl?raw=1) - Holds the 50mm blower in an upright position
+- [N-Filter Filter Cone](https://github.com/gpstar81/GPStar-proton-pack/stl/pack/Haslab/N-Filter Smoke/N-Filter Cone.stl?raw=1) - Replaces the stock cone and allows smoke and air to exit
+- [N-Filter Template](https://github.com/gpstar81/GPStar-proton-pack/stl/pack/Haslab/N-Filter Smoke/N-Filter Template.stl?raw=1) - Used to mark where to cut into the pack for smoke tubing and blower air hole
 
 ![](images/NFilterTemplate.jpg)
 

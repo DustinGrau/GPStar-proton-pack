@@ -4,7 +4,9 @@ site_dir: site
 
 nav:
   - Home: README.md
-  - Guide: GUIDE.md
+  - Operation Manuals:
+    - General Usage: OPERATION.md
+    - EEPROM Menus: OPERATION_EEPROM.md
   - FAQ: FAQ.md
   - About: ABOUT.md
 

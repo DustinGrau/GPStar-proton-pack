@@ -1,6 +1,6 @@
 <h1><img src='docs/images/gpstar_logo.png' width=50 align="left"/>GPStar Proton Pack and Neutrona Wand</h1>
 
-### Summary
+## Summary
 
 A fully integrated Proton Pack and Neutrona Wand, packed with features and add-ons. Compatible with the HasLab Plasma Series Proton Pack and Neutrona Wand, Mack's Proton Pack and Wand, and more!
 
@@ -18,7 +18,11 @@ Just see for yourself what this kit can do, and you'll be ready to believe us!
 
 ## Official Documentation
 
-Link TBD
+Please find the official documentation in HTML format at [https://gpstar81.github.io/GPStar-proton-pack/](https://gpstar81.github.io/GPStar-proton-pack/)
+
+### Viewing MD Files
+
+Throughout this repository you will find files which end in the `.md` extension. GitHub should automatically display these files with basic formatting, though to view these MarkDown (MD) files with full formatting including color-coding, you can use a program such as [MarkdownPad](http://markdownpad.com/) (Windows) or [MacDown](https://macdown.uranusjr.com/) (MacOS).
 
 ## Licensing
 

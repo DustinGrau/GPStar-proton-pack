@@ -355,7 +355,7 @@ Please view the [supplemental operation guide for EEPROM menus](OPERATION_EEPROM
 ## PDF Operational Guide
 
 (Direct Download link)
-[GPStar Operational Guide [pdf]](extras/gpstar-Operational-Guide.pdf?raw=1)
+[GPStar Operational Guide [pdf]](https://github.com/gpstar81/GPStar-proton-pack/extras/gpstar-Operational-Guide.pdf?raw=1)
 
 <div class="page-break"></div>
 

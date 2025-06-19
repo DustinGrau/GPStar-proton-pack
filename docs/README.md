@@ -158,10 +158,6 @@ Except that we have! Here is a [Walkthrough Video Contributed by JustinDustin](h
 Additionally, this video covers several new updates in the months since, using the new GPStar controllers, as the [Optional Features and Menu Walkthrough](https://www.youtube.com/watch?v=ePXz99UawLQ) (YouTube, July 2023).
 [![Optional Features and Menu Walkthrough Video](https://img.youtube.com/vi/ePXz99UawLQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=mnfljGd5-uU)
 
-## Viewing MD Files
-
-GitHub should automatically display these files with basic formatting, though to view these MD (MarkDown) files linked above with full formatting including color-coding, you can use a program such as [MarkdownPad](http://markdownpad.com/) (Windows) or [MacDown](https://macdown.uranusjr.com/) (MacOS). Alternatively, you may copy the contents into [an online viewer](https://markdownlivepreview.com/).
-
 ### "Yes, have some"...music!
 
 Special thanks to Michael Klodzinksi for graciously allowing us to include his version of [Savin' The Day](https://www.youtube.com/watch?v=shJslMSAxE0) as a bundled music file to demo your awesome Proton Pack mods! Check out his other works at [michaelk.net](https://michaelk.net).
@@ -177,25 +173,6 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-## Acknowledgements
-
-This project is made possible by Ghostbusters community makers and volunteers spanning 4 countries over 2 continents.
-
-* Michael Rajotte (aka. "GPStar Technologies") - Director of Operations, Software Architect, Product Designer, PCB Design, 3D Modelling, EU & Worldwide Distribution
-* Jonathan Gunn (aka. "Jonogunn") - Video Instruction Guides, Install Testing.
-* Dustin Grau (aka. "JustinDustin") - Prototyping and Testing, Documentation, 3D Modelling, Software Support
-* Angie Rutto (aka. "Frutto Technology") - Maker and purveyor of fine add-on products, UK Distribution
-* Nomake Wan - Software Support and Feature Development
-
-### Special Thanks
-
-* Emre Sahare (GBFans: One Time) - For the original prop mode "Mode Original" operation deciphering.
-* Alexander Hibbs (@BeaulieuDesigns87) - For his equipment schematic as used in the WiFi web UI.
-
-Thank you to our supporters on [GBFans.com](https://www.gbfans.com/forum) and the [Facebook group](https://www.facebook.com/groups/gpstartechnologies).
-
-For those who are curious you can view a condensed [history of how this project began](HISTORY.md).
 
 ## Disclaimer
 
