@@ -6,6 +6,7 @@
 
 BINDIR="../binaries"
 SRCDIR="../source"
+PROJECT_DIR="$SRCDIR/AttenuatorESP32"
 
 mkdir -p ${BINDIR}/attenuator/extras
 
@@ -13,14 +14,11 @@ mkdir -p ${BINDIR}/attenuator/extras
 MJVER="${MJVER:="V6"}"
 TIMESTAMP="${TIMESTAMP:=$(date +"%Y%m%d%H%M%S")}"
 
-echo ""
-
-# Set the project directory based on the source folder
-PROJECT_DIR="$SRCDIR/AttenuatorESP32"
-
 # Update date of compilation
 echo "Setting Build Timestamp: ${MJVER}_${TIMESTAMP}"
 sed -i -e 's/\(String build_date = "\)[^"]*\(";\)/\1'"${MJVER}_${TIMESTAMP}"'\2/' ${PROJECT_DIR}/include/Configuration.h
+
+echo ""
 
 # Attenuator (ESP32 - Normal)
 echo "Building Attenuator Binary (ESP32 - Normal)..."
@@ -29,10 +27,17 @@ echo "Building Attenuator Binary (ESP32 - Normal)..."
 pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-pio run --project-dir "$PROJECT_DIR" | grep -iv Retrieved
+pio run --project-dir "$PROJECT_DIR"
 
-rm -f ${PROJECT_DIR}/include/*.h-e
+# Check if the build was successful
+if [ $? -eq 0 ]; then
+  echo "Build succeeded!"
+else
+  echo "Build failed!"
+  exit 1
+fi
 
+# Copy the new firmware to the expected binaries directory
 if [ -f ${PROJECT_DIR}/.pio/build/esp32dev/firmware.bin ]; then
   mv ${PROJECT_DIR}/.pio/build/esp32dev/firmware.bin ${BINDIR}/attenuator/Attenuator-ESP32.bin
 fi
@@ -44,3 +49,5 @@ if [ -f ${PROJECT_DIR}/.pio/build/esp32dev/partitions.bin ]; then
 fi
 echo "Done."
 echo ""
+
+rm -f ${PROJECT_DIR}/include/*.h-e

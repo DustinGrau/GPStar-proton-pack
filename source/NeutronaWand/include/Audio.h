@@ -31,6 +31,26 @@
 #include <GPStarAudio.h>
 gpstarAudio audio;
 
+// --- Serial3 definition for ESP32 ---
+// The ESP32 macro is automatically defined by the Arduino/PlatformIO toolchain
+// when compiling for ESP32-based boards. No need to define it manually.
+// HardwareSerial is provided by the ESP32 Arduino core and allows creation of
+// additional UART serial ports. See: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/serial.html
+#ifdef ESP32
+  #include <HardwareSerial.h> // Provided by the ESP32 Arduino core
+  #ifndef SERIAL3_RX_PIN
+    #define SERIAL3_RX_PIN 6  // Example RX pin, change as needed
+  #endif
+  #ifndef SERIAL3_TX_PIN
+    #define SERIAL3_TX_PIN 7  // Example TX pin, change as needed
+  #endif
+  // Create a HardwareSerial instance for UART2 (Serial3)
+  HardwareSerial Serial3(2);
+#else
+  // On non-ESP32, assume Serial3 is defined by the platform
+  // (e.g., on ATmega2560, Serial3 is hardware)
+#endif
+
 /*
  * Audio Devices
  */
@@ -248,7 +268,7 @@ void playMusic() {
 
     if(b_gpstar_benchtest) {
       // Keep track of music playback on the wand directly.
-      ms_music_status_check.start(i_music_check_delay * 10);
+      ms_music_status_check.start(i_music_check_delay * 5);
     }
   }
 }
@@ -833,7 +853,11 @@ void toggleMusicLoop() {
 bool setupAudioDevice() {
   char gVersion[VERSION_STRING_LEN];
 
+#ifdef ESP32
+  Serial3.begin(57600, SERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN);
+#else
   Serial3.begin(57600);
+#endif
 
   audio.start(Serial3);
 
@@ -852,7 +876,10 @@ bool setupAudioDevice() {
       AUDIO_DEVICE = A_GPSTAR_AUDIO;
     }
 
-    i_volume_abs_max = 10; // GPStar Audio has higher maximum amplification, so reset default values accordingly.
+    if(!b_gpstar_benchtest) {
+      i_volume_abs_max = 10; // Allow GPStar Audio to use +10dB if on external power.
+    }
+
     i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100); // Master overall volume.
     i_volume_master_eeprom = i_volume_master; // Master overall volume that is saved into the eeprom menu and loaded during bootup.
     i_volume_revert = i_volume_master; // Used to restore volume level from a muted state.

@@ -288,14 +288,6 @@ bool vgModeCheck() {
   }
 }
 
-void bargraphClearAlt() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
-    ht_bargraph.clearAll();
-
-    i_bargraph_status_alt = 0;
-  }
-}
-
 void soundBeepLoopStop() {
   // First we need to reset the idle timer to prevent audio overlaps
   if(switch_wand.on() && switch_vent.on() && switch_activate.on() && WAND_STATUS == MODE_ON) {
@@ -674,8 +666,8 @@ void vibrationWand(uint8_t i_level) {
     if(VIBRATION_MODE == VIBRATION_FIRING_ONLY) {
       if(WAND_ACTION_STATUS == ACTION_FIRING || ms_semi_automatic_firing.isRunning()) {
         if(ms_semi_automatic_firing.isRunning()) {
-          if(i_vibration_level_current != (i_level * 2 < 256 ? i_level * 2 : 255)) {
-            i_vibration_level_current = (i_level * 2 < 256 ? i_level * 2 : 255);
+          if(i_vibration_level_current != (i_level * 2 < 64 ? i_level * 2 : 64)) {
+            i_vibration_level_current = (i_level * 2 < 64 ? i_level * 2 : 64);
             analogWrite(VIBRATION_PIN, i_vibration_level_current);
           }
         }
@@ -691,8 +683,8 @@ void vibrationWand(uint8_t i_level) {
     else {
       // Wand vibrates even when idling, etc. (When enabled by the pack)
       if(ms_semi_automatic_firing.isRunning()) {
-        if(i_vibration_level_current != (i_level * 2 < 256 ? i_level * 2 : 255)) {
-          i_vibration_level_current = (i_level * 2 < 256 ? i_level * 2 : 255);
+        if(i_vibration_level_current != (i_level * 2 < 64 ? i_level * 2 : 64)) {
+          i_vibration_level_current = (i_level * 2 < 64 ? i_level * 2 : 64);
           analogWrite(VIBRATION_PIN, i_vibration_level_current);
         }
       }
@@ -753,12 +745,24 @@ uint8_t bargraphLookupTable(uint8_t index) {
     }
   }
   else {
+#ifndef ESP32
     if(b_bargraph_invert) {
       return PROGMEM_READU8(i_bargraph_5_led_invert[index]);
     }
     else {
       return PROGMEM_READU8(i_bargraph_5_led_normal[index]);
     }
+#else
+    return 0; // Return 0 if in error.
+#endif
+  }
+}
+
+void bargraphClearAlt() {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
+    ht_bargraph.clearAll();
+
+    i_bargraph_status_alt = 0;
   }
 }
 
@@ -782,6 +786,7 @@ void resetBargraphSpeed() {
 }
 
 void wandBargraphControl(uint8_t i_t_level) {
+#ifndef ESP32
   if(i_t_level > 4) {
     // On
     digitalWriteFast(bargraphLookupTable(5-1), LOW);
@@ -818,6 +823,7 @@ void wandBargraphControl(uint8_t i_t_level) {
   else {
     digitalWriteFast(bargraphLookupTable(1-1), HIGH);
   }
+#endif
 }
 
 void bargraphRampUp() {
@@ -836,7 +842,7 @@ void bargraphRampUp() {
         ht_bargraph.setLedNow(bargraphLookupTable(i_bargraph_status_alt));
 
         if(i_bargraph_status_alt > 22) {
-          vibrationWand(i_vibration_level_min + 80);
+          vibrationWand(i_vibration_level_min + 50);
         }
         else if(i_bargraph_status_alt > 16) {
           vibrationWand(i_vibration_level_min + 40);
@@ -1049,7 +1055,7 @@ void bargraphRampUp() {
         ht_bargraph.setLedNow(bargraphLookupTable(i_bargraph_status_alt));
 
         if(i_bargraph_status_alt > 23) {
-          vibrationWand(i_vibration_level_min + 80);
+          vibrationWand(i_vibration_level_min + 50);
         }
         else if(i_bargraph_status_alt > 17) {
           vibrationWand(i_vibration_level_min + 40);
@@ -1247,6 +1253,7 @@ void bargraphRampUp() {
       break;
     }
   }
+#ifndef ESP32
   else {
     uint8_t t_bargraph_ramp_multiplier = 1;
 
@@ -1288,7 +1295,7 @@ void bargraphRampUp() {
       break;
 
       case 4:
-        vibrationWand(i_vibration_level_min + 80);
+        vibrationWand(i_vibration_level_min + 50);
 
         wandBargraphControl(5);
 
@@ -1370,6 +1377,7 @@ void bargraphRampUp() {
       break;
     }
   }
+#endif
 }
 
 void soundIdleLoop(bool fadeIn) {
@@ -1838,7 +1846,7 @@ uint8_t bargraphPowerLookupTable(uint8_t index) {
 
 // Draw the bargraph to the current power level instantly.
 void bargraphRedraw() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     /*
       // 28 segment bargraph
       Power Level 5: full: 23 - 27  (5 segments)
@@ -1939,7 +1947,7 @@ void bargraphPowerCheck() {
     Power Level 1: none: 0 - 5    (6 segments)
   */
 
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     if(ms_bargraph_alt.justFinished()) {
       uint8_t i_segment_adjust = 2;
 
@@ -2086,7 +2094,7 @@ void bargraphPowerCheck() {
 
 // Fully lights up the bargraph.
 void bargraphFull() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     uint8_t i_segment_adjust = 2;
 
     if(BARGRAPH_TYPE == SEGMENTS_30) {
@@ -2211,7 +2219,7 @@ void prepBargraphRampUp() {
 
       // If using the 28 and 30 segment bargraph, in Afterlife, we need to redraw the segments.
       // 1984/1989 years will go in to a auto ramp and do not need a manual refresh.
-      if(BARGRAPH_TYPE != SEGMENTS_5 && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
+      if((BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
         bargraphPowerCheck2021Alt(false);
       }
 
@@ -2636,7 +2644,7 @@ void settingsBlinkingLights() {
       b_solid_one = true;
     }
 
-    if(BARGRAPH_TYPE != SEGMENTS_5) {
+    if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
       uint8_t i_top_segment_rows = 25;
       uint8_t i_bottom_segment_rows = 4;
 
@@ -2677,6 +2685,7 @@ void settingsBlinkingLights() {
         ht_bargraph.clearAll();
       }
     }
+#ifndef ESP32
     else {
       if(b_solid_one) {
         digitalWriteFast(bargraphLookupTable(1-1), LOW);
@@ -2696,11 +2705,12 @@ void settingsBlinkingLights() {
         digitalWriteFast(bargraphLookupTable(5-1), HIGH);
       }
     }
+#endif
   }
   else {
     switch(i_wand_menu) {
       case 5:
-        if(BARGRAPH_TYPE != SEGMENTS_5) {
+        if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
           if(BARGRAPH_TYPE == SEGMENTS_30) {
             for(uint8_t i = 1; i < i_bargraph_segments - i_segment_adjust; i++) {
               switch(i) {
@@ -2755,7 +2765,7 @@ void settingsBlinkingLights() {
       break;
 
       case 4:
-        if(BARGRAPH_TYPE != SEGMENTS_5) {
+        if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
           if(BARGRAPH_TYPE == SEGMENTS_30) {
             for(uint8_t i = 1; i < 23; i++) {
               switch(i) {
@@ -2804,7 +2814,7 @@ void settingsBlinkingLights() {
       break;
 
       case 3:
-        if(BARGRAPH_TYPE != SEGMENTS_5) {
+        if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
           if(BARGRAPH_TYPE == SEGMENTS_30) {
             for(uint8_t i = 1; i < 17; i++) {
               switch(i) {
@@ -2848,7 +2858,7 @@ void settingsBlinkingLights() {
       break;
 
       case 2:
-        if(BARGRAPH_TYPE != SEGMENTS_5) {
+        if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
           if(BARGRAPH_TYPE == SEGMENTS_30) {
             for(uint8_t i = 1; i < 11; i++) {
               switch(i) {
@@ -2887,7 +2897,7 @@ void settingsBlinkingLights() {
       break;
 
       case 1:
-        if(BARGRAPH_TYPE != SEGMENTS_5) {
+        if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
           if(BARGRAPH_TYPE == SEGMENTS_30) {
             for(uint8_t i = 1; i < 5; i++) {
               ht_bargraph.setLed(bargraphLookupTable(i));
@@ -2935,7 +2945,7 @@ void altWingButtonCheck() {
 
           // If using the 28 or 30 segment bargraph with BARGRAPH_ORIGINAL, we need to redraw the segments.
           // BARGRAPH_SUPER_HERO auto ramps and does not need a manual refresh.
-          if(BARGRAPH_TYPE != SEGMENTS_5 && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
+          if((BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
             bargraphPowerCheck2021Alt(true);
           }
         }
@@ -2952,7 +2962,7 @@ void altWingButtonCheck() {
 
       // If using the 28 or 30 segment bargraph with BARGRAPH_ORIGINAL, we need to redraw the segments.
       // BARGRAPH_SUPER_HERO auto ramps and does not need a manual refresh.
-      if(BARGRAPH_TYPE != SEGMENTS_5 && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
+      if((BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) && BARGRAPH_MODE == BARGRAPH_ORIGINAL) {
         bargraphPowerCheck2021Alt(true);
       }
     }
@@ -3140,7 +3150,7 @@ void wandLightsOffMenuSystem() {
 }
 
 void wandLightsOff() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     bargraphClearAlt();
   }
   else {
@@ -3852,7 +3862,7 @@ void checkSwitches() {
                   i_power_level_prev = i_power_level;
                   i_power_level = 1;
 
-                  if(BARGRAPH_TYPE != SEGMENTS_5) {
+                  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
                     bargraphPowerCheck2021Alt(false);
                   }
 
@@ -3895,7 +3905,7 @@ void checkSwitches() {
                     stopEffect(S_WAND_HEATUP_ALT);
                     playEffect(S_WAND_HEATUP_ALT);
 
-                    if(BARGRAPH_TYPE != SEGMENTS_5) {
+                    if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
                       bargraphPowerCheck2021Alt(false);
                     }
 
@@ -3945,7 +3955,7 @@ void checkSwitches() {
                   }
                 }
                 else {
-                  if(BARGRAPH_TYPE != SEGMENTS_5) {
+                  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
                     bargraphClearAlt();
                   }
                   else {
@@ -4228,11 +4238,11 @@ void modeFireStartSounds() {
 
 // This is the Super Hero bargraph firing animation. Ramping up and down from the middle to the top/bottom and back to the middle again.
 void bargraphSuperHeroRampFiringAnimation() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     if(BARGRAPH_TYPE == SEGMENTS_30) {
       switch(i_bargraph_status_alt) {
         case 0:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(14));
           ht_bargraph.setLed(bargraphLookupTable(15));
@@ -4251,7 +4261,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 1:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(13));
           ht_bargraph.setLed(bargraphLookupTable(16));
@@ -4274,7 +4284,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 2:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(12));
           ht_bargraph.setLed(bargraphLookupTable(17));
@@ -4297,7 +4307,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 3:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(11));
           ht_bargraph.setLed(bargraphLookupTable(18));
@@ -4320,7 +4330,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 4:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(10));
           ht_bargraph.setLed(bargraphLookupTable(19));
@@ -4343,7 +4353,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 5:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(9));
           ht_bargraph.setLed(bargraphLookupTable(20));
@@ -4366,7 +4376,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 6:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(8));
           ht_bargraph.setLed(bargraphLookupTable(21));
@@ -4389,7 +4399,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 7:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(7));
           ht_bargraph.setLed(bargraphLookupTable(22));
@@ -4412,7 +4422,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 8:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(6));
           ht_bargraph.setLed(bargraphLookupTable(23));
@@ -4435,7 +4445,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 9:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(5));
           ht_bargraph.setLed(bargraphLookupTable(24));
@@ -4458,7 +4468,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 10:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(4));
           ht_bargraph.setLed(bargraphLookupTable(25));
@@ -4481,7 +4491,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 11:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(3));
           ht_bargraph.setLed(bargraphLookupTable(26));
@@ -4504,7 +4514,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 12:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(2));
           ht_bargraph.setLed(bargraphLookupTable(27));
@@ -4527,7 +4537,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 13:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(1));
           ht_bargraph.setLed(bargraphLookupTable(28));
@@ -4550,7 +4560,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 14:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(0));
           ht_bargraph.setLed(bargraphLookupTable(29));
@@ -4574,7 +4584,7 @@ void bargraphSuperHeroRampFiringAnimation() {
     else {
       switch(i_bargraph_status_alt) {
         case 0:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(13));
           ht_bargraph.setLed(bargraphLookupTable(14));
@@ -4593,7 +4603,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 1:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(12));
           ht_bargraph.setLed(bargraphLookupTable(15));
@@ -4616,7 +4626,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 2:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(11));
           ht_bargraph.setLed(bargraphLookupTable(16));
@@ -4639,7 +4649,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 3:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(10));
           ht_bargraph.setLed(bargraphLookupTable(17));
@@ -4662,7 +4672,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 4:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(9));
           ht_bargraph.setLed(bargraphLookupTable(18));
@@ -4685,7 +4695,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 5:
-          vibrationWand(i_vibration_level_min + 110);
+          vibrationWand(i_vibration_level_min + 45);
 
           ht_bargraph.setLed(bargraphLookupTable(8));
           ht_bargraph.setLed(bargraphLookupTable(19));
@@ -4708,7 +4718,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 6:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(7));
           ht_bargraph.setLed(bargraphLookupTable(20));
@@ -4731,7 +4741,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 7:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(6));
           ht_bargraph.setLed(bargraphLookupTable(21));
@@ -4754,7 +4764,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 8:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(5));
           ht_bargraph.setLed(bargraphLookupTable(22));
@@ -4777,7 +4787,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 9:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(4));
           ht_bargraph.setLed(bargraphLookupTable(23));
@@ -4800,7 +4810,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 10:
-          vibrationWand(i_vibration_level_min + 112);
+          vibrationWand(i_vibration_level_min + 47);
 
           ht_bargraph.setLed(bargraphLookupTable(3));
           ht_bargraph.setLed(bargraphLookupTable(24));
@@ -4823,7 +4833,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 11:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(2));
           ht_bargraph.setLed(bargraphLookupTable(25));
@@ -4846,7 +4856,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 12:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(1));
           ht_bargraph.setLed(bargraphLookupTable(26));
@@ -4869,7 +4879,7 @@ void bargraphSuperHeroRampFiringAnimation() {
         break;
 
         case 13:
-          vibrationWand(i_vibration_level_min + 115);
+          vibrationWand(i_vibration_level_min + 50);
 
           ht_bargraph.setLed(bargraphLookupTable(0));
           ht_bargraph.setLed(bargraphLookupTable(27));
@@ -4891,11 +4901,12 @@ void bargraphSuperHeroRampFiringAnimation() {
       }
     }
   }
+#ifndef ESP32
   else {
     // Hasbro 5 LED Bargraph.
     switch(i_bargraph_status) {
       case 1:
-        vibrationWand(i_vibration_level_min + 110);
+        vibrationWand(i_vibration_level_min + 45);
 
         digitalWriteFast(bargraphLookupTable(1-1), LOW);
         digitalWriteFast(bargraphLookupTable(2-1), HIGH);
@@ -4908,7 +4919,7 @@ void bargraphSuperHeroRampFiringAnimation() {
       break;
 
       case 2:
-        vibrationWand(i_vibration_level_min + 112);
+        vibrationWand(i_vibration_level_min + 47);
 
         digitalWriteFast(bargraphLookupTable(1-1), HIGH);
         digitalWriteFast(bargraphLookupTable(2-1), LOW);
@@ -4921,7 +4932,7 @@ void bargraphSuperHeroRampFiringAnimation() {
       break;
 
       case 3:
-        vibrationWand(i_vibration_level_min + 115);
+        vibrationWand(i_vibration_level_min + 50);
 
         digitalWriteFast(bargraphLookupTable(1-1), HIGH);
         digitalWriteFast(bargraphLookupTable(2-1), HIGH);
@@ -4934,7 +4945,7 @@ void bargraphSuperHeroRampFiringAnimation() {
       break;
 
       case 4:
-        vibrationWand(i_vibration_level_min + 112);
+        vibrationWand(i_vibration_level_min + 47);
 
         digitalWriteFast(bargraphLookupTable(1-1), HIGH);
         digitalWriteFast(bargraphLookupTable(2-1), LOW);
@@ -4947,7 +4958,7 @@ void bargraphSuperHeroRampFiringAnimation() {
       break;
 
       case 5:
-        vibrationWand(i_vibration_level_min + 110);
+        vibrationWand(i_vibration_level_min + 45);
 
         digitalWriteFast(bargraphLookupTable(1-1), LOW);
         digitalWriteFast(bargraphLookupTable(2-1), HIGH);
@@ -4960,11 +4971,12 @@ void bargraphSuperHeroRampFiringAnimation() {
       break;
     }
   }
+#endif
 }
 
 // This is the Mode Original bargraph firing animation. The top portion fluctuates during firing and becomes more erratic the longer firing continues.
 void bargraphModeOriginalRampFiringAnimation() {
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     /*
       // For 28 Segments
       Power Level 5: full: 23 - 27  (5 segments)
@@ -5418,13 +5430,13 @@ void bargraphModeOriginalRampFiringAnimation() {
     }
 
     if(i_bargraph_status_alt > 22) {
-      vibrationWand(i_vibration_level_min + 115);
+      vibrationWand(i_vibration_level_min + 50);
     }
     else if(i_bargraph_status_alt > 11) {
-      vibrationWand(i_vibration_level_min + 112);
+      vibrationWand(i_vibration_level_min + 47);
     }
     else {
-      vibrationWand(i_vibration_level_min + 110);
+      vibrationWand(i_vibration_level_min + 45);
     }
   }
   else {
@@ -5828,13 +5840,13 @@ void bargraphModeOriginalRampFiringAnimation() {
   }
 
   if(i_bargraph_status > 3) {
-    vibrationWand(i_vibration_level_min + 115);
+    vibrationWand(i_vibration_level_min + 50);
   }
   else if(i_bargraph_status > 1) {
-    vibrationWand(i_vibration_level_min + 112);
+    vibrationWand(i_vibration_level_min + 47);
   }
   else {
-    vibrationWand(i_vibration_level_min + 110);
+    vibrationWand(i_vibration_level_min + 45);
   }
 }
 
@@ -5891,7 +5903,7 @@ void bargraphRampFiring() {
 
   uint8_t i_ramp_interval = i_bargraph_ramp_interval;
 
-  if(BARGRAPH_TYPE != SEGMENTS_5) {
+  if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
     // Switch to a different ramp speed if using the 28 or 30 segment bargraph.
     i_ramp_interval = i_bargraph_ramp_interval_alt;
   }
@@ -5899,7 +5911,7 @@ void bargraphRampFiring() {
   // If in a power level on the wand that can overheat, change the speed of the bargraph ramp during firing based on time remaining before we overheat.
   if(ms_overheat_initiate.isRunning()) {
     if(ms_overheat_initiate.remaining() < i_ms_overheat_initiate[i_power_level - 1] / 6) {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         ms_bargraph_firing.start((i_ramp_interval / 8) + 2); // 7ms per segment
       }
       else {
@@ -5909,7 +5921,7 @@ void bargraphRampFiring() {
       cyclotronSpeedUp(6);
     }
     else if(ms_overheat_initiate.remaining() < i_ms_overheat_initiate[i_power_level - 1] / 5) {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         ms_bargraph_firing.start((i_ramp_interval / 8) + 4); // 9ms per segment
       }
       else {
@@ -5919,7 +5931,7 @@ void bargraphRampFiring() {
       cyclotronSpeedUp(5);
     }
     else if(ms_overheat_initiate.remaining() < i_ms_overheat_initiate[i_power_level - 1] / 4) {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         ms_bargraph_firing.start((i_ramp_interval / 4) + 1); // 11ms per segment
       }
       else {
@@ -5929,7 +5941,7 @@ void bargraphRampFiring() {
       cyclotronSpeedUp(4);
     }
     else if(ms_overheat_initiate.remaining() < i_ms_overheat_initiate[i_power_level - 1] / 3) {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         ms_bargraph_firing.start((i_ramp_interval / 4) + 3); // 13ms per segment
       }
       else {
@@ -5939,7 +5951,7 @@ void bargraphRampFiring() {
       cyclotronSpeedUp(3);
     }
     else if(ms_overheat_initiate.remaining() < i_ms_overheat_initiate[i_power_level - 1] / 2) {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         ms_bargraph_firing.start((i_ramp_interval / 4) + 5); // 15ms per segment
       }
       else {
@@ -5949,7 +5961,7 @@ void bargraphRampFiring() {
       cyclotronSpeedUp(2);
     }
     else {
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         switch(i_power_level) {
           case 5:
             ms_bargraph_firing.start((i_ramp_interval / 2) - 5); // 15ms per segment
@@ -6007,7 +6019,7 @@ void bargraphRampFiring() {
     }
   }
   else {
-    if(BARGRAPH_TYPE != SEGMENTS_5) {
+    if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
       switch(i_power_level) {
         case 5:
           ms_bargraph_firing.start((i_ramp_interval / 2) - 7); // 13ms per segment
@@ -9646,12 +9658,12 @@ void checkRotaryEncoder() {
                 i_power_level_prev = i_power_level;
                 i_power_level--;
 
-                if(BARGRAPH_MODE == BARGRAPH_ORIGINAL && BARGRAPH_TYPE != SEGMENTS_5) {
+                if(BARGRAPH_MODE == BARGRAPH_ORIGINAL && (BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30)) {
                   bargraphPowerCheck2021Alt(false);
                 }
 
                 // Forces a redraw of the bargraph if firing while changing the power level in the BARGRAPH_ANIMATION_ORIGINAL.
-                if(b_firing && BARGRAPH_TYPE != SEGMENTS_5 && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
+                if(b_firing && (BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
                   bargraphRedraw();
                 }
 
@@ -9765,12 +9777,12 @@ void checkRotaryEncoder() {
                   i_power_level_prev = i_power_level;
                   i_power_level++;
 
-                  if(BARGRAPH_MODE == BARGRAPH_ORIGINAL && BARGRAPH_TYPE != SEGMENTS_5) {
+                  if(BARGRAPH_MODE == BARGRAPH_ORIGINAL && (BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30)) {
                     bargraphPowerCheck2021Alt(false);
                   }
 
                   // Forces a redraw of the bargraph if firing while changing the power level if using BARGRAPH_ANIMATION_ORIGINAL.
-                  if(b_firing && BARGRAPH_TYPE != SEGMENTS_5 && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
+                  if(b_firing && (BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) && BARGRAPH_FIRING_ANIMATION == BARGRAPH_ANIMATION_ORIGINAL) {
                     bargraphRedraw();
                   }
 
@@ -9900,7 +9912,7 @@ void changeIonArmSwitchState(bool state) {
                 stopEffect(S_WAND_HEATUP_ALT);
                 playEffect(S_WAND_HEATUP_ALT);
 
-                if(BARGRAPH_TYPE != SEGMENTS_5) {
+                if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
                   bargraphPowerCheck2021Alt(false);
                 }
 
@@ -10019,7 +10031,7 @@ void wandExitMenu() {
       stopEffect(S_WAND_HEATUP_ALT);
       playEffect(S_WAND_HEATUP_ALT);
 
-      if(BARGRAPH_TYPE != SEGMENTS_5) {
+      if(BARGRAPH_TYPE == SEGMENTS_28 || BARGRAPH_TYPE == SEGMENTS_30) {
         bargraphPowerCheck2021Alt(false);
         prepBargraphRampUp();
       }
@@ -10077,10 +10089,12 @@ void checkPowerOnReminder() {
 
 void ventTopLightControl(bool b_on) {
   if(!b_on) {
+#ifndef ESP32
     if(!b_rgb_vent_light) {
       // Turn off top light.
       digitalWriteFast(TOP_LED_PIN, HIGH);
     }
+#endif
 
     // Turn off if not off already.
     if(vent_leds[1]) {
@@ -10089,10 +10103,12 @@ void ventTopLightControl(bool b_on) {
     }
   }
   else {
+#ifndef ESP32
     if(!b_rgb_vent_light) {
       // Turn on top light.
       digitalWriteFast(TOP_LED_PIN, LOW);
     }
+#endif
 
     // Turn on if not on already.
     if(!vent_leds[1]) {
@@ -10130,10 +10146,12 @@ void ventTopLightControl(bool b_on) {
 
 void ventLightControl(uint8_t i_intensity) {
   if(b_rgb_vent_light) {
+#ifndef ESP32
     // Put in a check just to be sure the non-addressable pin stays off.
     if(digitalRead(VENT_LED_PIN) != HIGH) {
       analogWrite(VENT_LED_PIN, 255);
     }
+#endif
 
     if(i_intensity < 20) {
       // Turn off if not off already.
@@ -10191,9 +10209,11 @@ void ventLightControl(uint8_t i_intensity) {
       b_vent_lights_changed = true;
     }
   }
+#ifndef ESP32
   else {
     analogWrite(VENT_LED_PIN, 255 - PROGMEM_READU8(ledLookupTable[i_intensity]));    
   }
+#endif
 }
 
 void resetWhiteLEDBlinkRate() {
