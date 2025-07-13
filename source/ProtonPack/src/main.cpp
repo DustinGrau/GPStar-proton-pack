@@ -21,15 +21,23 @@
 #include <Arduino.h>
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
-#define debug(x) Serial.print(x)
-#define debugln(x) Serial.println(x)
+  #ifdef ESP32
+    #define DEBUG_PORT USBSerial
+  #else
+    #define DEBUG_PORT Serial
+  #endif
+
+  #define debug(...) DEBUG_PORT.print(__VA_ARGS__)
+  #define debugf(...) DEBUG_PORT.printf(__VA_ARGS__)
+  #define debugln(...) DEBUG_PORT.println(__VA_ARGS__)
 #else
-#define debug(x)
-#define debugln(x)
+  #define debug(...)
+  #define debugf(...)
+  #define debugln(...)
 #endif
 
 // PROGMEM macros
