@@ -55,6 +55,10 @@
 #include <Ramp.h>
 #include <SerialTransfer.h>
 #include <Wire.h>
+#ifdef ESP32
+  // Provided by the ESP32 Arduino core  
+  #include <HardwareSerial.h>
+#endif
 
 // Local Files
 #include "Configuration.h"
@@ -75,16 +79,31 @@
   #include "Wireless.h"
 #endif
 
-void setup() {
-  // Setup i2c.
 #ifdef ESP32
-  // ESP32-S3 requires manually specifying SDA and SCL pins first.
-  Wire.setPins(I2C_SDA, I2C_SCL);
-#endif
-  Wire.begin();
-  Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
+  #include "esp_system.h"
 
+  const char* resetReasonToString(esp_reset_reason_t reason) {
+    switch (reason) {
+      case ESP_RST_POWERON:    return "Power-on reset";
+      case ESP_RST_EXT:        return "External reset";
+      case ESP_RST_SW:         return "Software reset";
+      case ESP_RST_PANIC:      return "Panic reset";
+      case ESP_RST_INT_WDT:    return "Interrupt watchdog";
+      case ESP_RST_TASK_WDT:   return "Task watchdog";
+      case ESP_RST_WDT:        return "Other watchdog reset";
+      case ESP_RST_DEEPSLEEP:  return "Deep sleep reset";
+      case ESP_RST_BROWNOUT:   return "Brownout reset";
+      case ESP_RST_SDIO:       return "SDIO reset";
+      default:                 return "Unknown reset reason";
+    }
+  }
+#endif
+
+void setup() {
 #ifdef ESP32
+  esp_reset_reason_t reason = esp_reset_reason();
+  debugf("Reset reason: %s (%d)\n", resetReasonToString(reason), reason);
+
   /* This loop changes GPIO39~GPIO44 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
    * IO_MUX_GPIO0_REG is the register for GPIO0, which we then seek from.
@@ -95,28 +114,43 @@ void setup() {
   }
 
   Serial0.end(); // Detach UART0 as we will be reassigning it.
-  HardwareSerial Serial1(1); // Assign Serial1 to UART1 (11/10).
-  HardwareSerial Serial2(0); // Assign Serial2 to UART0 (44/43).
-  USBSerial.begin(9600); // Standard serial (USB-CDC) console.
-  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN); // Add-on "Serial1" communication (11/10).
-  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN); // Communication to the Neutrona Wand (44/43).
+  USBSerial.begin(9600); // Standard serial (USB-CDC) console (technically 19/20 but not really Tx/Rx).
+
+  // Assign Serial1 to UART1 (pins 11/10) for the "Serial1" communications (aka. serial1Coms).
+  HardwareSerial Serial1(1);
+  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN);
+
+  // Assign Serial2 to UART0 (pins 44/43) for the Neutrona Wand communications (aka. packComs).
+  HardwareSerial Serial2(0);
+  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 #else
   Serial.begin(9600); // Standard HW serial (USB) console (0/1).
   Serial1.begin(9600); // Add-on "Serial1" communication (19/18).
   Serial2.begin(9600); // Communication to the Neutrona Wand (17/16).
 #endif
 
-  // Initialize an optional power meter on the i2c bus.
-  if(b_use_power_meter) {
-    powerMeterInit();
-  }
-
   // Connect the serial ports.
-  serial1Coms.begin(Serial1, false, Serial, 100); // Attenuator/Wireless
+  debugln(F("Connecting serial ports..."));
+  serial1Coms.begin(Serial1, false, DEBUG_PORT, 100); // Attenuator/Wireless
   packComs.begin(Serial2, false); // Neutrona Wand
 
-  // Setup the audio device for this controller.
+  // Setup the audio device for this controller (configures UART2 as Serial3).
+  debugln(F("Setting up audio device..."));
   setupAudioDevice();
+
+  // Setup the i2c bus using the Wire protocol.
+#ifdef ESP32
+  // ESP32-S3 requires manually specifying SDA and SCL pins first.
+  Wire.setPins(I2C_SDA, I2C_SCL);
+#endif
+  Wire.begin();
+  Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
+
+  // Initialize an optional power meter on the i2c bus.
+  if(b_use_power_meter) {
+    debugln(F("Init power meter..."));
+    powerMeterInit();
+  }
 
   // Rotary encoder for volume control.
   pinModeFast(ROTARY_ENCODER_A, INPUT_PULLUP);
@@ -287,6 +321,10 @@ void setup() {
   else {
     b_pack_post_finish = true;
   }
+
+#ifdef ESP32
+  debugf("Setup complete, free heap: %u bytes\n", ESP.getFreeHeap());
+#endif
 }
 
 void mainLoop() {
@@ -595,14 +633,18 @@ void mainLoop() {
 
 void loop() {
 #ifdef ESP32
+  // Run checks on web-related tasks.
   webLoops();
-#endif
 
   // Update the available audio device.
-  updateAudio();
+  // debugln(F("updateAudio()"));
+  // updateAudio();
+
+  // debug(F("packComs.available(): "));
+  // debugln(packComs.available());
 
   // Check for any new serial commands were received from the Neutrona Wand.
-  checkWand();
+  // checkWand();
 
   // Check if the wand is considered to have been disconnected.
   // wandDisconnectCheck();
@@ -615,6 +657,25 @@ void loop() {
 
   // Handle any actions after POST event.
   // mainLoop();
+#else
+  // Update the available audio device.
+  updateAudio();
+
+  // Check for any new serial commands were received from the Neutrona Wand.
+  checkWand();
+
+  // Check if the wand is considered to have been disconnected.
+  wandDisconnectCheck();
+
+  // Check if serial1 device is present.
+  serial1HandShake();
+
+  // Check if any new serial commands were received.
+  checkSerial1();
+
+  // Handle any actions after POST event.
+  mainLoop();
+#endif
 
   // Update the LEDs
   if(ms_fast_led.justFinished()) {
