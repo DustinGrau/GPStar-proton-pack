@@ -85,19 +85,6 @@ void setup() {
   Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
 
 #ifdef ESP32
-  #ifndef SERIAL1_RX_PIN
-    #define SERIAL1_RX_PIN 21
-  #endif
-  #ifndef SERIAL1_TX_PIN
-    #define SERIAL1_TX_PIN 14
-  #endif
-  #ifndef SERIAL2_RX_PIN
-    #define SERIAL2_RX_PIN 43
-  #endif
-  #ifndef SERIAL2_TX_PIN
-    #define SERIAL2_TX_PIN 44
-  #endif
-
   /* This loop changes GPIO39~GPIO44 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
    * IO_MUX_GPIO0_REG is the register for GPIO0, which we then seek from.
@@ -111,12 +98,12 @@ void setup() {
   HardwareSerial Serial1(1); // Assign Serial1 to UART1.
   HardwareSerial Serial2(0); // Assign Serial2 to UART0.
   USBSerial.begin(9600); // Standard serial (USB) console.
-  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN); // Add-on Serial1 communication.
-  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN); // Communication to the Neutrona Wand.
+  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN); // Add-on "Serial1" communication (21/14).
+  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN); // Communication to the Neutrona Wand (43/44).
 #else
-  Serial.begin(9600); // Standard serial (USB) console.
-  Serial1.begin(9600); // Add-on Serial1 communication.
-  Serial2.begin(9600); // Communication to the Neutrona Wand.
+  Serial.begin(9600); // Standard HW serial (USB) console (0/1).
+  Serial1.begin(9600); // Add-on "Serial1" communication (19/18).
+  Serial2.begin(9600); // Communication to the Neutrona Wand (17/16).
 #endif
 
   // Initialize an optional power meter on the i2c bus.
@@ -615,7 +602,7 @@ void loop() {
   updateAudio();
 
   // Check for any new serial commands were received from the Neutrona Wand.
-  // checkWand();
+  checkWand();
 
   // Check if the wand is considered to have been disconnected.
   // wandDisconnectCheck();
