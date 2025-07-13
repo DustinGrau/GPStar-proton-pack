@@ -69,9 +69,9 @@
 #include "Cyclotron.h"
 #include "Audio.h"
 #ifdef ESP32
-#include "PreferencesESP.h"
+  #include "PreferencesESP.h"
 #else
-#include "PreferencesATMega.h"
+  #include "PreferencesATMega.h"
 #endif
 #include "System.h"
 #include "Actions.h"
@@ -222,15 +222,15 @@ void animateTaskCallback() {
   // Update bargraph with latest state and pattern changes.
   if(ms_firing_pulse.isRunning()) {
     // Increase the speed for updates while this timer is still running.
-    bargraphUpdate(POWER_LEVEL - 1);
+    // bargraphUpdate(POWER_LEVEL - 1);
   }
   else {
     // Otherwise run with the standard timing.
-    bargraphUpdate();
+    // bargraphUpdate();
   }
 
   // Keep the cyclotron spinning as necessary.
-  checkCyclotron();
+  // checkCyclotron();
 
   // Update all addressable LEDs to reflect any changes.
   FastLED[0].showLeds(255);
@@ -248,21 +248,25 @@ void animateTaskCallback() {
 
 // Task callback for handling user inputs.
 void inputTaskCallback() {
-  updateAudio(); // Update the state of the available sound board.
+#ifdef ESP32
+  webLoops(); // Handle web server loops, including WebSocket events and OTA updates.
+#endif
 
-  checkMusic(); // Perform music control here as this is a standalone device.
+  // updateAudio(); // Update the state of the available sound board.
 
-  switchLoops(); // Standard polling for switch/button changes via user inputs.
+  // checkMusic(); // Perform music control here as this is a standalone device.
+
+  // switchLoops(); // Standard polling for switch/button changes via user inputs.
 
   // Get the current state of any input devices (toggles, buttons, and switches).
-  checkRotaryEncoder();
-  checkMenuVibration();
+  // checkRotaryEncoder();
+  // checkMenuVibration();
 
   // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
-  checkDeviceAction();
+  // checkDeviceAction();
 
   // Perform updates/actions based on timer events.
-  checkGeneralTimers();
+  // checkGeneralTimers();
 }
 
 void loop() {

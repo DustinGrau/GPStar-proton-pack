@@ -523,42 +523,46 @@ void mainLoop() {
 }
 
 void loop() {
+#ifdef ESP32
+  webLoops(); // Handle web server loops, including WebSocket events and OTA updates.
+#endif
+
   switch(WAND_CONN_STATE) {
     case PACK_DISCONNECTED:
       // While waiting for a proton pack, issue a request for synchronization.
       if(ms_packsync.justFinished()) {
         // If not already doing so, explicitly tell the pack a wand is here to sync.
-        wandSerialSend(W_SYNC_NOW);
+        // wandSerialSend(W_SYNC_NOW);
         ms_packsync.start(i_sync_initial_delay); // Prepare for the next sync attempt.
         vent_leds[1] ? ventTopLightControl(false) : ventTopLightControl(true); // Blink the top LED.
         digitalWriteFast(WAND_STATUS_LED_PIN, (digitalReadFast(WAND_STATUS_LED_PIN) == LOW) ? HIGH : LOW); // Blink the onboard LED on the Neutrona Wand board.
       }
 
-      checkPack(); // Check for any response from the pack while still waiting.
+      // checkPack(); // Check for any response from the pack while still waiting.
     break;
 
     case PACK_CONNECTED:
       // When connected to a pack, prepare to send a regular handshake to indicate presence.
       if(ms_handshake.justFinished()) {
-        wandSerialSend(W_HANDSHAKE); // Remind the pack that a wand is still present.
+        // wandSerialSend(W_HANDSHAKE); // Remind the pack that a wand is still present.
         ms_handshake.restart(); // Restart the handshake timer.
       }
 
-      updateAudio(); // Update the state of the selected sound board.
+      // updateAudio(); // Update the state of the selected sound board.
 
-      checkPack(); // Get the latest communications from the connected Proton Pack.
+      // checkPack(); // Get the latest communications from the connected Proton Pack.
 
       if(b_pack_post_finish) {
-        mainLoop(); // Continue on to the main loop.
+        // mainLoop(); // Continue on to the main loop.
       }
     break;
 
     case NC_BENCHTEST:
-      updateAudio(); // Update the state of the selected sound board.
+      // updateAudio(); // Update the state of the selected sound board.
 
-      checkMusic(); // Music control is here since pack is not present.
+      // checkMusic(); // Music control is here since pack is not present.
 
-      mainLoop(); // Continue on to the main loop.
+      // mainLoop(); // Continue on to the main loop.
     break;
   }
 
@@ -573,8 +577,10 @@ void loop() {
         FastLED[1].showLeds(255);
 
         if(WAND_CONN_STATE == PACK_DISCONNECTED && !vent_leds[1]) {
+        #ifndef ESP32
           // Make sure we turn the actual pin back off so the non-addressable LED still blinks.
           digitalWriteFast(TOP_LED_PIN, HIGH);
+        #endif
         }
       }
 
