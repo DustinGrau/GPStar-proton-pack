@@ -95,11 +95,11 @@ void setup() {
   }
 
   Serial0.end(); // Detach UART0 as we will be reassigning it.
-  HardwareSerial Serial1(1); // Assign Serial1 to UART1.
-  HardwareSerial Serial2(0); // Assign Serial2 to UART0.
-  USBSerial.begin(9600); // Standard serial (USB) console.
-  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN); // Add-on "Serial1" communication (21/14).
-  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN); // Communication to the Neutrona Wand (43/44).
+  HardwareSerial Serial1(1); // Assign Serial1 to UART1 (11/10).
+  HardwareSerial Serial2(0); // Assign Serial2 to UART0 (44/43).
+  USBSerial.begin(9600); // Standard serial (USB-CDC) console.
+  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN); // Add-on "Serial1" communication (11/10).
+  Serial2.begin(9600, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN); // Communication to the Neutrona Wand (44/43).
 #else
   Serial.begin(9600); // Standard HW serial (USB) console (0/1).
   Serial1.begin(9600); // Add-on "Serial1" communication (19/18).
