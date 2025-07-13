@@ -607,19 +607,19 @@ void loop() {
   updateAudio();
 
   // Check for any new serial commands were received from the Neutrona Wand.
-  // checkWand();
+  checkWand();
 
   // Check if the wand is considered to have been disconnected.
-  // wandDisconnectCheck();
+  wandDisconnectCheck();
 
   // Check if serial1 device is present.
-  // serial1HandShake();
+  serial1HandShake();
 
   // Check if any new serial commands were received.
-  // checkSerial1();
+  checkSerial1();
 
   // Handle any actions after POST event.
-  // postProcess();
+  postProcess();
 
   // Update the LEDs
   if(ms_fast_led.justFinished()) {
