@@ -211,8 +211,8 @@ void setup() {
 
   // Initialize the task scheduler and enable the core tasks.
   schedule.init();
-  schedule.addTask(animateTask);
-  schedule.addTask(inputsTask);
+  // schedule.addTask(animateTask);
+  // schedule.addTask(inputsTask);
   animateTask.enable();
   inputsTask.enable();
 }
@@ -248,10 +248,6 @@ void animateTaskCallback() {
 
 // Task callback for handling user inputs.
 void inputTaskCallback() {
-#ifdef ESP32
-  webLoops(); // Handle web server loops, including WebSocket events and OTA updates.
-#endif
-
   // updateAudio(); // Update the state of the available sound board.
 
   // checkMusic(); // Perform music control here as this is a standalone device.
@@ -270,6 +266,13 @@ void inputTaskCallback() {
 }
 
 void loop() {
+#ifdef ESP32
+  webLoops(); // Handle web server loops, including WebSocket events and OTA updates.
+#endif
+
   // Task execution via the scheduler.
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    Serial.println(F("Executing Scheduler in Loop"));
+  #endif
   schedule.execute();
 }
