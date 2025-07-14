@@ -20,6 +20,10 @@
       "path": "source/BeltGizmo"
     },
     {
+      "name": "DebugESP",
+      "path": "source/DebugESP"
+    },
+    {
       "name": "GhostTrapBase",
       "path": "source/GhostTrapBase"
     },
