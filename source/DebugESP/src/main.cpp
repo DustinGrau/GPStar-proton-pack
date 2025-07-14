@@ -1,6 +1,5 @@
 // Required for PlatformIO
 #include <Arduino.h>
-#include <Wire.h>
 
 // Set to 1 to enable built-in debug messages
 #define DEBUG 1
@@ -26,6 +25,13 @@
 #define PROGMEM_READU32(x) pgm_read_dword_near(&(x))
 #define PROGMEM_READU16(x) pgm_read_word_near(&(x))
 #define PROGMEM_READU8(x) pgm_read_byte_near(&(x))
+
+// 3rd-Party Libraries
+#include <millisDelay.h>
+#include <FastLED.h>
+#include <SerialTransfer.h>
+#include <Wire.h>
+#include <HardwareSerial.h>
 
 // Libraries
 #include "esp_system.h"
@@ -57,6 +63,12 @@
 // For the i2c Bus
 #define I2C_SCL 39
 #define I2C_SDA 40
+
+/*
+ * Define Serial Communication Buffers
+ */
+SerialTransfer serial1Coms;
+SerialTransfer packComs;
 
 const char* resetReasonToString(esp_reset_reason_t reason) {
   switch (reason) {
