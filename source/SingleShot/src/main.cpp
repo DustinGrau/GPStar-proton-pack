@@ -35,11 +35,13 @@
 
 // Debug macros
 #if DEBUG == 1
-#define debug(x) Serial.print(x)
-#define debugln(x) Serial.println(x)
+  #define debug(...) Serial.print(__VA_ARGS__)
+  #define debugf(...) Serial.printf(__VA_ARGS__)
+  #define debugln(...) Serial.println(__VA_ARGS__)
 #else
-#define debug(x)
-#define debugln(x)
+  #define debug(...)
+  #define debugf(...)
+  #define debugln(...)
 #endif
 
 // PROGMEM macros
@@ -106,15 +108,15 @@ void setup() {
     PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_pin * 4), PIN_FUNC_GPIO);
   }
 
-  USBSerial.begin(9600); // Standard serial (USB) console.
+  Serial.begin(9600); // Standard serial (USB-CDC) console (technically 19/20 but not really Tx/Rx).
 #else
-  Serial.begin(9600); // Standard serial (USB) console.
+  Serial.begin(9600); // Standard HW serial (USB) console (0/1).
 #endif
 
   // Setup the audio device for this controller.
   setupAudioDevice();
 
-  // Change PWM frequency of pin 3 and 11 for the vibration motor, we do not want it high pitched.
+  // Change PWM frequency for the vibration motor, we do not want it high pitched.
   #ifdef ESP32
     // Use of the register is not needed by ESP32, as it uses a different method for PWM.
     pinMode(VIBRATION_PIN, OUTPUT);
@@ -211,8 +213,8 @@ void setup() {
 
   // Initialize the task scheduler and enable the core tasks.
   schedule.init();
-  // schedule.addTask(animateTask);
-  // schedule.addTask(inputsTask);
+  schedule.addTask(animateTask);
+  schedule.addTask(inputsTask);
   animateTask.enable();
   inputsTask.enable();
 }
@@ -222,15 +224,15 @@ void animateTaskCallback() {
   // Update bargraph with latest state and pattern changes.
   if(ms_firing_pulse.isRunning()) {
     // Increase the speed for updates while this timer is still running.
-    // bargraphUpdate(POWER_LEVEL - 1);
+    bargraphUpdate(POWER_LEVEL - 1);
   }
   else {
     // Otherwise run with the standard timing.
-    // bargraphUpdate();
+    bargraphUpdate();
   }
 
   // Keep the cyclotron spinning as necessary.
-  // checkCyclotron();
+  checkCyclotron();
 
   // Update all addressable LEDs to reflect any changes.
   FastLED[0].showLeds(255);
@@ -248,31 +250,28 @@ void animateTaskCallback() {
 
 // Task callback for handling user inputs.
 void inputTaskCallback() {
-  // updateAudio(); // Update the state of the available sound board.
-
-  // checkMusic(); // Perform music control here as this is a standalone device.
-
-  // switchLoops(); // Standard polling for switch/button changes via user inputs.
-
-  // Get the current state of any input devices (toggles, buttons, and switches).
-  // checkRotaryEncoder();
-  // checkMenuVibration();
-
-  // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
-  // checkDeviceAction();
-
-  // Perform updates/actions based on timer events.
-  // checkGeneralTimers();
-}
-
-void loop() {
 #ifdef ESP32
   webLoops(); // Handle web server loops, including WebSocket events and OTA updates.
 #endif
 
+  updateAudio(); // Update the state of the available sound board.
+
+  checkMusic(); // Perform music control here as this is a standalone device.
+
+  switchLoops(); // Standard polling for switch/button changes via user inputs.
+
+  // Get the current state of any input devices (toggles, buttons, and switches).
+  checkRotaryEncoder();
+  checkMenuVibration();
+
+  // Handle button press events based on current device state and menu level (for config/EEPROM purposes).
+  checkDeviceAction();
+
+  // Perform updates/actions based on timer events.
+  checkGeneralTimers();
+}
+
+void loop() {
   // Task execution via the scheduler.
-  #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.println(F("Executing Scheduler in Loop"));
-  #endif
   schedule.execute();
 }
