@@ -152,8 +152,8 @@ void setup() {
 
   // Connect the serial ports.
   debugln(F("Connecting serial ports..."));
-  serial1Coms.begin(SERIAL1_DEVICE, false, DEBUG_PORT, 100); // Attenuator/Wireless
-  packComs.begin(WAND_DEVICE, false); // Neutrona Wand
+  serial1Coms.begin(SERIAL1_DEVICE, false, DEBUG_PORT, 100); // Attenuator/Wireless Communications
+  packComs.begin(WAND_DEVICE, false, DEBUG_PORT); // Proton Pack to Neutrona Wand Communications
 
   // Setup the audio device for this controller (configures UART2 as Serial3).
   // Create a HardwareSerial instance for UART2 (Serial3, pins 15/16)
