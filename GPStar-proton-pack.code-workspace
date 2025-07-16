@@ -12,10 +12,6 @@
       "path": "source/ATmegaEEPROM"
     },
     {
-      "name": "ATtinyTesting",
-      "path": "source/ATtinyTesting"
-    },
-    {
       "name": "BeltGizmo",
       "path": "source/BeltGizmo"
     },
