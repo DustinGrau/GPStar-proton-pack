@@ -58,6 +58,7 @@
 #include <SerialTransfer.h>
 #include <Wire.h>
 #ifdef ESP32
+  #include <HardwareSerial.h>
   #include <Adafruit_LIS3MDL.h>
   #include <SparkFunLSM6DS3.h>
 #endif
@@ -88,21 +89,20 @@ void setup() {
    * IO_MUX_GPIO0_REG is the register for GPIO0, which we then seek from.
    * PIN_FUNC_GPIO is a define for Function 1, which sets the pins to GPIO mode.
    */
+  Serial0.end();
   for(uint8_t gpio_pin = 39; gpio_pin < 45; gpio_pin++) {
     PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_pin * 4), PIN_FUNC_GPIO);
   }
 
-  Serial.begin(9600); // Standard serial (USB-CDC) console (technically 19/20 but not really Tx/Rx).
-
-  // Assign Serial1 to pins 21/14 for the Proton Pack communications (aka. wandComs).
-  Serial1.begin(9600, SERIAL_8N1, SERIAL1_RX_PIN, SERIAL1_TX_PIN);
+  // Assign PackSerial to pins 21/14 for the Proton Pack communications.
+  PackSerial.begin(9600, SERIAL_8N1, PACK_RX_PIN, PACK_TX_PIN);
 #else
-  Serial.begin(9600); // Standard HW serial (USB) console (0/1).
-  Serial1.begin(9600); // Communication to the Proton Pack.
+  Serial.begin(9600); // Standard HW serial (USB) console.
+  PackSerial.begin(9600); // Communication to the Proton Pack.
 #endif
 
-  // Connect the serial ports.
-  wandComs.begin(Serial1, false); // Proton Pack
+  // Initialize the SerialTransfer object by passing in the appropriate ports.
+  packComs.begin(PackSerial, false); // Proton Pack
 
   // Setup the audio device for this controller.
   setupAudioDevice();
@@ -110,8 +110,6 @@ void setup() {
   // Change PWM frequency for the vibration motor, we do not want it high pitched.
   #ifdef ESP32
     // Use of the register is not needed by ESP32, as it uses a different method for PWM.
-    pinMode(VIBRATION_PIN, OUTPUT);
-    //ledcAttachChannel(VIBRATION_PIN, 123, 8, 5); // Uses 123 Hz frequency, 8-bit resolution, channel 5.
   #else
     // For ATmega2560, we set the PWM frequency for pin 11 (TCCR5B) to 122.55 Hz.
     TCCR1B = (TCCR1B & B11111000) | B00000100;

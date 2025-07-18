@@ -31,7 +31,7 @@ fi
 
 # Copy the new firmware to the expected binaries directory
 if [ -f ${PROJECT_DIR}/.pio/build/attiny1616/firmware.elf ]; then
-  mv ${PROJECT_DIR}/.pio/build/attiny1616/firmware.elf ${BINDIR}/trap/GhostTrap-ATtiny.bin
+  mv ${PROJECT_DIR}/.pio/build/attiny1616/firmware.elf ${BINDIR}/trap/GhostTrap-Cartridge.bin
 fi
 echo "Done."
 echo ""

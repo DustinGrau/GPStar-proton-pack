@@ -39,13 +39,13 @@ fi
 
 # Copy the new firmware to the expected binaries directory
 if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ${BINDIR}/trap/GhostTrap-ESP32.bin
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ${BINDIR}/trap/GhostTrap-Base.bin
 fi
 if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ${BINDIR}/trap/extras/GhostTrap-ESP32-Bootloader.bin
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ${BINDIR}/trap/extras/GhostTrap-Base-Bootloader.bin
 fi
 if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ${BINDIR}/trap/extras/GhostTrap-ESP32-Partitions.bin
+  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ${BINDIR}/trap/extras/GhostTrap-Base-Partitions.bin
 fi
 echo "Done."
 echo ""
