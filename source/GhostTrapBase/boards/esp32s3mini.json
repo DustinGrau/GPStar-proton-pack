@@ -1,5 +1,9 @@
 {
   "build": {
+    "arduino": {
+      "partitions": "partitions/no_spiffs_4mb.csv",
+      "memory_type": "qio_opi"
+    },
     "core": "esp32",
     "extra_flags": [
       "-DARDUINO_ESP32S3_DEV",

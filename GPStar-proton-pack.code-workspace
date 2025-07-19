@@ -4,8 +4,8 @@
       "path": "."
     },
     {
-      "name": "AttenuatorESP32",
-      "path": "source/AttenuatorESP32"
+      "name": "Attenuator",
+      "path": "source/Attenuator"
     },
     {
       "name": "ATmegaEEPROM",

@@ -19,9 +19,9 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 # COMPILE ATTENUATOR AND VARIANTS
 
-source ./compile_attenuator_esp.sh
+source ./compile_attenuator.sh
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-source ./compile_attenuator_esp_extras.sh
+source ./compile_attenuator_extras.sh
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 # COMPILE STANDALONE/ADD-ON DEVICES

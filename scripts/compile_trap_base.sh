@@ -20,34 +20,36 @@ sed -i -e 's/\(String build_date = "\)[^"]*\(";\)/\1'"${MJVER}_${TIMESTAMP}"'\2/
 
 echo ""
 
-# GhostTrap (ESP32 - Normal)
-echo "Building GhostTrap Binary (ESP32)..."
+# GhostTrap Base (ESP32)
+echo "GhostTrap Base Binary (ESP32) - Building..."
 
 # Clean the project before building
 pio run --project-dir "$PROJECT_DIR" --target clean
 
 # Compile the PlatformIO project
-pio run --project-dir "$PROJECT_DIR"
+pio run --project-dir "$PROJECT_DIR" --jobs 4
 
 # Check if the build was successful
 if [ $? -eq 0 ]; then
-  echo "Build succeeded!"
+  echo "Building GhostTrap Binary (ESP32 - Base) - Build succeeded!"
 else
-  echo "Build failed!"
+  echo "Building GhostTrap Binary (ESP32 - Base) - Build failed!"
   exit 1
 fi
 
 # Copy the new firmware to the expected binaries directory
-if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/firmware.bin ${BINDIR}/trap/GhostTrap-Base.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3/firmware.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3/firmware.bin ${BINDIR}/trap/GhostTrap-Base.bin
+  echo "Firmware copy completed."
 fi
-if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/bootloader.bin ${BINDIR}/trap/extras/GhostTrap-Base-Bootloader.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3/bootloader.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3/bootloader.bin ${BINDIR}/trap/extras/GhostTrap-Base-Bootloader.bin
+  echo "Bootloader copy completed."
 fi
-if [ -f ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ]; then
-  mv ${PROJECT_DIR}/.pio/build/esp32s3mini/partitions.bin ${BINDIR}/trap/extras/GhostTrap-Base-Partitions.bin
+if [ -f ${PROJECT_DIR}/.pio/build/esp32s3/partitions.bin ]; then
+  mv ${PROJECT_DIR}/.pio/build/esp32s3/partitions.bin ${BINDIR}/trap/extras/GhostTrap-Base-Partitions.bin
+  echo "Partitions copy completed."
 fi
-echo "Done."
 echo ""
 
 rm -f ${PROJECT_DIR}/include/*.h-e
