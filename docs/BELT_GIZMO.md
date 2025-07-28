@@ -4,6 +4,11 @@ While the original "gizmo" was never given an on-screen purpose it has endured a
 
 This depends on the presence of an Attenuator or WiFi Adapter in order to provide a wireless integration with your equipment.
 
+Watch this demonstration of the Belt Gizmo and Stream Effects devices:
+<video src="../videos/effects_demo.webm" controls width="480">
+  Your browser does not support the video tag.
+</video>
+
 ## External Shell
 
 Many models of this device exist in the wild and you can pick any that you prefer as your base. Or if you have an existing Belt Gizmo you may be able to modify it to incorporate the new electronics.
@@ -31,7 +36,7 @@ Assembly of this device WILL require SOLDERING skills and is considered a DIY ap
 
 ![](images/ESP32-S3-Zero.jpg)
 
-The following is a diagram of the **ESP32-S3-Zero pins** from left and right, when oriented with the USB connection facing up (north) like the pinout diagram above-top. We only need a single 
+The following is a diagram of the **ESP32-S3-Zero pins** from left and right, when oriented with the USB connection facing up (north) like the pinout diagram above-top. We only need a single
 
 | Connection    | ESP32 (L) |     | ESP32 (R) | Connection    |
 |---------------|-----------|-----|-----------|---------------|
@@ -82,7 +87,7 @@ For the initial flashing of the firmware you can use a 3rd-party website to uplo
 
 1. Once connected, select the files (noted above) for the following address spaces:
 
-	* 0x1000 &rarr; [BeltGizmo-Bootloader.bin](https://github.com/gpstar81/GPStar-proton-pack/blob/main/binaries/gizmo/extras/BeltGizmo-Bootloader.bin?raw=1)
+	* 0x0000 &rarr; [BeltGizmo-Bootloader.bin](https://github.com/gpstar81/GPStar-proton-pack/blob/main/binaries/gizmo/extras/BeltGizmo-Bootloader.bin?raw=1)
 	* 0x8000 &rarr; [BeltGizmo-Partitions.bin](https://github.com/gpstar81/GPStar-proton-pack/blob/main/binaries/gizmo/extras/BeltGizmo-Partitions.bin?raw=1)
 	* 0xE000 &rarr; [boot_app0.bin](https://github.com/gpstar81/GPStar-proton-pack/blob/main/binaries/gizmo/extras/boot_app0.bin?raw=1)
 	* 0x10000 &rarr; [BeltGizmo.bin](https://github.com/gpstar81/GPStar-proton-pack/blob/main/binaries/gizmo/BeltGizmo.bin?raw=1)
