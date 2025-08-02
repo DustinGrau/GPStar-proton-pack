@@ -732,11 +732,11 @@ void ventTopLightControl(bool b_on) {
 void ventLightControl(uint8_t i_intensity) {
   if(b_rgb_vent_light) {
     // Put in a check just to be sure the non-addressable pin stays off.
-    #ifndef ESP32
+  #ifndef ESP32
     if(led_Vent.getState() != HIGH) {
       led_Vent.turnOff();
     }
-    #endif
+  #endif
 
     if(i_intensity < 20) {
       vent_leds[0] = getHueAsRGB(C_BLACK);

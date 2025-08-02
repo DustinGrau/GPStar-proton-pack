@@ -134,16 +134,16 @@ void setup() {
 #endif
 
 #ifdef ESP32
-// Begin by setting up WiFi as a prerequisite to all else.
-if(startWiFi()) {
-  // Start the local web server.
-  startWebServer();
+  // Begin by setting up WiFi as a prerequisite to all else.
+  if(startWiFi()) {
+    // Start the local web server.
+    startWebServer();
 
-  // Begin timer for remote client events.
-  ms_cleanup.start(i_websocketCleanup);
-  ms_apclient.start(i_apClientCount);
-  ms_otacheck.start(i_otaCheck);
-}
+    // Begin timer for remote client events.
+    ms_cleanup.start(i_websocketCleanup);
+    ms_apclient.start(i_apClientCount);
+    ms_otacheck.start(i_otaCheck);
+  }
 #endif
 
   // System LEDs
