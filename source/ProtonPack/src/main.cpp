@@ -21,7 +21,7 @@
 #include <Arduino.h>
 
 // Set to 1 to enable built-in debug messages
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -51,7 +51,6 @@
 #include <Wire.h>
 #ifdef ESP32
   #include <HDC1080.h>
-  GuL::HDC1080 tempSensor(Wire1);
   #include <HardwareSerial.h>
 #endif
 
@@ -112,13 +111,20 @@ void setup() {
   // Setup the i2c bus using the Wire protocol.
 #ifdef ESP32
   // ESP32-S3 requires manually specifying SDA and SCL pins first.
-  Wire.setPins(I2C_SDA, I2C_SCL);
-  Wire1.setPins(TEMP_SDA, TEMP_SCL);
-  Wire1.begin();
-  Wire1.setClock(400000UL); // Sets the i2c bus to 400kHz
-#endif
+  Wire.begin(I2C_SDA, I2C_SCL, 400000UL);
+  Wire1.begin(TEMP_SDA, TEMP_SCL, 400000UL);
+
+  // Initialize the HDC1080 temp/humidity sensor.
+  GuL::HDC1080 tempSensor(Wire1);
+  tempSensor.resetConfiguration();
+  tempSensor.disableHeater();
+  tempSensor.setHumidityResolution(GuL::HDC1080::HumidityMeasurementResolution::HUM_RES_14BIT);
+  tempSensor.setTemperaturResolution(GuL::HDC1080::TemperatureMeasurementResolution::TEMP_RES_14BIT);
+  tempSensor.setAcquisitionMode(GuL::HDC1080::AcquisitionModes::SINGLE_CHANNEL);
+#else
   Wire.begin();
   Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
+#endif
 
   // Initialize an optional power meter on the i2c bus.
   if(b_use_power_meter) {
