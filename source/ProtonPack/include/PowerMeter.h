@@ -47,6 +47,8 @@ float f_sliding_window[20] = {}; // Sliding window for detecting state changes, 
 float f_accumulator = 0.0; // Accumulator used for sliding window averaging operations.
 float f_diff_average = 0.0; // Stores the result of the sliding window average operation.
 float f_idle_value = 0.0; // Stores the previous idle value to be used for stop firing checks.
+float f_batt_volts = 0.0; // Stores the current battery voltage reading from the pack.
+float f_wand_amps = 0.0; // Stores the current amperage reading from the wand.
 
 // Define an object which can store
 struct PowerMeter {
@@ -201,7 +203,8 @@ void updateWandPowerState() {
   // This is called whenever the power meter is available--for wand hot-swapping purposes.
   // Data is sent as integer so this is sent multiplied by 100 to get 2 decimal precision.
   if(si_update == 0) {
-    attenuatorSend(A_WAND_POWER_AMPS, f_sliding_window[19] * 100);
+    f_wand_amps = f_sliding_window[19] * 100;
+    attenuatorSend(A_WAND_POWER_AMPS, f_wand_amps);
   }
 
   // Handle packside overheat sequence.
@@ -386,7 +389,8 @@ void updateWandPowerState() {
 void updatePackPowerState() {
   if(b_attenuator_connected) {
     // Data is sent as uint16_t so this is already multiplied by 100 to get 2 decimal precision.
-    attenuatorSend(A_BATTERY_VOLTAGE_PACK, packReading.BusVoltage);
+    f_batt_volts = packReading.BusVoltage;
+    attenuatorSend(A_BATTERY_VOLTAGE_PACK, f_batt_volts);
   }
 }
 

@@ -30,6 +30,11 @@
 #define PROGMEM_READU16(x) pgm_read_word_near(&(x))
 #define PROGMEM_READU8(x) pgm_read_byte_near(&(x))
 
+// Debug macros
+#define debug(...) Serial.print(__VA_ARGS__)
+#define debugf(...) Serial.printf(__VA_ARGS__)
+#define debugln(...) Serial.println(__VA_ARGS__)
+
 // 3rd-Party Libraries
 #include <millisDelay.h>
 #include <FastLED.h>
@@ -88,11 +93,11 @@ void AnimationTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing AnimationTask in core"));
-      Serial.print(xPortGetCoreID());
+      debug(F("Executing AnimationTask in core"));
+      debug(xPortGetCoreID());
       // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+      debug(F(" | Stack HWM: "));
+      debugln(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
     // Call this on each loop in case the user changed their preference.
@@ -127,8 +132,8 @@ void AnimationTask(void *parameter) {
 void PreferencesTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
-    Serial.print(F("Executing PreferencesTask in core"));
-    Serial.println(xPortGetCoreID());
+    debug(F("Executing PreferencesTask in core"));
+    debugln(xPortGetCoreID());
   #endif
 
   // Print partition information to verify NVS availability
@@ -140,25 +145,27 @@ void PreferencesTask(void *parameter) {
   esp_err_t err = nvs_flash_init();
   if(err != ESP_OK) {
     #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.printf("NVS initialization failed with error: %s\n", esp_err_to_name(err));
+    debug(F("NVS initialization failed with error: "));
+    debugln(esp_err_to_name(err));
     #endif
 
     // If initialization fails, erase and reinitialize NVS.
-    debug(F("Erasing and reinitializing NVS..."));
+    debugln(F("Erasing and reinitializing NVS..."));
     nvs_flash_erase();
 
     err = nvs_flash_init();
     if(err != ESP_OK) {
       #if defined(DEBUG_SEND_TO_CONSOLE)
-      Serial.printf("Failed to reinitialize NVS: %s\n", esp_err_to_name(err));
+      debug(F("Failed to reinitialize NVS: "));
+      debugln(esp_err_to_name(err));
       #endif
     }
     else {
-      debug(F("NVS reinitialized successfully"));
+      debugln(F("NVS reinitialized successfully"));
     }
   }
   else {
-    debug(F("NVS initialized successfully"));
+    debugln(F("NVS initialized successfully"));
   }
 
   /*
@@ -219,8 +226,8 @@ void PreferencesTask(void *parameter) {
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F("PreferencesTask Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    debug(F("PreferencesTask Stack HWM: "));
+    debugln(uxTaskGetStackHighWaterMark(NULL));
   #endif
 
   // Task ends after setup is complete and MUST be removed from scheduling.
@@ -232,11 +239,11 @@ void PreferencesTask(void *parameter) {
 void SerialCommsTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
-    Serial.print(F("Executing SerialCommsTask in core"));
-    Serial.print(xPortGetCoreID());
+    debug(F("Executing SerialCommsTask in core"));
+    debug(xPortGetCoreID());
     // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F(" | Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    debug(F(" | Stack HWM: "));
+    debugln(uxTaskGetStackHighWaterMark(NULL));
   #endif
 
   while(true) {
@@ -299,11 +306,11 @@ void UserInputTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing UserInputTask in core"));
-      Serial.print(xPortGetCoreID());
+      debug(F("Executing UserInputTask in core"));
+      debug(xPortGetCoreID());
       // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+      debug(F(" | Stack HWM: "));
+      debugln(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
     if(!b_wait_for_pack) {
@@ -320,11 +327,11 @@ void WiFiManagementTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing WiFiManagementTask in core"));
-      Serial.print(xPortGetCoreID());
+      debug(F("Executing WiFiManagementTask in core"));
+      debug(xPortGetCoreID());
       // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+      debug(F(" | Stack HWM: "));
+      debugln(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
     // Proceed with management if the AP and web server are started.
@@ -362,8 +369,8 @@ void WiFiManagementTask(void *parameter) {
 void WiFiSetupTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
-    Serial.print(F("Executing WiFiSetupTask in core"));
-    Serial.println(xPortGetCoreID());
+    debug(F("Executing WiFiSetupTask in core"));
+    debugln(xPortGetCoreID());
   #endif
 
   // Begin by setting up WiFi as a prerequisite to all else.
@@ -379,8 +386,8 @@ void WiFiSetupTask(void *parameter) {
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F("WiFiSetupTask Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    debug(F("WiFiSetupTask Stack HWM: "));
+    debugln(uxTaskGetStackHighWaterMark(NULL));
   #endif
 
   // Task ends after setup is complete and MUST be removed from scheduling.
@@ -403,8 +410,8 @@ void setup() {
   // Lower frequency means less power consumption, but slower performance (obviously).
   setCpuFrequencyMhz(240);
   #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.print(F("CPU Freq (MHz): "));
-    Serial.println(getCpuFrequencyMhz());
+    debug(F("CPU Freq (MHz): "));
+    debugln(getCpuFrequencyMhz());
   #endif
 
   btStop(); // Disable Bluetooth which is not needed for this hardware.
@@ -541,13 +548,13 @@ void printCPULoad() {
   float cpuLoadCore0 = 100.0 - ((float)idle0 / (float)(idle0 + idle1)) * 100.0;
   float cpuLoadCore1 = 100.0 - ((float)idle1 / (float)(idle0 + idle1)) * 100.0;
 
-  Serial.print(F("CPU Load Core0: "));
-  Serial.print(cpuLoadCore0);
-  Serial.println(F("%"));
+  debug(F("CPU Load Core0: "));
+  debug(cpuLoadCore0);
+  debugln(F("%"));
 
-  Serial.print(F("CPU Load Core1: "));
-  Serial.print(cpuLoadCore1);
-  Serial.println(F("%"));
+  debug(F("CPU Load Core1: "));
+  debug(cpuLoadCore1);
+  debugln(F("%"));
 
   // Reset idle times after calculation
   idleTimeCore0 = 0;
@@ -555,47 +562,47 @@ void printCPULoad() {
 }
 
 void printMemoryStats() {
-  Serial.println(F("Memory Usage Stats:"));
+  debugln(F("Memory Usage Stats:"));
 
   // Heap memory
-  Serial.print(F("|-Total Free Heap: "));
-  Serial.print(formatBytesWithCommas(esp_get_free_heap_size()));
-  Serial.println(F(" bytes"));
+  debug(F("|-Total Free Heap: "));
+  debug(formatBytesWithCommas(esp_get_free_heap_size()));
+  debugln(F(" bytes"));
 
-  Serial.print(F("|-Minimum Free Heap Ever: "));
-  Serial.print(formatBytesWithCommas(esp_get_minimum_free_heap_size()));
-  Serial.println(F(" bytes"));
+  debug(F("|-Minimum Free Heap Ever: "));
+  debug(formatBytesWithCommas(esp_get_minimum_free_heap_size()));
+  debugln(F(" bytes"));
 
-  Serial.print(F("|-Maximum Allocatable Block: "));
-  Serial.print(formatBytesWithCommas(heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)));
-  Serial.println(F(" bytes"));
+  debug(F("|-Maximum Allocatable Block: "));
+  debug(formatBytesWithCommas(heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)));
+  debugln(F(" bytes"));
 
   // Stack memory (for the main task)
-  Serial.println(F("|-Tasks Stack High Water Mark:"));
-  Serial.print(F("|--Main Task: "));
-  Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(NULL)));
-  Serial.println(F(" bytes"));
+  debug(F("|-Tasks Stack High Water Mark:"));
+  debug(F("|--Main Task: "));
+  debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(NULL)));
+  debugln(F(" bytes"));
 
   // Stack memory (for other tasks)
   if (AnimationTaskHandle != NULL) {
-    Serial.print(F("|--Animation: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
-    Serial.println(F(" / 2,048 bytes"));
+    debug(F("|--Animation: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
+    debugln(F(" / 2,048 bytes"));
   }
   if (SerialCommsTaskHandle != NULL) {
-    Serial.print(F("|--Serial Comms: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(SerialCommsTaskHandle)));
-    Serial.println(F(" / 4,096 bytes"));
+    debug(F("|--Serial Comms: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(SerialCommsTaskHandle)));
+    debugln(F(" / 4,096 bytes"));
   }
   if (UserInputTaskHandle != NULL) {
-    Serial.print(F("|--User Input: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
-    Serial.println(F(" / 4,096 bytes"));
+    debug(F("|--User Input: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
+    debugln(F(" / 4,096 bytes"));
   }
   if (WiFiManagementTaskHandle != NULL) {
-    Serial.print(F("|--WiFi Mgmt.: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
-    Serial.println(F(" / 2,048 bytes"));
+    debug(F("|--WiFi Mgmt.: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
+    debugln(F(" / 2,048 bytes"));
   }
 }
 
@@ -603,7 +610,7 @@ void loop() {
   // No work done here, only in the tasks!
 
   #if defined(DEBUG_PERFORMANCE)
-  Serial.println(F("=================================================="));
+  debugln(F("=================================================="));
   printCPULoad();      // Print CPU load
   printMemoryStats();  // Print memory usage
   delay(3000);         // Wait 5 seconds before printing again

@@ -347,7 +347,7 @@ void mainLoop() {
           b_pack_on = false;
         }
 
-        if(b_ramp_down && !b_overheating && !b_alarm) {
+        if(b_ramp_down && !b_overheating && !b_pack_alarm) {
           if(b_spectral_lights_on) {
             // If we enter the LED EEPROM menu while the pack is ramping off, stop it right away.
             packOffReset();
@@ -409,7 +409,7 @@ void mainLoop() {
         }
 
         if(ribbonCableAttached() && !b_overheating) {
-          if(b_alarm) {
+          if(b_pack_alarm) {
             if(SYSTEM_YEAR == SYSTEM_1984 || SYSTEM_YEAR == SYSTEM_1989) {
               // Reset the LEDs before resetting the alarm flag.
               if(!usingSlimeCyclotron()) {
@@ -427,7 +427,7 @@ void mainLoop() {
             ventLight(false);
             ventLightLEDW(false);
 
-            b_alarm = false;
+            b_pack_alarm = false;
 
             resetRampUp();
 

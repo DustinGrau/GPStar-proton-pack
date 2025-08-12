@@ -925,7 +925,7 @@ void doAttenuatorSync() {
   // Pack status.
   attenuatorSyncData.packOn = (PACK_STATE != MODE_OFF) ? 1 : 0;
   attenuatorSyncData.systemMode = (SYSTEM_MODE == MODE_ORIGINAL) ? 2 : 1;
-  attenuatorSyncData.ionArmSwitch = (switch_power.getState() == LOW) ? 2 : 1;
+  attenuatorSyncData.ionArmSwitch = (RED_SWITCH_MODE == SWITCH_ON) ? 2 : 1;
   attenuatorSyncData.powerLevel = i_wand_power_level;
   attenuatorSyncData.packVoltage = packReading.BusVoltage;
 
@@ -988,7 +988,7 @@ void doAttenuatorSync() {
   attenuatorSendData(A_SYNC_DATA);
 
   // Send the ribbon cable alarm status if the ribbon cable is detached.
-  if(b_alarm && !ribbonCableAttached()) {
+  if(b_pack_alarm && !ribbonCableAttached()) {
     attenuatorSend(A_ALARM_ON);
   }
 
@@ -1475,7 +1475,7 @@ void doWandSync() {
   packSerialSendData(P_SYNC_DATA);
 
   // Send the ribbon cable alarm status if the ribbon cable is detached.
-  if(b_alarm && !ribbonCableAttached()) {
+  if(b_pack_alarm && !ribbonCableAttached()) {
     packSerialSend(P_ALARM_ON);
   }
 
