@@ -292,6 +292,25 @@ void toggleYearModes() {
  * Serial API Communication Handlers
  */
 
+ // Helper function to check if a command is excluded from notification
+bool isExcludedCommand(uint8_t i_command) {
+  return i_command == A_HANDSHAKE ||
+         i_command == A_SYNC_START ||
+         i_command == A_SYNC_DATA ||
+         i_command == A_SYNC_END ||
+         i_command == A_BATTERY_VOLTAGE_PACK ||
+         i_command == A_WAND_POWER_AMPS ||
+         i_command == A_REQUEST_PREFERENCES_PACK ||
+         i_command == A_REQUEST_PREFERENCES_WAND ||
+         i_command == A_REQUEST_PREFERENCES_SMOKE ||
+         i_command == A_SEND_PREFERENCES_PACK ||
+         i_command == A_SEND_PREFERENCES_WAND ||
+         i_command == A_SEND_PREFERENCES_SMOKE ||
+         i_command == A_SAVE_PREFERENCES_PACK ||
+         i_command == A_SAVE_PREFERENCES_WAND ||
+         i_command == A_SAVE_PREFERENCES_SMOKE;
+}
+
 // Outgoing commands to the Attenuator
 void attenuatorSend(uint8_t i_command, uint16_t i_value) {
   uint16_t i_send_size = 0;
@@ -308,8 +327,10 @@ void attenuatorSend(uint8_t i_command, uint16_t i_value) {
   attenuatorComs.sendData(i_send_size, (uint8_t) PACKET_COMMAND);
 
 #ifdef ESP32
-  // Send latest status to the WebSocket (ESP32 only).
-  notifyWSClients();
+  // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
+  if (!isExcludedCommand(i_command)) {
+    notifyWSClients();
+  }
 #endif
 }
 // Override function to handle calls with a single parameter.
