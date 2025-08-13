@@ -100,6 +100,8 @@ void setup() {
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
 
+  Serial.begin(115200);
+
   /* This loop changes GPIO39~GPIO42 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
    * IO_MUX_GPIO0_REG is the register for GPIO0, which we then seek from.
@@ -636,15 +638,16 @@ void loop() {
   // Run checks on web-related tasks.
   webLoops();
 
-  // Test the HDC1080 by outputting the current temperature reading to the debug console.
+  // Read the HDC1080 and output the current temperature reading to the debug console.
   if(b_temp_sensor_detected) {
     if(!ms_temp_read.isRunning()) {
       tempSensor.startAcquisition(GuL::HDC1080::Channel::TEMPERATURE);
-      ms_temp_read.start(10);
+      ms_temp_read.start(5000); // Read every 5 seconds
     }
     else if(ms_temp_read.justFinished()) {
-      float f_temp = tempSensor.getTemperature();
-      Serial.printf("\t\tTemp: %f degC \n",f_temp);
+      float f_temp_c = tempSensor.getTemperature();
+      float f_temp_f = f_temp_c * 1.8 + 32; // Convert Celsius to Fahrenheit
+      Serial.printf("\t\tTemp: %.1f C (%.1f F)\n", f_temp_c, f_temp_f);
     }
   }
 #endif
