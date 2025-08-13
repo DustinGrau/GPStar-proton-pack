@@ -20,8 +20,8 @@
 // Required for PlatformIO
 #include <Arduino.h>
 
-// Set to 1 to enable built-in debug messages
-#define DEBUG 0
+// Set to 1 to enable built-in debug messages via Serial device output.
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -54,6 +54,9 @@
   #include <HardwareSerial.h>
 #endif
 
+// Forward declaration for use in all includes.
+void sendDebug(String message);
+
 // Local Files
 #include "Configuration.h"
 #include "MusicSounds.h"
@@ -73,6 +76,16 @@
 #ifdef ESP32
   #include "Wireless.h"
 #endif
+
+// Writes a debug message to the serial console or sends to the WebSocket.
+void sendDebug(String message) {
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    debugln(message); // Print to serial console.
+  #endif
+  #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
+    ws.textAll(message); // Send a copy to the WebSocket.
+  #endif
+}
 
 void setup() {
 #ifdef ESP32
@@ -129,7 +142,7 @@ void setup() {
 
   // Initialize an optional power meter on the i2c bus.
   if(b_use_power_meter) {
-    debugln(F("Init power meter..."));
+    sendDebug(F("Init power meter..."));
     powerMeterInit();
   }
 

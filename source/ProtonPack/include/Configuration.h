@@ -37,10 +37,12 @@ String user_wifi_pass = ""; // Preferred network password for external WiFi
  * expect to see them. Using the console should be reserved for active
  * debugging, while the websocket will help with confirming operations
  * while using the device (post-setup for wireless).
+ * 
+ * For console output, must first set DEBUG 1 in main.cpp to enable debug macros.
  */
 //#define DEBUG_WIRELESS_SETUP   // Output debugs related to the WiFi/network setup.
-//#define DEBUG_SEND_TO_CONSOLE  // Send any general messages to the serial (USB) console.
-//#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
+#define DEBUG_SEND_TO_CONSOLE  // Send any general messages to the serial (USB) console.
+#define DEBUG_SEND_TO_WEBSOCKET  // Send any messages to connected WebSocket clients.
 
 /*
  * Force the use of default SSID and password for wireless capabilities.

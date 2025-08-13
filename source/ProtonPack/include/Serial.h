@@ -558,7 +558,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value);
 
 // Perform update of the pack preferences based on the current configuration object.
 void handlePackPrefsUpdate() {
-  debugln(F("Saving Pack Preferences"));
+  sendDebug(F("Saving Pack Preferences"));
 
   switch(packConfig.defaultSystemModePack) {
     case 0:
@@ -789,7 +789,7 @@ void handlePackPrefsUpdate() {
 
 // Send the current wand preferences based on the current configuration object.
 void handleWandPrefsUpdate() {
-  debugln(F("Saving Wand Preferences"));
+  sendDebug(F("Saving Wand Preferences"));
 
   packSerialSendData(P_SAVE_PREFERENCES_WAND);
 
@@ -800,7 +800,7 @@ void handleWandPrefsUpdate() {
 
 // Save and send the smoke preferences based on the current configuration object.
 void handleSmokePrefsUpdate() {
-  debugln(F("Saving Smoke Preferences"));
+  sendDebug(F("Saving Smoke Preferences"));
 
   // Save local and remote (wand) smoke timing settings
   i_ms_overheating_length_5 = smokeConfig.overheatDuration5 * 1000;
@@ -880,7 +880,7 @@ void checkAttenuator() {
           }
 
           attenuatorComs.rxObj(packConfig);
-          debugln(F("Recv. Pack Config"));
+          sendDebug(F("Recv. Pack Config"));
 
           // Writes pack preferences back to runtime variables.
           // This action does not save changes to the EEPROM!
@@ -894,7 +894,7 @@ void checkAttenuator() {
           }
 
           attenuatorComs.rxObj(wandConfig);
-          debugln(F("Recv. Wand Config"));
+          sendDebug(F("Recv. Wand Config"));
 
           // This will pass values from the wandConfig object
           handleWandPrefsUpdate();
@@ -907,7 +907,7 @@ void checkAttenuator() {
           }
 
           attenuatorComs.rxObj(smokeConfig);
-          debugln(F("Recv. Smoke Config"));
+          sendDebug(F("Recv. Smoke Config"));
 
           // Writes pack preferences back to runtime variables.
           // This action does not save changes to the EEPROM!
@@ -929,7 +929,7 @@ void doAttenuatorSync() {
     playEffect(S_BEEPS_ALT);
   }
 
-  debugln(F("Attenuator Sync Start"));
+  sendDebug(F("Attenuator Sync Start"));
   attenuatorSend(A_SYNC_START);
 
   // Tell the Attenuator about the wand status.
@@ -1010,7 +1010,7 @@ void doAttenuatorSync() {
   attenuatorSyncData.musicPaused = b_music_paused ? 1 : 0;
   attenuatorSyncData.trackLooped = b_repeat_track ? 2 : 1;
   attenuatorSyncData.currentTrack = i_current_music_track;
-  attenuatorSyncData.musicCount = i_music_count;
+  attenuatorSyncData.musicCount = i_music_track_count;
   attenuatorSyncData.masterMuted = (i_volume_master == i_volume_abs_min) ? 2 : 1;
   attenuatorSyncData.masterVolume = i_volume_master_percentage;
   attenuatorSyncData.effectsVolume = i_volume_effects_percentage;
@@ -1024,7 +1024,7 @@ void doAttenuatorSync() {
   }
 
   attenuatorSend(A_SYNC_END);
-  debugln(F("Attenuator Sync End"));
+  sendDebug(F("Attenuator Sync End"));
 }
 
 // Incoming messages from the wand.
@@ -1072,7 +1072,7 @@ void checkWand() {
           }
 
           wandComs.rxObj(wandConfig);
-          debugln(F("Recv. Wand Config Prefs"));
+          sendDebug(F("Recv. Wand Config Prefs"));
 
           // Send the EEPROM preferences just returned by the wand.
           attenuatorSendData(A_SEND_PREFERENCES_WAND);
@@ -1085,7 +1085,7 @@ void checkWand() {
           }
 
           wandComs.rxObj(smokeConfig);
-          debugln(F("Recv. Wand Smoke Prefs"));
+          sendDebug(F("Recv. Wand Smoke Prefs"));
 
           // Send the EEPROM preferences just returned by the wand.
           // This data will combine with the pack's smoke settings.
@@ -1114,7 +1114,7 @@ void doWandSync() {
   playEffect(S_WAND_SYNC);
 
   // Begin the synchronization process which tells the wand the pack got the handshake.
-  debugln(F("Wand Sync Start"));
+  sendDebug(F("Wand Sync Start"));
   packSerialSend(P_SYNC_START, b_pack_post_finish ? 2 : 1);
 
   // Attaching a new wand means we need to stop any prior overheat as the wand initiates this action.
@@ -1250,7 +1250,7 @@ void doWandSync() {
 
   // Tell the wand that we've reached the end of settings to be sync'd.
   packSerialSend(P_SYNC_END);
-  debugln(F("Wand Sync End"));
+  sendDebug(F("Wand Sync End"));
 }
 
 void handleWandCommand(uint8_t i_command, uint16_t i_value) {
@@ -1290,7 +1290,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     break;
 
     case W_SYNCHRONIZED:
-      debugln(F("Wand Synchronized"));
+      sendDebug(F("Wand Synchronized"));
       b_wand_syncing = false; // Stop trying to sync since we've successfully synchronized.
       b_wand_connected = true; // Wand sent sync confirmation, so it must be connected.
       ms_wand_check.start(i_wand_disconnect_delay); // Wand is synchronized, so start the keep-alive timer.
@@ -1300,6 +1300,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         // Demo light mode enabled. Send command to turn on the Neutrona Wand.
         packSerialSend(P_TURN_WAND_ON);
       }
+      b_notify = true;
     break;
 
     case W_ON:
@@ -2177,11 +2178,13 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_OVERHEATING:
       // Overheating.
       packOverheatingStart();
+      b_notify = true;
     break;
 
     case W_VENTING:
       // Quick Vent function.
       packVentingStart();
+      b_notify = true;
     break;
 
     case W_CYCLOTRON_NORMAL_SPEED:
@@ -2190,6 +2193,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Indicate normalcy to serial device.
       attenuatorSend(A_CYCLOTRON_NORMAL_SPEED);
+      b_notify = true;
     break;
 
     case W_CYCLOTRON_INCREASE_SPEED:
@@ -2198,6 +2202,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Indicate speed-up to serial device.
       attenuatorSend(A_CYCLOTRON_INCREASE_SPEED);
+      b_notify = true;
     break;
 
     case W_BEEP_START:
@@ -2232,6 +2237,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_1);
+      b_notify = true;
     break;
 
     case W_POWER_LEVEL_2:
@@ -2250,6 +2256,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_2);
+      b_notify = true;
     break;
 
     case W_POWER_LEVEL_3:
@@ -2268,6 +2275,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_3);
+      b_notify = true;
     break;
 
     case W_POWER_LEVEL_4:
@@ -2286,6 +2294,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_4);
+      b_notify = true;
     break;
 
     case W_POWER_LEVEL_5:
@@ -2305,6 +2314,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_5);
+      b_notify = true;
     break;
 
     case W_OVERHEAT_INCREASE_LEVEL_1:
@@ -3064,6 +3074,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       if(b_playing_music) {
         decreaseVolumeMusic();
       }
+      b_notify = true;
     break;
 
     case W_VOLUME_MUSIC_INCREASE:
@@ -3071,21 +3082,25 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       if(b_playing_music) {
         increaseVolumeMusic();
       }
+      b_notify = true;
     break;
 
     case W_VOLUME_SOUND_EFFECTS_DECREASE:
       // Lower the sound effects volume.
       decreaseVolumeEffects();
+      b_notify = true;
     break;
 
     case W_VOLUME_SOUND_EFFECTS_INCREASE:
       // Increase the sound effects volume.
       increaseVolumeEffects();
+      b_notify = true;
     break;
 
     case W_MUSIC_TRACK_LOOP_TOGGLE:
       toggleMusicLoop();
       attenuatorSend(A_MUSIC_TRACK_LOOP_TOGGLE, b_repeat_track ? 2 : 1);
+      b_notify = true;
     break;
 
     case W_TOGGLE_MUTE:
@@ -3106,16 +3121,19 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       updateMasterVolume();
+      b_notify = true;
     break;
 
     case W_VOLUME_DECREASE:
       // Lower overall pack volume.
       decreaseVolume();
+      b_notify = true;
     break;
 
     case W_VOLUME_INCREASE:
       // Increase overall pack volume.
       increaseVolume();
+      b_notify = true;
     break;
 
     case W_MUSIC_TOGGLE:
@@ -3126,6 +3144,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       else {
         playMusic();
       }
+      b_notify = true;
     break;
 
     case W_SOUND_OVERHEAT_SMOKE_DURATION_LEVEL_5:
@@ -3316,6 +3335,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           attenuatorSend(A_MODE_ORIGINAL);
         break;
       }
+      b_notify = true;
     break;
 
     case W_SPECTRAL_LIGHTS_ON:
@@ -4482,10 +4502,12 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_MUSIC_NEXT_TRACK:
       musicNextTrack();
+      b_notify = true;
     break;
 
     case W_MUSIC_PREV_TRACK:
       musicPrevTrack();
+      b_notify = true;
     break;
 
     case W_COM_SOUND_NUMBER:
@@ -4506,4 +4528,10 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // No-op for all other actions.
     break;
   }
+
+  #ifdef ESP32
+    if(b_notify) {
+      notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+    }
+  #endif
 }

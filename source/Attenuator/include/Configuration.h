@@ -26,6 +26,8 @@
  * expect to see them. Using the console should be reserved for active
  * debugging, while the websocket will help with confirming operations
  * while using the device (post-setup for wireless).
+ * 
+ * For console output, must first set DEBUG 1 in main.cpp to enable debug macros.
  */
 //#define DEBUG_WIRELESS_SETUP   // Output debugs related to the WiFi/network setup.
 //#define DEBUG_PERFORMANCE      // Send debug messages for CPU/memory to the (USB) console.

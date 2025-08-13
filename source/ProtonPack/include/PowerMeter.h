@@ -76,10 +76,11 @@ void wandFiring();
 void wandStoppedFiring();
 void cyclotronSpeedRevert();
 void packOverheatingStart();
+void notifyWSClients(); // From Webhandler.h
 
 // Configure and calibrate the power meter device.
 void powerMeterConfig() {
-  debugln(F("Configure Power Meter"));
+  sendDebug(F("Configure Power Meter"));
 
   // Custom configuration, defaults are RANGE_32V, GAIN_8_320MV, ADC_12BIT, ADC_12BIT, CONT_SH_BUS
   monitor.configure(INA219::RANGE_16V, INA219::GAIN_1_40MV, INA219::ADC_64SAMP, INA219::ADC_64SAMP, INA219::CONT_SH_BUS);
@@ -109,7 +110,7 @@ void powerMeterInit() {
   else {
     // If returning a non-zero value, device could not be reset or is not present on the I2C bus.
     b_power_meter_available = false;
-    debugln(F("Unable to find power monitoring device on i2c. Power meter features will be disabled."));
+    sendDebug(F("Unable to find power monitoring device on i2c. Power meter features will be disabled."));
   }
 
   // Always obtain a voltage reading directly from the pack PCB.
@@ -295,6 +296,10 @@ void updateWandPowerState() {
         // Tell the Attenuator the pack is powered on
         attenuatorSend(A_PACK_ON);
       }
+
+    #ifdef ESP32
+      notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+    #endif
     }
     else if(b_pack_started_by_meter) {
       // If we did not turn on, we can't have been started by the meter.
@@ -328,6 +333,10 @@ void updateWandPowerState() {
       b_wand_on = false;
       b_pack_started_by_meter = false;
       attenuatorSend(A_WAND_OFF);
+
+      #ifdef ESP32
+        notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+      #endif
     }
     else if(PACK_STATE == MODE_OFF) {
       b_pack_started_by_meter = false; // Make sure this is kept as false since the pack was manually shut down.
@@ -369,6 +378,10 @@ void updateWandPowerState() {
           f_idle_value = f_sliding_window[0];
           b_firing_intensify = true;
           wandFiring();
+
+        #ifdef ESP32
+          notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+        #endif
         }
       }
       else if(!b_wand_overheated && !b_overheating) {
@@ -379,6 +392,10 @@ void updateWandPowerState() {
 
           // Return cyclotron to normal speed.
           cyclotronSpeedRevert();
+
+        #ifdef ESP32
+          notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+        #endif
         }
       }
     }

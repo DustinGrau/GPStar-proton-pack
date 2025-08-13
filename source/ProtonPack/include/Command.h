@@ -21,7 +21,8 @@
 #pragma once
 
 // Forward function declaration.
-void doAttenuatorSync();
+void doAttenuatorSync(); // From Serial.h
+void notifyWSClients(); // From Webhandler.h
 
 /**
  * Centralized handler for commands, allowing the Pack and Attenuator to both perform the same action.
@@ -52,7 +53,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
     break;
 
     case A_SYNC_END:
-      debugln(F("Attenuator Synchronized"));
+      sendDebug(F("Attenuator Synchronized"));
       b_attenuator_syncing = false;
       b_attenuator_connected = true;
       ms_attenuator_check.start(i_attenuator_disconnect_delay);
@@ -172,6 +173,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
 
       // Tell wand to decrease effects volume.
       packSerialSend(P_VOLUME_SOUND_EFFECTS_DECREASE);
+      b_notify = true;
     break;
 
     case A_VOLUME_SOUND_EFFECTS_INCREASE:
@@ -200,7 +202,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
         stopMusic();
       }
       else {
-        if(i_music_count > 0 && i_current_music_track >= i_music_track_start) {
+        if(i_music_track_count > 0 && i_current_music_track >= i_music_track_start) {
           // Play the appropriate track on pack and wand, and notify the Attenuator.
           playMusic();
         }
@@ -264,7 +266,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
 
     case A_MUSIC_PLAY_TRACK:
       // Music track number to be played.
-      if(i_music_count > 0 && i_value >= i_music_track_start) {
+      if(i_music_track_count > 0 && i_value >= i_music_track_start) {
         if(b_playing_music) {
           stopMusic(); // Stops current track before change.
 

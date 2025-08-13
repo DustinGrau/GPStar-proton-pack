@@ -25,15 +25,24 @@
 // Define this before including <FastLED.h>
 #define FASTLED_INTERNAL
 
+// Set to 1 to enable built-in debug messages via Serial device output.
+#define DEBUG 0
+
+// Debug macros
+#if DEBUG == 1
+  #define debug(...) Serial.print(__VA_ARGS__)
+  #define debugf(...) Serial.printf(__VA_ARGS__)
+  #define debugln(...) Serial.println(__VA_ARGS__)
+#else
+  #define debug(...)
+  #define debugf(...)
+  #define debugln(...)
+#endif
+
 // PROGMEM macros
 #define PROGMEM_READU32(x) pgm_read_dword_near(&(x))
 #define PROGMEM_READU16(x) pgm_read_word_near(&(x))
 #define PROGMEM_READU8(x) pgm_read_byte_near(&(x))
-
-// Debug macros
-#define debug(...) Serial.print(__VA_ARGS__)
-#define debugf(...) Serial.printf(__VA_ARGS__)
-#define debugln(...) Serial.println(__VA_ARGS__)
 
 // 3rd-Party Libraries
 #include <millisDelay.h>
