@@ -52,6 +52,8 @@
 #ifdef ESP32
   #include <HDC1080.h>
   GuL::HDC1080 tempSensor(Wire1);
+  millisDelay ms_temp_read;
+  bool b_temp_sensor_detected = false;
   #include <HardwareSerial.h>
 #endif
 
@@ -132,11 +134,15 @@ void setup() {
   Wire1.begin(TEMP_SDA, TEMP_SCL, 400000UL);
 
   // Initialize the HDC1080 temp/humidity sensor.
-  tempSensor.resetConfiguration();
-  tempSensor.disableHeater();
-  tempSensor.setHumidityResolution(GuL::HDC1080::HumidityMeasurementResolution::HUM_RES_14BIT);
-  tempSensor.setTemperaturResolution(GuL::HDC1080::TemperatureMeasurementResolution::TEMP_RES_14BIT);
-  tempSensor.setAcquisitionMode(GuL::HDC1080::AcquisitionModes::SINGLE_CHANNEL);
+  Wire1.beginTransmission(0x40);
+  if(Wire1.endTransmission() == 0) {
+    b_temp_sensor_detected = true;
+    tempSensor.resetConfiguration();
+    tempSensor.disableHeater();
+    tempSensor.setHumidityResolution(GuL::HDC1080::HumidityMeasurementResolution::HUM_RES_14BIT);
+    tempSensor.setTemperaturResolution(GuL::HDC1080::TemperatureMeasurementResolution::TEMP_RES_14BIT);
+    tempSensor.setAcquisitionMode(GuL::HDC1080::AcquisitionModes::SINGLE_CHANNEL);
+  }
 #else
   Wire.begin();
   Wire.setClock(400000UL); // Sets the i2c bus to 400kHz
@@ -629,6 +635,18 @@ void loop() {
 #ifdef ESP32
   // Run checks on web-related tasks.
   webLoops();
+
+  // Test the HDC1080 by outputting the current temperature reading to the debug console.
+  if(b_temp_sensor_detected) {
+    if(!ms_temp_read.isRunning()) {
+      tempSensor.startAcquisition(GuL::HDC1080::Channel::TEMPERATURE);
+      ms_temp_read.start(10);
+    }
+    else if(ms_temp_read.justFinished()) {
+      float f_temp = tempSensor.getTemperature();
+      Serial.printf("\t\tTemp: %f degC \n",f_temp);
+    }
+  }
 #endif
 
   // Update the available audio device.
