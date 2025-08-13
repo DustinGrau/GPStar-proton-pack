@@ -68,6 +68,9 @@
   millisDelay ms_sensor_delay;
 #endif
 
+// Forward declaration for use in all includes.
+void sendDebug(String message);
+
 // Local Files
 #include "Configuration.h"
 #include "MusicSounds.h"
@@ -87,6 +90,18 @@
   #include "Wireless.h"
 #endif
 
+// Writes a debug message to the serial console or sends to the WebSocket.
+void sendDebug(String message) {
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    debugln(message); // Print to serial console.
+  #endif
+  #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
+    if (b_ws_started) {
+      ws.textAll(message); // Send a copy to the WebSocket.
+    }
+  #endif
+}
+
 void setup() {
 #ifdef ESP32
   // To save power, reduce CPU frequency to 160 MHz.
@@ -94,6 +109,9 @@ void setup() {
 
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
+
+  // Set the baud rate for the Serial console.
+  Serial.begin(115200);
 
   /* This loop changes GPIO39~GPIO42 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
@@ -556,7 +574,7 @@ void loop() {
 
   if(b_imu_found && b_mag_found) {
     if(!ms_sensor_delay.isRunning()) {
-      ms_sensor_delay.start(100); // Have the IMU/MAG report every 100ms.
+      ms_sensor_delay.start(200); // Have the IMU/MAG report every 200ms.
     }
     else if(ms_sensor_delay.justFinished()) {
       // Poll the sensors.
@@ -566,7 +584,7 @@ void loop() {
       sensors_event_t temp;
       myMAG.getEvent(&mag);
       myIMU.getEvent(&accel, &gyro, &temp);
-      Serial.print("\t\tMag X: ");
+      Serial.print("\t\tMag   X: ");
       Serial.print(mag.magnetic.x);
       Serial.print(" \tY: ");
       Serial.print(mag.magnetic.y); 
@@ -580,7 +598,7 @@ void loop() {
       Serial.print(" \tZ: ");
       Serial.print(accel.acceleration.z);
       Serial.println(" m/s^2 ");
-      Serial.print("\t\tGyro X: ");
+      Serial.print("\t\tGyro  X: ");
       Serial.print(gyro.gyro.x);
       Serial.print(" \tY: ");
       Serial.print(gyro.gyro.y);

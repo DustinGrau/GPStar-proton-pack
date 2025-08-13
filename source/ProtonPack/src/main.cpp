@@ -100,6 +100,7 @@ void setup() {
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
 
+  // Set the baud rate for the Serial console.
   Serial.begin(115200);
 
   /* This loop changes GPIO39~GPIO42 to Function 1, which is GPIO.
