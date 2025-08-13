@@ -31,6 +31,10 @@ void doAttenuatorSync();
  *   - i_value: Optional value for the command (default 0)
  */
 void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
+  // Assume we will want to notify the user via the web UI of a change.
+  // Set to true in any command to send a notification (ESP32 only).
+  bool b_notify = false;
+
   switch(i_command) {
     case A_SYNC_START:
       // Attenuator has explicitly asked to be synchronized.
@@ -67,6 +71,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
 
       // Tell the Attenuator or any other device that the power to the Proton Pack is on.
       attenuatorSend(A_ION_ARM_SWITCH_ON);
+      b_notify = true;
     break;
 
     case A_TURN_PACK_OFF:
@@ -85,11 +90,13 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
 
       // Tell the Attenuator or any other device that the power to the Proton Pack is off.
       attenuatorSend(A_ION_ARM_SWITCH_OFF);
+      b_notify = true;
     break;
 
     case A_WARNING_CANCELLED:
       // Tell wand to reset overheat warning.
       packSerialSend(P_WARNING_CANCELLED);
+      b_notify = true;
     break;
 
     case A_MANUAL_OVERHEAT:
@@ -100,6 +107,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
       else if(b_pack_on) {
         packOverheatingStart();
       }
+      b_notify = true;
     break;
 
     case A_SYSTEM_LOCKOUT:
@@ -116,11 +124,13 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
           playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
         break;
       }
+      b_notify = true;
     break;
 
     case A_CANCEL_LOCKOUT:
       // Initiate a restart of the pack after a lockout event has occurred.
       restartFromWandMash();
+      b_notify = true;
     break;
 
     case A_TOGGLE_MUTE:
@@ -141,16 +151,19 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
       }
 
       updateMasterVolume();
+      b_notify = true;
     break;
 
     case A_VOLUME_DECREASE:
       // Decrease overall pack volume.
       decreaseVolume();
+      b_notify = true;
     break;
 
     case A_VOLUME_INCREASE:
       // Increase overall pack volume.
       increaseVolume();
+      b_notify = true;
     break;
 
     case A_VOLUME_SOUND_EFFECTS_DECREASE:
@@ -167,16 +180,19 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
 
       // Tell wand to increase effects volume.
       packSerialSend(P_VOLUME_SOUND_EFFECTS_INCREASE);
+      b_notify = true;
     break;
 
     case A_VOLUME_MUSIC_DECREASE:
       // Decrease pack music volume.
       decreaseVolumeMusic();
+      b_notify = true;
     break;
 
     case A_VOLUME_MUSIC_INCREASE:
       // Increase pack music volume.
       increaseVolumeMusic();
+      b_notify = true;
     break;
 
     case A_MUSIC_START_STOP:
@@ -189,6 +205,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
           playMusic();
         }
       }
+      b_notify = true;
     break;
 
     case A_MUSIC_PAUSE_RESUME:
@@ -200,19 +217,23 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
           resumeMusic();
         }
       }
+      b_notify = true;
     break;
 
     case A_MUSIC_NEXT_TRACK:
       musicNextTrack();
+      b_notify = true;
     break;
 
     case A_MUSIC_PREV_TRACK:
       musicPrevTrack();
+      b_notify = true;
     break;
 
     case A_MUSIC_TRACK_LOOP_TOGGLE:
       toggleMusicLoop();
       attenuatorSend(A_MUSIC_TRACK_LOOP_TOGGLE, b_repeat_track ? 2 : 1);
+      b_notify = true;
     break;
 
     case A_REQUEST_PREFERENCES_PACK:
@@ -257,6 +278,7 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
           i_current_music_track = i_value;
         }
       }
+      b_notify = true;
     break;
 
     case A_SAVE_EEPROM_SETTINGS_PACK:
@@ -282,4 +304,10 @@ void executePackCommand(uint8_t i_command, uint16_t i_value = 0) {
       // No-op for anything else.
     break;
   }
+
+  #ifdef ESP32
+    if(b_notify) {
+      notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+    }
+  #endif
 }

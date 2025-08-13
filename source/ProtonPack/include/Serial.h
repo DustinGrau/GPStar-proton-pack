@@ -1262,6 +1262,10 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     }
   }
 
+  // Assume we will want to notify the user via the web UI of a change.
+  // Set to true in any command to send a notification (ESP32 only).
+  bool b_notify = false;
+
   switch(i_command) {
     case W_SYNC_NOW:
       // Wand has explicitly asked to be synchronized, so treat as not yet connected.
@@ -1309,6 +1313,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_WAND_ON);
+      b_notify = true;
     break;
 
     case W_OFF:
@@ -1323,6 +1328,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       attenuatorSend(A_WAND_OFF);
       attenuatorSend(A_OVERHEATING_FINISHED);
+      b_notify = true;
     break;
 
     case W_BARREL_EXTENDED:
@@ -1331,6 +1337,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Tell the Attenuator that the Neutrona Wand barrel is extended.
       attenuatorSend(A_BARREL_EXTENDED);
+      b_notify = true;
     break;
 
     case W_BARREL_RETRACTED:
@@ -1339,6 +1346,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Tell the Attenuator that the Neutrona Wand barrel is retracted.
       attenuatorSend(A_BARREL_RETRACTED);
+      b_notify = true;
     break;
 
     case W_BARGRAPH_OVERHEAT_BLINK_ENABLED:
@@ -1635,6 +1643,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       wandFiring();
+      b_notify = true;
     break;
 
     case W_FIRING_STOPPED:
@@ -1645,11 +1654,13 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         // Return cyclotron to normal speed.
         cyclotronSpeedRevert();
       }
+      b_notify = true;
     break;
 
     case W_BUTTON_MASHING:
       // User has triggered a lockout by repeated button presses on the wand.
       startWandMashLockout(i_value);
+      b_notify = true;
     break;
 
     case W_MASH_ERROR_LOOP:
@@ -1665,11 +1676,13 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
         break;
       }
+      b_notify = true;
     break;
 
     case W_MASH_ERROR_RESTART:
       // Initiates a restart of the pack after a lockout.
       restartFromWandMash();
+      b_notify = true;
     break;
 
     case W_PROTON_MODE:
@@ -2079,6 +2092,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       b_settings = true;
 
       attenuatorSend(A_SETTINGS_MODE);
+      b_notify = true;
     break;
 
     case W_TOGGLE_INNER_CYCLOTRON_PANEL:
@@ -2131,6 +2145,12 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the LED count for the panel and update the LED counts.
       resetInnerCyclotronLEDs(); // Must call this first, prior to updating counts
       updateProtonPackLEDCounts(); // Must call this after resetting # of LEDs
+
+    #ifdef ESP32
+      if(b_notify) {
+        notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
+      }
+    #endif
     break;
 
     case W_TOGGLE_CYCLOTRON_FADING:

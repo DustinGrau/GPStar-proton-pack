@@ -1,5 +1,5 @@
 /**
- *   GPStar Attenuator - Ghostbusters Proton Pack & Neutrona Wand.
+ *   GPStar Proton Pack - Ghostbusters Proton Pack & Neutrona Wand.
  *   Copyright (C) 2023-2025 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
  *                         & Dustin Grau <dustin.grau@gmail.com>
  *
@@ -36,11 +36,11 @@ const char DEVICE_page[] PROGMEM = R"=====(
   <h1 id="top">Special Device Settings</h1>
   <div class="block left">
     <p>
-      Change system configuration options using the available toggles and selectors.
+      Adjust settings unique to this device's web interface.
       Use this screen to customize the private network used by the built-in WiFi network.
       <br/>
       You may also use <b>http://[PRIVATE_NETWORK].local</b> to access this device via your browser.
-      Use the "Update Settings" button to save values to the Attenuator/Wireless controller.
+      Use the "Update Settings" button to save values to the controller.
     </p>
     <br/>
   </div>
