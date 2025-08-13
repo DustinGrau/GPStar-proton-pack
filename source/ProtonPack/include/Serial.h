@@ -306,6 +306,11 @@ void attenuatorSend(uint8_t i_command, uint16_t i_value) {
 
   i_send_size = attenuatorComs.txObj(sendCmdS);
   attenuatorComs.sendData(i_send_size, (uint8_t) PACKET_COMMAND);
+
+#ifdef ESP32
+  // Send latest status to the WebSocket (ESP32 only).
+  notifyWSClients();
+#endif
 }
 // Override function to handle calls with a single parameter.
 void attenuatorSend(uint8_t i_command) {
@@ -1262,10 +1267,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     }
   }
 
-  // Assume we will want to notify the user via the web UI of a change.
-  // Set to true in any command to send a notification (ESP32 only).
-  bool b_notify = false;
-
   switch(i_command) {
     case W_SYNC_NOW:
       // Wand has explicitly asked to be synchronized, so treat as not yet connected.
@@ -1300,7 +1301,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         // Demo light mode enabled. Send command to turn on the Neutrona Wand.
         packSerialSend(P_TURN_WAND_ON);
       }
-      b_notify = true;
     break;
 
     case W_ON:
@@ -1314,7 +1314,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_WAND_ON);
-      b_notify = true;
     break;
 
     case W_OFF:
@@ -1329,7 +1328,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       attenuatorSend(A_WAND_OFF);
       attenuatorSend(A_OVERHEATING_FINISHED);
-      b_notify = true;
     break;
 
     case W_BARREL_EXTENDED:
@@ -1338,7 +1336,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Tell the Attenuator that the Neutrona Wand barrel is extended.
       attenuatorSend(A_BARREL_EXTENDED);
-      b_notify = true;
     break;
 
     case W_BARREL_RETRACTED:
@@ -1347,7 +1344,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Tell the Attenuator that the Neutrona Wand barrel is retracted.
       attenuatorSend(A_BARREL_RETRACTED);
-      b_notify = true;
     break;
 
     case W_BARGRAPH_OVERHEAT_BLINK_ENABLED:
@@ -1644,7 +1640,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       wandFiring();
-      b_notify = true;
     break;
 
     case W_FIRING_STOPPED:
@@ -1655,13 +1650,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         // Return cyclotron to normal speed.
         cyclotronSpeedRevert();
       }
-      b_notify = true;
     break;
 
     case W_BUTTON_MASHING:
       // User has triggered a lockout by repeated button presses on the wand.
       startWandMashLockout(i_value);
-      b_notify = true;
     break;
 
     case W_MASH_ERROR_LOOP:
@@ -1677,13 +1670,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           playEffect(S_SMASH_ERROR_LOOP, true, i_volume_effects, true, 2500);
         break;
       }
-      b_notify = true;
     break;
 
     case W_MASH_ERROR_RESTART:
       // Initiates a restart of the pack after a lockout.
       restartFromWandMash();
-      b_notify = true;
     break;
 
     case W_PROTON_MODE:
@@ -2093,7 +2084,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       b_settings = true;
 
       attenuatorSend(A_SETTINGS_MODE);
-      b_notify = true;
     break;
 
     case W_TOGGLE_INNER_CYCLOTRON_PANEL:
@@ -2146,12 +2136,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // Reset the LED count for the panel and update the LED counts.
       resetInnerCyclotronLEDs(); // Must call this first, prior to updating counts
       updateProtonPackLEDCounts(); // Must call this after resetting # of LEDs
-
-    #ifdef ESP32
-      if(b_notify) {
-        notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
-      }
-    #endif
     break;
 
     case W_TOGGLE_CYCLOTRON_FADING:
@@ -2178,13 +2162,11 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
     case W_OVERHEATING:
       // Overheating.
       packOverheatingStart();
-      b_notify = true;
     break;
 
     case W_VENTING:
       // Quick Vent function.
       packVentingStart();
-      b_notify = true;
     break;
 
     case W_CYCLOTRON_NORMAL_SPEED:
@@ -2193,7 +2175,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Indicate normalcy to serial device.
       attenuatorSend(A_CYCLOTRON_NORMAL_SPEED);
-      b_notify = true;
     break;
 
     case W_CYCLOTRON_INCREASE_SPEED:
@@ -2202,7 +2183,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
       // Indicate speed-up to serial device.
       attenuatorSend(A_CYCLOTRON_INCREASE_SPEED);
-      b_notify = true;
     break;
 
     case W_BEEP_START:
@@ -2237,7 +2217,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_1);
-      b_notify = true;
     break;
 
     case W_POWER_LEVEL_2:
@@ -2256,7 +2235,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_2);
-      b_notify = true;
     break;
 
     case W_POWER_LEVEL_3:
@@ -2275,7 +2253,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_3);
-      b_notify = true;
     break;
 
     case W_POWER_LEVEL_4:
@@ -2294,7 +2271,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_4);
-      b_notify = true;
     break;
 
     case W_POWER_LEVEL_5:
@@ -2314,7 +2290,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       attenuatorSend(A_POWER_LEVEL_5);
-      b_notify = true;
     break;
 
     case W_OVERHEAT_INCREASE_LEVEL_1:
@@ -3074,7 +3049,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       if(b_playing_music) {
         decreaseVolumeMusic();
       }
-      b_notify = true;
     break;
 
     case W_VOLUME_MUSIC_INCREASE:
@@ -3082,25 +3056,21 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       if(b_playing_music) {
         increaseVolumeMusic();
       }
-      b_notify = true;
     break;
 
     case W_VOLUME_SOUND_EFFECTS_DECREASE:
       // Lower the sound effects volume.
       decreaseVolumeEffects();
-      b_notify = true;
     break;
 
     case W_VOLUME_SOUND_EFFECTS_INCREASE:
       // Increase the sound effects volume.
       increaseVolumeEffects();
-      b_notify = true;
     break;
 
     case W_MUSIC_TRACK_LOOP_TOGGLE:
       toggleMusicLoop();
       attenuatorSend(A_MUSIC_TRACK_LOOP_TOGGLE, b_repeat_track ? 2 : 1);
-      b_notify = true;
     break;
 
     case W_TOGGLE_MUTE:
@@ -3121,19 +3091,16 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       }
 
       updateMasterVolume();
-      b_notify = true;
     break;
 
     case W_VOLUME_DECREASE:
       // Lower overall pack volume.
       decreaseVolume();
-      b_notify = true;
     break;
 
     case W_VOLUME_INCREASE:
       // Increase overall pack volume.
       increaseVolume();
-      b_notify = true;
     break;
 
     case W_MUSIC_TOGGLE:
@@ -3144,7 +3111,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       else {
         playMusic();
       }
-      b_notify = true;
     break;
 
     case W_SOUND_OVERHEAT_SMOKE_DURATION_LEVEL_5:
@@ -3335,7 +3301,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           attenuatorSend(A_MODE_ORIGINAL);
         break;
       }
-      b_notify = true;
     break;
 
     case W_SPECTRAL_LIGHTS_ON:
@@ -4502,12 +4467,10 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_MUSIC_NEXT_TRACK:
       musicNextTrack();
-      b_notify = true;
     break;
 
     case W_MUSIC_PREV_TRACK:
       musicPrevTrack();
-      b_notify = true;
     break;
 
     case W_COM_SOUND_NUMBER:
@@ -4528,10 +4491,4 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       // No-op for all other actions.
     break;
   }
-
-  #ifdef ESP32
-    if(b_notify) {
-      notifyWSClients(); // Send latest status to the WebSocket (ESP32 only).
-    }
-  #endif
 }

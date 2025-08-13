@@ -51,6 +51,7 @@
 #include <Wire.h>
 #ifdef ESP32
   #include <HDC1080.h>
+  GuL::HDC1080 tempSensor(Wire1);
   #include <HardwareSerial.h>
 #endif
 
@@ -83,7 +84,9 @@ void sendDebug(String message) {
     debugln(message); // Print to serial console.
   #endif
   #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
-    ws.textAll(message); // Send a copy to the WebSocket.
+    if (b_ws_started) {
+      ws.textAll(message); // Send a copy to the WebSocket.
+    }
   #endif
 }
 
@@ -129,7 +132,6 @@ void setup() {
   Wire1.begin(TEMP_SDA, TEMP_SCL, 400000UL);
 
   // Initialize the HDC1080 temp/humidity sensor.
-  GuL::HDC1080 tempSensor(Wire1);
   tempSensor.resetConfiguration();
   tempSensor.disableHeater();
   tempSensor.setHumidityResolution(GuL::HDC1080::HumidityMeasurementResolution::HUM_RES_14BIT);
