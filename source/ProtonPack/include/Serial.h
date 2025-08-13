@@ -556,6 +556,275 @@ void packSerialSendData(uint8_t i_message) {
 // Forward function declarations.
 void handleWandCommand(uint8_t i_command, uint16_t i_value);
 
+// Perform update of the pack preferences based on the current configuration object.
+void handlePackPrefsUpdate() {
+  debugln(F("Saving Pack Preferences"));
+
+  switch(packConfig.defaultSystemModePack) {
+    case 0:
+    default:
+      SYSTEM_MODE = MODE_SUPER_HERO;
+      packSerialSend(P_MODE_SUPER_HERO);
+      attenuatorSend(A_MODE_SUPER_HERO);
+    break;
+
+    case 1:
+      SYSTEM_MODE = MODE_ORIGINAL;
+      packSerialSend(P_MODE_ORIGINAL);
+      attenuatorSend(A_MODE_ORIGINAL);
+
+      if(!b_wand_connected && STREAM_MODE != PROTON) {
+        // If no wand is connected we need to make sure we're in Proton Stream.
+        STREAM_MODE = PROTON;
+        attenuatorSend(A_PROTON_MODE);
+      }
+    break;
+  }
+
+  switch(packConfig.defaultYearThemePack) {
+    case 1:
+    default:
+      // Will allow the pack to boot up to whatever state the mode switch is in.
+      SYSTEM_EEPROM_YEAR = SYSTEM_TOGGLE_SWITCH;
+    break;
+    case 2:
+      SYSTEM_EEPROM_YEAR = SYSTEM_1984;
+    break;
+    case 3:
+      SYSTEM_EEPROM_YEAR = SYSTEM_1989;
+    break;
+    case 4:
+      SYSTEM_EEPROM_YEAR = SYSTEM_AFTERLIFE;
+    break;
+    case 5:
+      SYSTEM_EEPROM_YEAR = SYSTEM_FROZEN_EMPIRE;
+    break;
+  }
+
+  switch(packConfig.currentYearThemePack) {
+    case 2:
+      SYSTEM_YEAR = SYSTEM_1984;
+      SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
+      b_switch_mode_override = true; // Explicit mode set, override mode toggle.
+      packSerialSend(P_YEAR_1984);
+      attenuatorSend(A_YEAR_1984);
+    break;
+    case 3:
+      SYSTEM_YEAR = SYSTEM_1989;
+      SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
+      b_switch_mode_override = true; // Explicit mode set, override mode toggle.
+      packSerialSend(P_YEAR_1989);
+      attenuatorSend(A_YEAR_1989);
+    break;
+    case 4:
+      SYSTEM_YEAR = SYSTEM_AFTERLIFE;
+      SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
+      b_switch_mode_override = true; // Explicit mode set, override mode toggle.
+      packSerialSend(P_YEAR_AFTERLIFE);
+      attenuatorSend(A_YEAR_AFTERLIFE);
+    break;
+    case 5:
+      SYSTEM_YEAR = SYSTEM_FROZEN_EMPIRE;
+      SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
+      b_switch_mode_override = true; // Explicit mode set, override mode toggle.
+      packSerialSend(P_YEAR_FROZEN_EMPIRE);
+      attenuatorSend(A_YEAR_FROZEN_EMPIRE);
+    break;
+  }
+
+  switch(packConfig.packVibration) {
+    case 1:
+      b_vibration_switch_on = true; // Override the vibration toggle switch.
+      VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
+      VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+    break;
+
+    case 2:
+      b_vibration_switch_on = true; // Override the vibration toggle switch.
+      VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
+      VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+    break;
+
+    case 3:
+      VIBRATION_MODE_EEPROM = VIBRATION_NONE;
+      VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+    break;
+
+    case 4:
+    default:
+      VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
+      VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+
+      // Reset the vibration switch state.
+      if(switch_vibration.getState() == LOW) {
+        b_vibration_switch_on = true;
+      }
+      else {
+        b_vibration_switch_on = false;
+      }
+    break;
+
+    case 5:
+      VIBRATION_MODE_EEPROM = CYCLOTRON_MOTOR;
+      VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+      pinMode(VIBRATION_PIN, OUTPUT); // Need to explicitly switch to GPIO from LEDC on ESP32.
+
+      // Reset the vibration switch state.
+      if(switch_vibration.getState() == LOW) {
+        b_vibration_switch_on = true;
+      }
+      else {
+        b_vibration_switch_on = false;
+      }
+    break;
+  }
+
+  i_volume_master_eeprom = (MINIMUM_VOLUME + i_volume_min_adj) - ((MINIMUM_VOLUME + i_volume_min_adj) * packConfig.defaultSystemVolume / 100);
+  b_stream_effects = (packConfig.protonStreamEffects == 1);
+  b_overheat_strobe = (packConfig.overheatStrobeNF == 1);
+  b_overheat_lights_off = (packConfig.overheatLightsOff == 1);
+  b_overheat_sync_to_fan = (packConfig.overheatSyncToFan == 1);
+  b_demo_light_mode = (packConfig.demoLightMode == 1);
+  b_use_ribbon_cable = (packConfig.ribbonCableAlarm == 1);
+
+  // Cyclotron Lid
+  switch(packConfig.ledCycLidCount) {
+    // For a 40 LED Neopixel ring.
+    case 40:
+      i_cyclotron_leds = OUTER_CYCLOTRON_LED_MAX;
+    break;
+
+    // For Frutto Technology Max Cyclotron (36) LEDs.
+    case 36:
+      i_cyclotron_leds = FRUTTO_MAX_CYCLOTRON_LED_COUNT;
+    break;
+
+    // For Frutto Technology Cyclotron (20) LEDs.
+    case 20:
+      i_cyclotron_leds = FRUTTO_CYCLOTRON_LED_COUNT;
+    break;
+
+    // Default HasLab (12) LEDs.
+    case 12:
+    default:
+      i_cyclotron_leds = HASLAB_CYCLOTRON_LED_COUNT;
+    break;
+  }
+  i_spectral_cyclotron_custom_colour = packConfig.ledCycLidHue;
+  i_spectral_cyclotron_custom_saturation = packConfig.ledCycLidSat;
+  i_cyclotron_brightness = packConfig.ledCycLidLum;
+  b_clockwise = (packConfig.cyclotronDirection == 1);
+  b_cyclotron_single_led = (packConfig.ledCycLidCenter == 1);
+  b_fade_cyclotron_led = (packConfig.ledCycLidFade == 1);
+  b_cyclotron_colour_toggle = (packConfig.ledVGCyclotron == 1);
+  b_cyclotron_simulate_ring = (packConfig.ledCycLidSimRing == 1);
+
+  if(b_fade_cyclotron_led) {
+    i_1984_delay = CYCLOTRON_DELAY_TVG;
+  }
+  else {
+    i_1984_delay = CYCLOTRON_DELAY_1984;
+  }
+
+  // Inner Cyclotron
+  i_cyclotron_panel_brightness = packConfig.ledCycPanLum;
+  switch(packConfig.ledCycInnerPanel) {
+    case 1:
+    #ifdef ESP32
+      INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
+    #else
+      INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
+    #endif
+    break;
+    case 2:
+      INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
+    break;
+    case 3:
+    default:
+      INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
+    break;
+  }
+  i_inner_cyclotron_cake_num_leds = packConfig.ledCycCakeCount;
+  i_spectral_cyclotron_inner_custom_colour = packConfig.ledCycCakeHue;
+  i_spectral_cyclotron_inner_custom_saturation = packConfig.ledCycCakeSat;
+  i_cyclotron_inner_brightness = packConfig.ledCycCakeLum;
+  if(packConfig.ledCycCakeGRB == 1) {
+    CAKE_LED_TYPE = GRB_LED;
+  }
+  else {
+    CAKE_LED_TYPE = RGB_LED;
+  }
+  i_inner_cyclotron_cavity_num_leds = packConfig.ledCycCavCount;
+  switch(packConfig.ledCycCavType) {
+    case 1:
+    default:
+      CAVITY_LED_TYPE = RGB_LED;
+    break;
+    case 2:
+      CAVITY_LED_TYPE = GRB_LED;
+    break;
+    case 3:
+      CAVITY_LED_TYPE = GBR_LED;
+    break;
+  }
+
+  // Power Cell
+  i_powercell_leds = packConfig.ledPowercellCount;
+  b_powercell_invert = (packConfig.ledInvertPowercell == 1);
+  i_spectral_powercell_custom_colour = packConfig.ledPowercellHue;
+  i_spectral_powercell_custom_saturation = packConfig.ledPowercellSat;
+  i_powercell_brightness = packConfig.ledPowercellLum;
+  b_powercell_colour_toggle = (packConfig.ledVGPowercell == 1);
+
+  // Offer some feedback to the user
+  stopEffect(S_VENT_DRY);
+  playEffect(S_VENT_DRY);
+
+  // Update system values and reset as needed.
+  resetInnerCyclotronLEDs(); // Must call this first, prior to updating counts
+  updateProtonPackLEDCounts(); // Must call this after resetting # of LEDs
+  resetCyclotronLEDs(); // Update delays based on LED count
+  resetRampSpeeds(); // Update delays based on LED count
+}
+
+// Send the current wand preferences based on the current configuration object.
+void handleWandPrefsUpdate() {
+  debugln(F("Saving Wand Preferences"));
+
+  packSerialSendData(P_SAVE_PREFERENCES_WAND);
+
+  // Offer some feedback to the user
+  stopEffect(S_VENT_DRY);
+  playEffect(S_VENT_DRY);
+}
+
+// Save and send the smoke preferences based on the current configuration object.
+void handleSmokePrefsUpdate() {
+  debugln(F("Saving Smoke Preferences"));
+
+  // Save local and remote (wand) smoke timing settings
+  i_ms_overheating_length_5 = smokeConfig.overheatDuration5 * 1000;
+  i_ms_overheating_length_4 = smokeConfig.overheatDuration4 * 1000;
+  i_ms_overheating_length_3 = smokeConfig.overheatDuration3 * 1000;
+  i_ms_overheating_length_2 = smokeConfig.overheatDuration2 * 1000;
+  i_ms_overheating_length_1 = smokeConfig.overheatDuration1 * 1000;
+
+  b_smoke_continuous_level_5 = (smokeConfig.overheatContinuous5 == 1);
+  b_smoke_continuous_level_4 = (smokeConfig.overheatContinuous4 == 1);
+  b_smoke_continuous_level_3 = (smokeConfig.overheatContinuous3 == 1);
+  b_smoke_continuous_level_2 = (smokeConfig.overheatContinuous2 == 1);
+  b_smoke_continuous_level_1 = (smokeConfig.overheatContinuous1 == 1);
+  b_smoke_enabled = (smokeConfig.smokeEnabled == 1);
+  resetContinuousSmoke(); // Set other variables as necessary
+
+  // This will pass values from the smokeConfig object
+  packSerialSendData(P_SAVE_PREFERENCES_SMOKE);
+
+  // Offer some feedback to the user
+  stopEffect(S_VENT_SMOKE);
+  playEffect(S_VENT_SMOKE);
+}
+
 // Incoming messages from the extra Attenuator port.
 void checkAttenuator() {
   if(attenuatorComs.available() > 0) {
@@ -613,234 +882,9 @@ void checkAttenuator() {
           attenuatorComs.rxObj(packConfig);
           debugln(F("Recv. Pack Config"));
 
-          // Writes new preferences back to runtime variables.
+          // Writes pack preferences back to runtime variables.
           // This action does not save changes to the EEPROM!
-
-          switch(packConfig.defaultSystemModePack) {
-            case 0:
-            default:
-              SYSTEM_MODE = MODE_SUPER_HERO;
-              packSerialSend(P_MODE_SUPER_HERO);
-              attenuatorSend(A_MODE_SUPER_HERO);
-            break;
-
-            case 1:
-              SYSTEM_MODE = MODE_ORIGINAL;
-              packSerialSend(P_MODE_ORIGINAL);
-              attenuatorSend(A_MODE_ORIGINAL);
-
-              if(!b_wand_connected && STREAM_MODE != PROTON) {
-                // If no wand is connected we need to make sure we're in Proton Stream.
-                STREAM_MODE = PROTON;
-                attenuatorSend(A_PROTON_MODE);
-              }
-            break;
-          }
-
-          switch(packConfig.defaultYearThemePack) {
-            case 1:
-            default:
-              // Will allow the pack to boot up to whatever state the mode switch is in.
-              SYSTEM_EEPROM_YEAR = SYSTEM_TOGGLE_SWITCH;
-            break;
-            case 2:
-              SYSTEM_EEPROM_YEAR = SYSTEM_1984;
-            break;
-            case 3:
-              SYSTEM_EEPROM_YEAR = SYSTEM_1989;
-            break;
-            case 4:
-              SYSTEM_EEPROM_YEAR = SYSTEM_AFTERLIFE;
-            break;
-            case 5:
-              SYSTEM_EEPROM_YEAR = SYSTEM_FROZEN_EMPIRE;
-            break;
-          }
-
-          switch(packConfig.currentYearThemePack) {
-            case 2:
-              SYSTEM_YEAR = SYSTEM_1984;
-              SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
-              b_switch_mode_override = true; // Explicit mode set, override mode toggle.
-              packSerialSend(P_YEAR_1984);
-              attenuatorSend(A_YEAR_1984);
-            break;
-            case 3:
-              SYSTEM_YEAR = SYSTEM_1989;
-              SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
-              b_switch_mode_override = true; // Explicit mode set, override mode toggle.
-              packSerialSend(P_YEAR_1989);
-              attenuatorSend(A_YEAR_1989);
-            break;
-            case 4:
-              SYSTEM_YEAR = SYSTEM_AFTERLIFE;
-              SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
-              b_switch_mode_override = true; // Explicit mode set, override mode toggle.
-              packSerialSend(P_YEAR_AFTERLIFE);
-              attenuatorSend(A_YEAR_AFTERLIFE);
-            break;
-            case 5:
-              SYSTEM_YEAR = SYSTEM_FROZEN_EMPIRE;
-              SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
-              b_switch_mode_override = true; // Explicit mode set, override mode toggle.
-              packSerialSend(P_YEAR_FROZEN_EMPIRE);
-              attenuatorSend(A_YEAR_FROZEN_EMPIRE);
-            break;
-          }
-
-          switch(packConfig.packVibration) {
-            case 1:
-              b_vibration_switch_on = true; // Override the vibration toggle switch.
-              VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
-              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
-            break;
-
-            case 2:
-              b_vibration_switch_on = true; // Override the vibration toggle switch.
-              VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
-              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
-            break;
-
-            case 3:
-              VIBRATION_MODE_EEPROM = VIBRATION_NONE;
-              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
-            break;
-
-            case 4:
-            default:
-              VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
-              VIBRATION_MODE = VIBRATION_FIRING_ONLY;
-
-              // Reset the vibration switch state.
-              if(switch_vibration.getState() == LOW) {
-                b_vibration_switch_on = true;
-              }
-              else {
-                b_vibration_switch_on = false;
-              }
-            break;
-
-            case 5:
-              VIBRATION_MODE_EEPROM = CYCLOTRON_MOTOR;
-              VIBRATION_MODE = VIBRATION_MODE_EEPROM;
-              pinMode(VIBRATION_PIN, OUTPUT); // Need to explicitly switch to GPIO from LEDC on ESP32.
-
-              // Reset the vibration switch state.
-              if(switch_vibration.getState() == LOW) {
-                b_vibration_switch_on = true;
-              }
-              else {
-                b_vibration_switch_on = false;
-              }
-            break;
-          }
-
-          i_volume_master_eeprom = (MINIMUM_VOLUME + i_volume_min_adj) - ((MINIMUM_VOLUME + i_volume_min_adj) * packConfig.defaultSystemVolume / 100);
-          b_stream_effects = (packConfig.protonStreamEffects == 1);
-          b_overheat_strobe = (packConfig.overheatStrobeNF == 1);
-          b_overheat_lights_off = (packConfig.overheatLightsOff == 1);
-          b_overheat_sync_to_fan = (packConfig.overheatSyncToFan == 1);
-          b_demo_light_mode = (packConfig.demoLightMode == 1);
-          b_use_ribbon_cable = (packConfig.ribbonCableAlarm == 1);
-
-          // Cyclotron Lid
-          switch(packConfig.ledCycLidCount) {
-            // For a 40 LED Neopixel ring.
-            case 40:
-              i_cyclotron_leds = OUTER_CYCLOTRON_LED_MAX;
-            break;
-
-            // For Frutto Technology Max Cyclotron (36) LEDs.
-            case 36:
-              i_cyclotron_leds = FRUTTO_MAX_CYCLOTRON_LED_COUNT;
-            break;
-
-            // For Frutto Technology Cyclotron (20) LEDs.
-            case 20:
-              i_cyclotron_leds = FRUTTO_CYCLOTRON_LED_COUNT;
-            break;
-
-            // Default HasLab (12) LEDs.
-            case 12:
-            default:
-              i_cyclotron_leds = HASLAB_CYCLOTRON_LED_COUNT;
-            break;
-          }
-          i_spectral_cyclotron_custom_colour = packConfig.ledCycLidHue;
-          i_spectral_cyclotron_custom_saturation = packConfig.ledCycLidSat;
-          i_cyclotron_brightness = packConfig.ledCycLidLum;
-          b_clockwise = (packConfig.cyclotronDirection == 1);
-          b_cyclotron_single_led = (packConfig.ledCycLidCenter == 1);
-          b_fade_cyclotron_led = (packConfig.ledCycLidFade == 1);
-          b_cyclotron_colour_toggle = (packConfig.ledVGCyclotron == 1);
-          b_cyclotron_simulate_ring = (packConfig.ledCycLidSimRing == 1);
-
-          if(b_fade_cyclotron_led) {
-            i_1984_delay = CYCLOTRON_DELAY_TVG;
-          }
-          else {
-            i_1984_delay = CYCLOTRON_DELAY_1984;
-          }
-
-          // Inner Cyclotron
-          i_cyclotron_panel_brightness = packConfig.ledCycPanLum;
-          switch(packConfig.ledCycInnerPanel) {
-            case 1:
-            #ifdef ESP32
-              INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
-            #else
-              INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
-            #endif
-            break;
-            case 2:
-              INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
-            break;
-            case 3:
-            default:
-              INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
-            break;
-          }
-          i_inner_cyclotron_cake_num_leds = packConfig.ledCycCakeCount;
-          i_spectral_cyclotron_inner_custom_colour = packConfig.ledCycCakeHue;
-          i_spectral_cyclotron_inner_custom_saturation = packConfig.ledCycCakeSat;
-          i_cyclotron_inner_brightness = packConfig.ledCycCakeLum;
-          if(packConfig.ledCycCakeGRB == 1) {
-            CAKE_LED_TYPE = GRB_LED;
-          }
-          else {
-            CAKE_LED_TYPE = RGB_LED;
-          }
-          i_inner_cyclotron_cavity_num_leds = packConfig.ledCycCavCount;
-          switch(packConfig.ledCycCavType) {
-            case 1:
-            default:
-              CAVITY_LED_TYPE = RGB_LED;
-            break;
-            case 2:
-              CAVITY_LED_TYPE = GRB_LED;
-            break;
-            case 3:
-              CAVITY_LED_TYPE = GBR_LED;
-            break;
-          }
-
-          // Power Cell
-          i_powercell_leds = packConfig.ledPowercellCount;
-          b_powercell_invert = (packConfig.ledInvertPowercell == 1);
-          i_spectral_powercell_custom_colour = packConfig.ledPowercellHue;
-          i_spectral_powercell_custom_saturation = packConfig.ledPowercellSat;
-          i_powercell_brightness = packConfig.ledPowercellLum;
-          b_powercell_colour_toggle = (packConfig.ledVGPowercell == 1);
-
-          // Offer some feedback to the user
-          stopEffect(S_VENT_DRY);
-          playEffect(S_VENT_DRY);
-
-          // Update system values and reset as needed.
-          resetInnerCyclotronLEDs(); // Must call this first, prior to updating counts
-          updateProtonPackLEDCounts(); // Must call this after resetting # of LEDs
-          resetCyclotronLEDs(); // Update delays based on LED count
-          resetRampSpeeds(); // Update delays based on LED count
+          handlePackPrefsUpdate();
         break;
 
         case PACKET_WAND:
@@ -853,11 +897,7 @@ void checkAttenuator() {
           debugln(F("Recv. Wand Config"));
 
           // This will pass values from the wandConfig object
-          packSerialSendData(P_SAVE_PREFERENCES_WAND);
-
-          // Offer some feedback to the user
-          stopEffect(S_VENT_DRY);
-          playEffect(S_VENT_DRY);
+          handleWandPrefsUpdate();
         break;
 
         case PACKET_SMOKE:
@@ -869,27 +909,9 @@ void checkAttenuator() {
           attenuatorComs.rxObj(smokeConfig);
           debugln(F("Recv. Smoke Config"));
 
-          // Save local and remote (wand) smoke timing settings
-          i_ms_overheating_length_5 = smokeConfig.overheatDuration5 * 1000;
-          i_ms_overheating_length_4 = smokeConfig.overheatDuration4 * 1000;
-          i_ms_overheating_length_3 = smokeConfig.overheatDuration3 * 1000;
-          i_ms_overheating_length_2 = smokeConfig.overheatDuration2 * 1000;
-          i_ms_overheating_length_1 = smokeConfig.overheatDuration1 * 1000;
-
-          b_smoke_continuous_level_5 = (smokeConfig.overheatContinuous5 == 1);
-          b_smoke_continuous_level_4 = (smokeConfig.overheatContinuous4 == 1);
-          b_smoke_continuous_level_3 = (smokeConfig.overheatContinuous3 == 1);
-          b_smoke_continuous_level_2 = (smokeConfig.overheatContinuous2 == 1);
-          b_smoke_continuous_level_1 = (smokeConfig.overheatContinuous1 == 1);
-          b_smoke_enabled = (smokeConfig.smokeEnabled == 1);
-          resetContinuousSmoke(); // Set other variables as necessary
-
-          // This will pass values from the smokeConfig object
-          packSerialSendData(P_SAVE_PREFERENCES_SMOKE);
-
-          // Offer some feedback to the user
-          stopEffect(S_VENT_SMOKE);
-          playEffect(S_VENT_SMOKE);
+          // Writes pack preferences back to runtime variables.
+          // This action does not save changes to the EEPROM!
+          handleSmokePrefsUpdate();
         break;
       }
     }

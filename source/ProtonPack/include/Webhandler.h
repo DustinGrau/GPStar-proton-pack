@@ -1040,7 +1040,7 @@ AsyncCallbackJsonWebHandler *handleSavePackConfig = new AsyncCallbackJsonWebHand
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      //attenuatorSerialSendData(A_SAVE_PREFERENCES_PACK); // Tell the pack to save the new settings.
+      handlePackPrefsUpdate(); // Have the pack save the new settings.
       request->send(200, "application/json", result);
      }
     catch (...) {
@@ -1096,7 +1096,7 @@ AsyncCallbackJsonWebHandler *handleSaveWandConfig = new AsyncCallbackJsonWebHand
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      //attenuatorSerialSendData(A_SAVE_PREFERENCES_WAND); // Tell the wand (via pack) to save the new settings.
+      handleWandPrefsUpdate(); // Have the pack pass the new settings.
       request->send(200, "application/json", result);
     }
     catch (...) {
@@ -1157,7 +1157,7 @@ AsyncCallbackJsonWebHandler *handleSaveSmokeConfig = new AsyncCallbackJsonWebHan
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      //attenuatorSerialSendData(A_SAVE_PREFERENCES_SMOKE); // Tell the pack and wand to save the new settings.
+      handleSmokePrefsUpdate(); // Have the pack save and pass the new settings.
       request->send(200, "application/json", result);
     }
     catch (...) {
