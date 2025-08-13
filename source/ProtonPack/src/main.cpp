@@ -68,6 +68,7 @@
   #include "PreferencesATMega.h"
 #endif
 #include "System.h"
+#include "Command.h"
 #include "Serial.h"
 #ifdef ESP32
   #include "Wireless.h"

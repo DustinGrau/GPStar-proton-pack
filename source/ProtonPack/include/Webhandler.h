@@ -324,7 +324,7 @@ void handleDeviceSettings(AsyncWebServerRequest *request) {
 
 void handlePackSettings(AsyncWebServerRequest *request) {
   // Tell the pack that we'll need the latest pack EEPROM values.
-  // attenuatorSerialSend(A_REQUEST_PREFERENCES_PACK);
+  executePackCommand(A_REQUEST_PREFERENCES_PACK);
 
   // Used for the settings page from the web server.
   debug("Sending -> Pack Settings HTML");
@@ -336,7 +336,7 @@ void handlePackSettings(AsyncWebServerRequest *request) {
 void handleWandSettings(AsyncWebServerRequest *request) {
   // Tell the pack that we'll need the latest wand EEPROM values.
   b_received_prefs_wand = false;
-  // attenuatorSerialSend(A_REQUEST_PREFERENCES_WAND);
+  executePackCommand(A_REQUEST_PREFERENCES_WAND);
 
   // Used for the settings page from the web server.
   debug("Sending -> Wand Settings HTML");
@@ -348,7 +348,7 @@ void handleWandSettings(AsyncWebServerRequest *request) {
 void handleSmokeSettings(AsyncWebServerRequest *request) {
   // Tell the pack that we'll need the latest smoke EEPROM values.
   b_received_prefs_smoke = false;
-  // attenuatorSerialSend(A_REQUEST_PREFERENCES_SMOKE);
+  executePackCommand(A_REQUEST_PREFERENCES_SMOKE);
 
   // Used for the settings page from the web server.
   debug("Sending -> Smoke Settings HTML");
@@ -692,13 +692,13 @@ void handleRestart(AsyncWebServerRequest *request) {
 
 void handlePackOn(AsyncWebServerRequest *request) {
   debug("Web: Turn Pack On");
-  // attenuatorSerialSend(A_TURN_PACK_ON);
+  executePackCommand(A_TURN_PACK_ON);
   request->send(200, "application/json", status);
 }
 
 void handlePackOff(AsyncWebServerRequest *request) {
   debug("Web: Turn Pack Off");
-  // attenuatorSerialSend(A_TURN_PACK_OFF);
+  executePackCommand(A_TURN_PACK_OFF);
   request->send(200, "application/json", status);
 }
 
@@ -706,7 +706,7 @@ void handleAttenuatePack(AsyncWebServerRequest *request) {
   if(i_cyclotron_multiplier > 2) {
     // Only send command to pack if cyclotron is not "normal".
     debug("Web: Cancel Overheat Warning");
-    // attenuatorSerialSend(A_WARNING_CANCELLED);
+    executePackCommand(A_WARNING_CANCELLED);
     request->send(200, "application/json", status);
   } else {
     // Tell the user why the requested action failed.
@@ -720,91 +720,91 @@ void handleAttenuatePack(AsyncWebServerRequest *request) {
 
 void handleManualVent(AsyncWebServerRequest *request) {
   debug("Web: Manual Vent Triggered");
-  // attenuatorSerialSend(A_MANUAL_OVERHEAT);
+  executePackCommand(A_MANUAL_OVERHEAT);
   request->send(200, "application/json", status);
 }
 
 void handleManualLockout(AsyncWebServerRequest *request) {
   debug("Web: Manual Lockout Triggered");
-  // attenuatorSerialSend(A_SYSTEM_LOCKOUT);
+  executePackCommand(A_SYSTEM_LOCKOUT);
   request->send(200, "application/json", status);
 }
 
 void handleCancelLockout(AsyncWebServerRequest *request) {
   debug("Web: Cancel Lockout Triggered");
-  // attenuatorSerialSend(A_CANCEL_LOCKOUT);
+  executePackCommand(A_CANCEL_LOCKOUT);
   request->send(200, "application/json", status);
 }
 
 void handleToggleMute(AsyncWebServerRequest *request) {
   debug("Web: Toggle Mute");
-  // attenuatorSerialSend(A_TOGGLE_MUTE);
+  executePackCommand(A_TOGGLE_MUTE);
   request->send(200, "application/json", status);
 }
 
 void handleMasterVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Master Volume Up");
-  // attenuatorSerialSend(A_VOLUME_INCREASE);
+  executePackCommand(A_VOLUME_INCREASE);
   request->send(200, "application/json", status);
 }
 
 void handleMasterVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Master Volume Down");
-  // attenuatorSerialSend(A_VOLUME_DECREASE);
+  executePackCommand(A_VOLUME_DECREASE);
   request->send(200, "application/json", status);
 }
 
 void handleEffectsVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Effects Volume Up");
-  // attenuatorSerialSend(A_VOLUME_SOUND_EFFECTS_INCREASE);
+  executePackCommand(A_VOLUME_SOUND_EFFECTS_INCREASE);
   request->send(200, "application/json", status);
 }
 
 void handleEffectsVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Effects Volume Down");
-  // attenuatorSerialSend(A_VOLUME_SOUND_EFFECTS_DECREASE);
+  executePackCommand(A_VOLUME_SOUND_EFFECTS_DECREASE);
   request->send(200, "application/json", status);
 }
 
 void handleMusicVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Music Volume Up");
-  // attenuatorSerialSend(A_VOLUME_MUSIC_INCREASE);
+  executePackCommand(A_VOLUME_MUSIC_INCREASE);
   request->send(200, "application/json", status);
 }
 
 void handleMusicVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Music Volume Down");
-  // attenuatorSerialSend(A_VOLUME_MUSIC_DECREASE);
+  executePackCommand(A_VOLUME_MUSIC_DECREASE);
   request->send(200, "application/json", status);
 }
 
 void handleMusicStartStop(AsyncWebServerRequest *request) {
   debug("Web: Music Start/Stop");
-  // attenuatorSerialSend(A_MUSIC_START_STOP);
+  executePackCommand(A_MUSIC_START_STOP);
   request->send(200, "application/json", status);
 }
 
 void handleMusicPauseResume(AsyncWebServerRequest *request) {
   debug("Web: Music Pause/Resume");
-  // attenuatorSerialSend(A_MUSIC_PAUSE_RESUME);
+  executePackCommand(A_MUSIC_PAUSE_RESUME);
   request->send(200, "application/json", status);
 }
 
 void handleNextMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Next Music Track");
-  // attenuatorSerialSend(A_MUSIC_NEXT_TRACK);
+  executePackCommand(A_MUSIC_NEXT_TRACK);
   request->send(200, "application/json", status);
 }
 
 void handlePrevMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Prev Music Track");
-  // attenuatorSerialSend(A_MUSIC_PREV_TRACK);
+  executePackCommand(A_MUSIC_PREV_TRACK);
   request->send(200, "application/json", status);
 }
 
 void handleLoopMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Toggle Music Track Loop");
-  // attenuatorSerialSend(A_MUSIC_TRACK_LOOP_TOGGLE);
+  executePackCommand(A_MUSIC_TRACK_LOOP_TOGGLE);
   request->send(200, "application/json", status);
 }
 
@@ -819,7 +819,7 @@ void handleSelectMusicTrack(AsyncWebServerRequest *request) {
   if(c_music_track.toInt() != 0 && c_music_track.toInt() >= i_music_track_start) {
     uint16_t i_music_track = c_music_track.toInt();
     debug("Web: Selected Music Track: " + String(i_music_track));
-    // attenuatorSerialSend(A_MUSIC_PLAY_TRACK, i_music_track); // Inform the pack of the new track.
+    executePackCommand(A_MUSIC_PLAY_TRACK, i_music_track); // Inform the pack of the new track.
     request->send(200, "application/json", status);
   }
   else {
@@ -834,20 +834,20 @@ void handleSelectMusicTrack(AsyncWebServerRequest *request) {
 
 void handleSaveAllEEPROM(AsyncWebServerRequest *request) {
   debug("Web: Save All EEPROM");
-  // attenuatorSerialSend(A_SAVE_EEPROM_SETTINGS_PACK);
-  // attenuatorSerialSend(A_SAVE_EEPROM_SETTINGS_WAND);
+  executePackCommand(A_SAVE_EEPROM_SETTINGS_PACK);
+  executePackCommand(A_SAVE_EEPROM_SETTINGS_WAND);
   request->send(200, "application/json", status);
 }
 
 void handleSavePackEEPROM(AsyncWebServerRequest *request) {
   debug("Web: Save Pack EEPROM");
-  // attenuatorSerialSend(A_SAVE_EEPROM_SETTINGS_PACK);
+  executePackCommand(A_SAVE_EEPROM_SETTINGS_PACK);
   request->send(200, "application/json", status);
 }
 
 void handleSaveWandEEPROM(AsyncWebServerRequest *request) {
   debug("Web: Save Wand EEPROM");
-  // attenuatorSerialSend(A_SAVE_EEPROM_SETTINGS_WAND);
+  executePackCommand(A_SAVE_EEPROM_SETTINGS_WAND);
   request->send(200, "application/json", status);
 }
 
@@ -1040,7 +1040,7 @@ AsyncCallbackJsonWebHandler *handleSavePackConfig = new AsyncCallbackJsonWebHand
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      // attenuatorSerialSendData(A_SAVE_PREFERENCES_PACK); // Tell the pack to save the new settings.
+      //attenuatorSerialSendData(A_SAVE_PREFERENCES_PACK); // Tell the pack to save the new settings.
       request->send(200, "application/json", result);
      }
     catch (...) {
@@ -1096,7 +1096,7 @@ AsyncCallbackJsonWebHandler *handleSaveWandConfig = new AsyncCallbackJsonWebHand
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      // attenuatorSerialSendData(A_SAVE_PREFERENCES_WAND); // Tell the wand (via pack) to save the new settings.
+      //attenuatorSerialSendData(A_SAVE_PREFERENCES_WAND); // Tell the wand (via pack) to save the new settings.
       request->send(200, "application/json", result);
     }
     catch (...) {
@@ -1157,7 +1157,7 @@ AsyncCallbackJsonWebHandler *handleSaveSmokeConfig = new AsyncCallbackJsonWebHan
       jsonBody.clear();
       jsonBody["status"] = "Settings updated, please test before saving to EEPROM.";
       serializeJson(jsonBody, result); // Serialize to string.
-      // attenuatorSerialSendData(A_SAVE_PREFERENCES_SMOKE); // Tell the pack and wand to save the new settings.
+      //attenuatorSerialSendData(A_SAVE_PREFERENCES_SMOKE); // Tell the pack and wand to save the new settings.
       request->send(200, "application/json", result);
     }
     catch (...) {
