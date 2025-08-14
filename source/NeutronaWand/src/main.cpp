@@ -587,9 +587,9 @@ void loop() {
       Serial.print("\t\tMag   X: ");
       Serial.print(mag.magnetic.x);
       Serial.print(" \tY: ");
-      Serial.print(mag.magnetic.y); 
+      Serial.print(mag.magnetic.y);
       Serial.print(" \tZ: ");
-      Serial.print(mag.magnetic.z); 
+      Serial.print(mag.magnetic.z);
       Serial.println(" uTesla ");
       Serial.print("\t\tAccel X: ");
       Serial.print(accel.acceleration.x);
