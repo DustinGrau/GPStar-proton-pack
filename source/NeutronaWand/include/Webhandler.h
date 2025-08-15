@@ -524,24 +524,26 @@ String getWifiSettings() {
   return wifiNetwork;
 }
 
+float roundFloat3(float value) {
+  // Rounds a float to 3 decimal places.
+  return roundf(value * 1000.0f) / 1000.0f;
+}
+
 String getTelemetry() {
   // Prepare a JSON object with magnetometer and gyroscope/acceleration data.
   String telemetryData;
   jsonTelemetry.clear();
 
   // Magnetometer in microteslas (uT) converted to a heading in degrees.
-  // jsonTelemetry["magX"]     = filteredMotionData.magX;
-  // jsonTelemetry["magY"]     = filteredMotionData.magY;
-  // jsonTelemetry["magZ"]     = filteredMotionData.magZ;
-  jsonTelemetry["heading"]  = filteredMotionData.heading;
+  jsonTelemetry["heading"] = roundFloat3(filteredMotionData.heading);
   // Acceleration in meters/second^2 (m/s^2)
-  jsonTelemetry["accelX"]   = filteredMotionData.accelX;
-  jsonTelemetry["accelY"]   = filteredMotionData.accelY;
-  jsonTelemetry["accelZ"]   = filteredMotionData.accelZ;
+  jsonTelemetry["accelX"] = roundFloat3(filteredMotionData.accelX);
+  jsonTelemetry["accelY"] = roundFloat3(filteredMotionData.accelY);
+  jsonTelemetry["accelZ"] = roundFloat3(filteredMotionData.accelZ);
   // Gyroscope in radians/second (rads/s)
-  jsonTelemetry["gyroX"]    = filteredMotionData.gyroX;
-  jsonTelemetry["gyroY"]    = filteredMotionData.gyroY;
-  jsonTelemetry["gyroZ"]    = filteredMotionData.gyroZ;
+  jsonTelemetry["gyroX"] = roundFloat3(filteredMotionData.gyroX);
+  jsonTelemetry["gyroY"] = roundFloat3(filteredMotionData.gyroY);
+  jsonTelemetry["gyroZ"] = roundFloat3(filteredMotionData.gyroZ);
 
   // Serialize JSON object to string.
   serializeJson(jsonTelemetry, telemetryData);

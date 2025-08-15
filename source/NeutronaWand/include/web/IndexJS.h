@@ -209,22 +209,20 @@ function init3D(){
 
   document.getElementById('3Dcube').appendChild(renderer.domElement);
 
-  // Create a geometry
-  const geometry = new THREE.BoxGeometry(5, 1, 4);
+  // Create a geometry (order: width, height, depth)
+  const geometry = new THREE.BoxGeometry(2, 1, 5);
 
-  // Materials of each face
+  // Materials for each cube face (order: right, left, top, bottom, front, back)
   var cubeMaterials = [
-    new THREE.MeshBasicMaterial({color:0x009000}), // slightly darker
-    new THREE.MeshBasicMaterial({color:0x00A000}), // base green
-    new THREE.MeshBasicMaterial({color:0x00B000}), // slightly lighter
-    new THREE.MeshBasicMaterial({color:0x008000}), // even darker
-    new THREE.MeshBasicMaterial({color:0x00A800}), // variant
-    new THREE.MeshBasicMaterial({color:0x00C000}), // lightest
+    new THREE.MeshBasicMaterial({color:0x009000}), // Right face  - darker green
+    new THREE.MeshBasicMaterial({color:0x009000}), // Left face   - darker green
+    new THREE.MeshBasicMaterial({color:0x00C000}), // Top face    - lighter green
+    new THREE.MeshBasicMaterial({color:0x007000}), // Bottom face - darkest green
+    new THREE.MeshBasicMaterial({color:0x00A000}), // Front face  - base green
+    new THREE.MeshBasicMaterial({color:0x00A000}), // Back face   - base green
   ];
 
-  const material = new THREE.MeshFaceMaterial(cubeMaterials);
-
-  cube = new THREE.Mesh(geometry, material);
+  cube = new THREE.Mesh(geometry, cubeMaterials);
   scene.add(cube);
   camera.position.z = 5;
   renderer.render(scene, camera);
@@ -258,21 +256,24 @@ if (!!window.EventSource) {
   }, false);
 
   source.addEventListener("telemetry", function(e) {
-    var obj = JSON.parse(e.data);  
-    console.log("telemetry", obj);
-    setHtml("heading", "Heading: " + obj.heading + " &deg;");
-    setHtml("gyroX", "X: " + obj.gyroX + " rads/s");
-    setHtml("gyroY", "Y: " + obj.gyroY + " rads/s");
-    setHtml("gyroZ", "Z: " + obj.gyroZ + " rads/s");
-    setHtml("accelX", "X: " + obj.accelX + " m/s<sup>2</sup>");
-    setHtml("accelY", "Y: " + obj.accelY + " m/s<sup>2</sup>");
-    setHtml("accelZ", "Z: " + obj.accelZ + " m/s<sup>2</sup>");
+    var obj = JSON.parse(e.data);
 
-    // Change cube rotation after receiving the readinds
-    cube.rotation.x = obj.gyroY;
-    cube.rotation.z = obj.gyroX;
-    cube.rotation.y = obj.gyroZ;
-    renderer.render(scene, camera);
+    // Update the HTML elements with the telemetry data
+    setHtml("heading", "&nbsp;&nbsp;Heading: " + parseFloat(obj.heading || 0).toFixed(2) + "&deg;");
+    setHtml("gyroX",   "Pitch (X): " + parseFloat(obj.gyroX || 0).toFixed(2) + " radians/s");
+    setHtml("gyroY",   "&nbsp;&nbsp;Yaw (Y): " + parseFloat(obj.gyroY || 0).toFixed(2) + " radians/s");
+    setHtml("gyroZ",   "&nbsp;Roll (Z): " + parseFloat(obj.gyroZ || 0).toFixed(2) + " radians/s");
+    setHtml("accelX",  "&nbsp;&nbsp;X (L-R): " + parseFloat(obj.accelX || 0).toFixed(2) + " m/s<sup>2</sup>");
+    setHtml("accelY",  "&nbsp;&nbsp;Y (U-D): " + parseFloat(obj.accelY || 0).toFixed(2) + " m/s<sup>2</sup>");
+    setHtml("accelZ",  "&nbsp;&nbsp;Z (F-B): " + parseFloat(obj.accelZ || 0).toFixed(2) + " m/s<sup>2</sup>");
+
+    // Change cube rotation after receiving the readings
+    if (cube) {
+      cube.rotation.x = obj.gyroX || 0;
+      cube.rotation.y = obj.gyroY || 0;
+      cube.rotation.z = obj.gyroZ || 0;
+      renderer.render(scene, camera);
+    }
   }, false);
 }
 )=====";

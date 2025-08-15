@@ -644,7 +644,7 @@ input:checked:not([disabled]) + .slider:before {
 }
 
 .cube-content{
-  width:100%;
+  width:98%;
   height:300px;
   margin:auto;
   padding-top:2%;
