@@ -27,6 +27,26 @@ var musicTrackStart = 0, musicTrackMax = 0, musicTrackCurrent = 0, musicTrackLis
 
 window.addEventListener("load", onLoad);
 
+// Create events for the sensor readings
+if (!!window.EventSource) {
+  var source = new EventSource("/events");
+
+  source.addEventListener("open", function(e) {
+    console.log("Events Connected");
+  }, false);
+
+  source.addEventListener("error", function(e) {
+    if (e.target.readyState != EventSource.OPEN) {
+      console.log("Events Disconnected");
+    }
+  }, false);
+
+  source.addEventListener("telemetry", function(e) {
+    var obj = JSON.parse(e.data);  
+    console.log("telemetry", obj);
+  }, false);
+}
+
 function onLoad(event) {
   document.getElementsByClassName("tablinks")[0].click();
   getDevicePrefs(); // Get all preferences.
@@ -78,6 +98,10 @@ function onMessage(event) {
     // Anything else gets sent to console.
     console.log(event.data);
   }
+}
+
+function resetPosition() {
+  sendCommand("/sensors/reset");
 }
 
 function getDevicePrefs() {
@@ -177,6 +201,7 @@ function getStreamColor(cMode) {
 
   return color;
 }
+
 function updateEquipment(jObj) {
   // Logic TBD for wand
 }

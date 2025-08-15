@@ -30,6 +30,7 @@
 #include "web/Style.h" // STYLE_page
 #include "web/Equip.h" // EQUIP_svg
 #include "web/Icon.h" // FAVICON_ico, FAVICON_svg
+#include "web/ThreeJS.h" // Three.js Library, THREEJS_page
 
 // Forward function declarations.
 void setupRouting();
@@ -174,6 +175,7 @@ String getPower() {
  */
 JsonDocument jsonBody; // Used for processing JSON body/payload data.
 JsonDocument jsonSuccess; // Used for sending JSON status as success.
+JsonDocument jsonTelemetry; // Used for sending JSON telemetry data.
 String status; // Holder for simple "status: success" response.
 
 void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -251,6 +253,16 @@ void startWebServer() {
   // Configure the WebSocket endpoint.
   ws.onEvent(onWebSocketEventHandler);
   httpServer.addHandler(&ws);
+
+  // Handle web server Events for telemetry data.
+  events.onConnect([](AsyncEventSourceClient *client){
+    if(client->lastId()){
+      debugf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
+    }
+    // Send event with message "hello!", id current millis and set reconnect delay to 1 second
+    client->send("hello!", NULL, millis(), 10000);
+  });
+  httpServer.addHandler(&events);
 
   // Configure the OTA firmware endpoint handler.
   ElegantOTA.begin(&httpServer);
@@ -363,6 +375,14 @@ void handleFavSvg(AsyncWebServerRequest *request) {
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
+}
+
+void handleThreeJS(AsyncWebServerRequest *request) {
+  // Used for the root page (/) from the web server.
+  debug("Sending -> Three.js Library");
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)THREEJS_page, strlen(THREEJS_page));
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
+  request->send(response); // Serve page content.
 }
 
 String getDeviceConfig() {
@@ -514,6 +534,28 @@ String getWifiSettings() {
   return wifiNetwork;
 }
 
+String getTelemetry() {
+  // Prepare a JSON object with magnetometer and gyroscope/acceleration data.
+  String telemetryData;
+  jsonTelemetry.clear();
+
+  // Add filtered motion data (from Motion.h) to the JSON document.
+  jsonTelemetry["magX"]     = filteredMotionData.magX;
+  jsonTelemetry["magY"]     = filteredMotionData.magY;
+  jsonTelemetry["magZ"]     = filteredMotionData.magZ;
+  jsonTelemetry["accelX"]   = filteredMotionData.accelX;
+  jsonTelemetry["accelY"]   = filteredMotionData.accelY;
+  jsonTelemetry["accelZ"]   = filteredMotionData.accelZ;
+  jsonTelemetry["gyroX"]    = filteredMotionData.gyroX;
+  jsonTelemetry["gyroY"]    = filteredMotionData.gyroY;
+  jsonTelemetry["gyroZ"]    = filteredMotionData.gyroZ;
+  jsonTelemetry["heading"]  = filteredMotionData.heading;
+
+  // Serialize JSON object to string.
+  serializeJson(jsonTelemetry, telemetryData);
+  return telemetryData;
+}
+
 void handleGetDeviceConfig(AsyncWebServerRequest *request) {
   // Return current device settings as a stringified JSON object.
   request->send(200, "application/json", getDeviceConfig());
@@ -532,6 +574,12 @@ void handleGetStatus(AsyncWebServerRequest *request) {
 void handleGetWifi(AsyncWebServerRequest *request) {
   // Return current system status as a stringified JSON object.
   request->send(200, "application/json", getWifiSettings());
+}
+
+void handleResetSensors(AsyncWebServerRequest *request) {
+  // Reset all telemetry data for motion sensors.
+  resetAllMotionData();
+  request->send(200, "application/json", status);
 }
 
 void handleRestart(AsyncWebServerRequest *request) {
@@ -959,6 +1007,7 @@ void setupRouting() {
   httpServer.on("/settings/device", HTTP_GET, handleDeviceSettings);
   httpServer.on("/settings/wand", HTTP_GET, handleWandSettings);
   httpServer.on("/style.css", HTTP_GET, handleStylesheet);
+  httpServer.on("/three.js", HTTP_GET, handleThreeJS);
   httpServer.onNotFound(handleNotFound);
 
   // Get/Set Handlers
@@ -980,6 +1029,7 @@ void setupRouting() {
   httpServer.on("/music/prev", HTTP_PUT, handlePrevMusicTrack);
   httpServer.on("/music/loop", HTTP_PUT, handleLoopMusicTrack);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
+  httpServer.on("/sensors/reset", HTTP_GET, handleResetSensors);
 
   // Body Handlers
   httpServer.addHandler(handleSaveDeviceConfig); // /config/device/save
@@ -993,6 +1043,15 @@ void notifyWSClients() {
   if(b_ws_started) {
     // Send latest status to all connected clients.
     ws.textAll(getEquipmentStatus());
+  }
+}
+
+void sendTelemetryData() {
+  if(b_ws_started) {
+    // Gather the latest filtered motion data, serialize it to a JSON string,
+    // and send it to all connected EventSource (SSE) clients as a "telemetry"
+    // event name (using the current time as a unique event identifier).
+    events.send(getTelemetry().c_str(), "telemetry", millis());
   }
 }
 

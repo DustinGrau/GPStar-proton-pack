@@ -128,6 +128,7 @@ const char INDEX_page[] PROGMEM = R"=====(
 
   <script type="application/javascript" src="/common.js"></script>
   <script type="application/javascript" src="/index.js"></script>
+  <script type="application/javascript" src="/three.js"></script>
 </body>
 </html>
 )=====";

@@ -22,6 +22,9 @@
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_LSM6DS3TRC.h>
 
+// Forward function declarations.
+void sendTelemetryData(); // From Webhandler.h
+
 /*
  * Magnetometer and IMU
  * Defines all device objects and variables.
@@ -68,6 +71,33 @@ const float HEADING_OFFSET_DEG = 270.0f;
 
 // Indicate if the device is mounted upside down (inverted); set true for installation orientation.
 bool isDeviceInstalled = false; // true: Components DOWN (Installed), false: Components UP (Deveolopment)
+
+// Function: resetMotionData
+// Purpose: Resets all fields of a MotionData object to zero.
+// Inputs:
+//   - MotionData &data: Reference to the MotionData object to reset.
+// Outputs: None (modifies the object in place)
+void resetMotionData(MotionData &data) {
+  data.magX = 0.0f;
+  data.magY = 0.0f;
+  data.magZ = 0.0f;
+  data.accelX = 0.0f;
+  data.accelY = 0.0f;
+  data.accelZ = 0.0f;
+  data.gyroX = 0.0f;
+  data.gyroY = 0.0f;
+  data.gyroZ = 0.0f;
+  data.heading = 0.0f;
+}
+
+// Function: resetAllMotionData
+// Purpose: Resets both global motionData and filteredMotionData objects to zero.
+// Inputs: None
+// Outputs: None
+void resetAllMotionData() {
+  resetMotionData(motionData);
+  resetMotionData(filteredMotionData);
+}
 
 // Function: calculateHeading
 // Purpose: Computes the compass heading (in degrees) from magnetometer X and Y values, applying a device-specific offset and optional inversion for mounting.
@@ -148,6 +178,9 @@ void initializeMotionDevices() {
     myIMU.configInt1(false, false, true); // Enable accelerometer data ready interrupt
     myIMU.configInt2(false, true, false); // Enable gyroscope data ready interrupt
   }
+
+  // Reset all motion data.
+  resetAllMotionData();
 }
 
 // Read the motion sensors and print the data to the debug console (if enabled).
@@ -208,6 +241,9 @@ void readMotionSensors() {
       debug(filteredMotionData.heading);
       debugln(" deg ");
       debugln();
+
+      // Send telemetry data to connected clients via server-side events.
+      sendTelemetryData();
     }
   }
 }
