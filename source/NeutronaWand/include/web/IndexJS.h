@@ -198,11 +198,13 @@ function parentHeight(elem) {
 
 function init3D(){
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
+  //scene.background = new THREE.Color(0xffffff);
+  scene.background = null; // Set background to transparent
 
   camera = new THREE.PerspectiveCamera(75, parentWidth(document.getElementById("3Dcube")) / parentHeight(document.getElementById("3Dcube")), 0.1, 1000);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  //renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // For transparent background
   renderer.setSize(parentWidth(document.getElementById("3Dcube")), parentHeight(document.getElementById("3Dcube")));
 
   document.getElementById('3Dcube').appendChild(renderer.domElement);
@@ -212,12 +214,12 @@ function init3D(){
 
   // Materials of each face
   var cubeMaterials = [
-    new THREE.MeshBasicMaterial({color:0x03045e}),
-    new THREE.MeshBasicMaterial({color:0x023e8a}),
-    new THREE.MeshBasicMaterial({color:0x0077b6}),
-    new THREE.MeshBasicMaterial({color:0x03045e}),
-    new THREE.MeshBasicMaterial({color:0x023e8a}),
-    new THREE.MeshBasicMaterial({color:0x0077b6}),
+    new THREE.MeshBasicMaterial({color:0x009000}), // slightly darker
+    new THREE.MeshBasicMaterial({color:0x00A000}), // base green
+    new THREE.MeshBasicMaterial({color:0x00B000}), // slightly lighter
+    new THREE.MeshBasicMaterial({color:0x008000}), // even darker
+    new THREE.MeshBasicMaterial({color:0x00A800}), // variant
+    new THREE.MeshBasicMaterial({color:0x00C000}), // lightest
   ];
 
   const material = new THREE.MeshFaceMaterial(cubeMaterials);

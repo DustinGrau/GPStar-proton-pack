@@ -51,13 +51,12 @@ const char INDEX_page[] PROGMEM = R"=====(
       <div id="accelX" class="infoState"></div>
       <div id="accelY" class="infoState"></div>
       <div id="accelZ" class="infoState"></div>
+      <div class="cube-content">
+        <div id="3Dcube"></div>
+      </div>
     </div>
 
-    <div class="cube-content">
-      <div id="3Dcube"></div>
-    </div>
-
-    <button type="button" class="orange" onclick="resetPosition()">Reset Position</button>
+    <button type="button" class="orange" onclick="resetPosition()">Recalibrate</button>
   </div>
 
   <div id="tab2" class="tab">

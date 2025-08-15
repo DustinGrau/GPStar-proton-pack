@@ -127,10 +127,6 @@ p {
 
 .equipment {
   background-color:#000;
-  background-image:url(/equipment.svg);
-  background-position:center;
-  background-repeat:no-repeat;
-  background-size:80%;
   border:1px solid green;
   border-radius:12px;
   box-sizing:border-box;
@@ -140,6 +136,7 @@ p {
   margin:20px auto;
   max-width:360px;
   min-height:200px;
+  padding:10px 15px;
   position:relative;
   text-align:left;
   text-shadow:#060 1px 0 5px;
@@ -647,9 +644,9 @@ input:checked:not([disabled]) + .slider:before {
 }
 
 .cube-content{
-  width: 100%;
-  background-color: white;
-  height: 300px; margin: auto;
+  width:100%;
+  height:300px;
+  margin:auto;
   padding-top:2%;
 }
 )=====";

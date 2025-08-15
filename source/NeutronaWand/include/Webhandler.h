@@ -28,7 +28,6 @@
 #include "web/Password.h" // PASSWORD_page
 #include "web/WandSettings.h" // WAND_SETTINGS_page
 #include "web/Style.h" // STYLE_page
-#include "web/Equip.h" // EQUIP_svg
 #include "web/Icon.h" // FAVICON_ico, FAVICON_svg
 #include "web/ThreeJS.h" // Three.js Library, THREEJS_page
 
@@ -348,15 +347,6 @@ void handleStylesheet(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200, "text/css", (const uint8_t*)STYLE_page, strlen(STYLE_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
-}
-
-void handleEquipSvg(AsyncWebServerRequest *request) {
-  // Used for the root page (/) of the web server.
-  debug("Sending -> Equipment SVG");
-  AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", EQUIP_svg, sizeof(EQUIP_svg));
-  response->addHeader("Cache-Control", "no-cache, must-revalidate");
-  response->addHeader("Content-Encoding", "gzip");
-  request->send(response);
 }
 
 void handleFavIco(AsyncWebServerRequest *request) {
@@ -1000,7 +990,6 @@ void setupRouting() {
   // Static Pages
   httpServer.on("/", HTTP_GET, handleRoot);
   httpServer.on("/common.js", HTTP_GET, handleCommonJS);
-  httpServer.on("/equipment.svg", HTTP_GET, handleEquipSvg);
   httpServer.on("/favicon.ico", HTTP_GET, handleFavIco);
   httpServer.on("/favicon.svg", HTTP_GET, handleFavSvg);
   httpServer.on("/index.js", HTTP_GET, handleRootJS);
@@ -1031,7 +1020,7 @@ void setupRouting() {
   httpServer.on("/music/prev", HTTP_PUT, handlePrevMusicTrack);
   httpServer.on("/music/loop", HTTP_PUT, handleLoopMusicTrack);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
-  httpServer.on("/sensors/reset", HTTP_GET, handleResetSensors);
+  httpServer.on("/sensors/reset", HTTP_PUT, handleResetSensors);
 
   // Body Handlers
   httpServer.addHandler(handleSaveDeviceConfig); // /config/device/save
