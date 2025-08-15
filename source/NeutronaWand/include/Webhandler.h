@@ -210,6 +210,11 @@ void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *clien
       #if defined(DEBUG_SEND_TO_CONSOLE)
         debugf("WebSocket[%s][C:%lu] Data[L:%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
       #endif
+
+      if(b_gpstar_benchtest) {
+        // If in bench test mode we need to respond with data when we get a heartbeat.
+        notifyWSClients();
+      }
     break;
   }
 }

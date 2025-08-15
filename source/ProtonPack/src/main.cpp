@@ -369,7 +369,7 @@ void mainLoop() {
 
           // Tell the wand the pack is off, so shut down the wand if it happens to still be on.
           packSerialSend(P_OFF);
-          attenuatorSend(A_PACK_OFF);
+          attenuatorSerialSend(A_PACK_OFF);
 
           b_pack_on = false;
         }
@@ -420,7 +420,7 @@ void mainLoop() {
         if(!b_pack_on) {
           // Tell the wand the pack is on.
           packSerialSend(P_ON);
-          attenuatorSend(A_PACK_ON);
+          attenuatorSerialSend(A_PACK_ON);
 
           ms_fadeout.stop();
           b_fade_out = false;
