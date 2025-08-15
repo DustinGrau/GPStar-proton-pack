@@ -359,8 +359,8 @@ void readMotionSensors() {
        *  Negative Pitch: Look down.
        *
        * Y Acceleration (Longitudinal, Forward-Backward):
-       *  Positive Z: Move backward.
-       *  Negative Z: Move forward.
+       *  Positive Y: Move backward.
+       *  Negative Y: Move forward.
        *  Movement: Walking forward/backward.
        *
        * Z Rotation (Yaw):
@@ -368,8 +368,8 @@ void readMotionSensors() {
        *  Negative Yaw: Turn right.
        *
        * Z Acceleration (Vertical, Up-Down):
-       *  Positive Y: Upwards.
-       *  Negative Y: Downwards.
+       *  Positive Z: Upwards.
+       *  Negative Z: Downwards.
        *
        * Due to the direction the sensor is mounted on the PCB we need to swap the Z and Y axes.
        * Additionally, the Z axis reads backwards from what is expected so we need to invert Y values.
