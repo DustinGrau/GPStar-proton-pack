@@ -5203,6 +5203,7 @@ void systemPOST() {
   }
 }
 
+#ifdef ESP32
 void readTemperature() {
   // Read the HDC1080 and store the current temperature readings in C and F.
   if(b_temp_sensor_detected) {
@@ -5220,3 +5221,4 @@ void readTemperature() {
     }
   }
 }
+#endif
