@@ -191,7 +191,7 @@ void setup() {
 #ifdef ESP32
   // ESP32-S3 requires manually specifying SDA and SCL pins first.
   Wire.begin(I2C_SDA, I2C_SCL, 400000UL);
-  
+
   // Initialize the I2C bus for the Magnetometer and IMU.
   initializeMotionDevices();
 #else
@@ -545,7 +545,7 @@ void mainLoop() {
 
 void loop() {
 #ifdef ESP32
-  // Run checks on web-related tasks.  
+  // Run checks on web-related tasks.
   webLoops();
 
   // Read the Mag/IMU motion sensors if they are available.
