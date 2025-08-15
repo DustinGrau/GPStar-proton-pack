@@ -230,10 +230,11 @@ void setup() {
 #endif
 
   // Default mode is Super Hero (for simpler controls).
-  // Assume the Super Hero arming mode with Afterlife (default for Haslab).
   SYSTEM_MODE = MODE_SUPER_HERO;
+
+  // Assume the Super Hero arming mode with Afterlife (default for Haslab).
   RED_SWITCH_MODE = SWITCH_OFF;
-  
+
   // Bootup the pack into Proton mode, the same as the wand.
   STREAM_MODE = PROTON;
 
