@@ -629,6 +629,8 @@ String getEquipmentStatus() {
   jsonBody["volEffects"] = i_volume_effects_percentage;
   jsonBody["volMusic"] = i_volume_music_percentage;
   jsonBody["battVoltage"] = f_batt_volts;
+  jsonBody["packTempC"] = f_temperature_c;
+  jsonBody["packTempF"] = f_temperature_f;
   jsonBody["wandAmps"] = f_wand_amps;
   jsonBody["apClients"] = i_ap_client_count;
   jsonBody["wsClients"] = i_ws_client_count;
