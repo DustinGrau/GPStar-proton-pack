@@ -26,32 +26,14 @@ var statusInterval;
 var musicTrackStart = 0, musicTrackMax = 0, musicTrackCurrent = 0, musicTrackList = [];
 
 window.addEventListener("load", onLoad);
-
-// Create events for the sensor readings
-if (!!window.EventSource) {
-  var source = new EventSource("/events");
-
-  source.addEventListener("open", function(e) {
-    console.log("Events Connected");
-  }, false);
-
-  source.addEventListener("error", function(e) {
-    if (e.target.readyState != EventSource.OPEN) {
-      console.log("Events Disconnected");
-    }
-  }, false);
-
-  source.addEventListener("telemetry", function(e) {
-    var obj = JSON.parse(e.data);  
-    console.log("telemetry", obj);
-  }, false);
-}
+window.addEventListener("resize", onWindowResize);
 
 function onLoad(event) {
   document.getElementsByClassName("tablinks")[0].click();
   getDevicePrefs(); // Get all preferences.
   initWebSocket(); // Open the WebSocket.
   getStatus(updateEquipment); // Get status immediately.
+  init3D(); // Initialize 3D representation.
 }
 
 function initWebSocket() {
@@ -98,10 +80,6 @@ function onMessage(event) {
     // Anything else gets sent to console.
     console.log(event.data);
   }
-}
-
-function resetPosition() {
-  sendCommand("/sensors/reset");
 }
 
 function getDevicePrefs() {
@@ -204,5 +182,95 @@ function getStreamColor(cMode) {
 
 function updateEquipment(jObj) {
   // Logic TBD for wand
+}
+
+// https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
+
+let scene, camera, rendered, cube;
+
+function parentWidth(elem) {
+  return elem.parentElement.clientWidth;
+}
+
+function parentHeight(elem) {
+  return elem.parentElement.clientHeight;
+}
+
+function init3D(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+
+  camera = new THREE.PerspectiveCamera(75, parentWidth(document.getElementById("3Dcube")) / parentHeight(document.getElementById("3Dcube")), 0.1, 1000);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(parentWidth(document.getElementById("3Dcube")), parentHeight(document.getElementById("3Dcube")));
+
+  document.getElementById('3Dcube').appendChild(renderer.domElement);
+
+  // Create a geometry
+  const geometry = new THREE.BoxGeometry(5, 1, 4);
+
+  // Materials of each face
+  var cubeMaterials = [
+    new THREE.MeshBasicMaterial({color:0x03045e}),
+    new THREE.MeshBasicMaterial({color:0x023e8a}),
+    new THREE.MeshBasicMaterial({color:0x0077b6}),
+    new THREE.MeshBasicMaterial({color:0x03045e}),
+    new THREE.MeshBasicMaterial({color:0x023e8a}),
+    new THREE.MeshBasicMaterial({color:0x0077b6}),
+  ];
+
+  const material = new THREE.MeshFaceMaterial(cubeMaterials);
+
+  cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
+  camera.position.z = 5;
+  renderer.render(scene, camera);
+}
+
+// Resize the 3D object when the browser window changes size
+function onWindowResize(){
+  camera.aspect = parentWidth(document.getElementById("3Dcube")) / parentHeight(document.getElementById("3Dcube"));
+  //camera.aspect = window.innerWidth /  window.innerHeight;
+  camera.updateProjectionMatrix();
+  //renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(parentWidth(document.getElementById("3Dcube")), parentHeight(document.getElementById("3Dcube")));
+}
+
+function resetPosition() {
+  sendCommand("/sensors/reset");
+}
+
+// Create events for the sensor readings
+if (!!window.EventSource) {
+  var source = new EventSource("/events");
+
+  source.addEventListener("open", function(e) {
+    console.log("Events Connected");
+  }, false);
+
+  source.addEventListener("error", function(e) {
+    if (e.target.readyState != EventSource.OPEN) {
+      console.log("Events Disconnected");
+    }
+  }, false);
+
+  source.addEventListener("telemetry", function(e) {
+    var obj = JSON.parse(e.data);  
+    console.log("telemetry", obj);
+    setHtml("heading", "Heading: " + obj.heading + " &deg;");
+    setHtml("gyroX", "X: " + obj.gyroX + " rads/s");
+    setHtml("gyroY", "Y: " + obj.gyroY + " rads/s");
+    setHtml("gyroZ", "Z: " + obj.gyroZ + " rads/s");
+    setHtml("accelX", "X: " + obj.accelX + " m/s<sup>2</sup>");
+    setHtml("accelY", "Y: " + obj.accelY + " m/s<sup>2</sup>");
+    setHtml("accelZ", "Z: " + obj.accelZ + " m/s<sup>2</sup>");
+
+    // Change cube rotation after receiving the readinds
+    cube.rotation.x = obj.gyroY;
+    cube.rotation.z = obj.gyroX;
+    cube.rotation.y = obj.gyroZ;
+    renderer.render(scene, camera);
+  }, false);
 }
 )=====";

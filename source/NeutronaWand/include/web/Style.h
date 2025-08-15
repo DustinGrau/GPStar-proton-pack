@@ -645,4 +645,11 @@ input:checked:not([disabled]) + .slider:before {
 .tabs button.active {
   background:#999
 }
+
+.cube-content{
+  width: 100%;
+  background-color: white;
+  height: 300px; margin: auto;
+  padding-top:2%;
+}
 )=====";
