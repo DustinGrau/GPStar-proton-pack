@@ -539,17 +539,19 @@ String getTelemetry() {
   String telemetryData;
   jsonTelemetry.clear();
 
-  // Add filtered motion data (from Motion.h) to the JSON document.
-  jsonTelemetry["magX"]     = filteredMotionData.magX;
-  jsonTelemetry["magY"]     = filteredMotionData.magY;
-  jsonTelemetry["magZ"]     = filteredMotionData.magZ;
+  // Magnetometer in microteslas (uT) converted to a heading in degrees.
+  // jsonTelemetry["magX"]     = filteredMotionData.magX;
+  // jsonTelemetry["magY"]     = filteredMotionData.magY;
+  // jsonTelemetry["magZ"]     = filteredMotionData.magZ;
+  jsonTelemetry["heading"]  = filteredMotionData.heading;
+  // Acceleration in meters/second^2 (m/s^2)
   jsonTelemetry["accelX"]   = filteredMotionData.accelX;
   jsonTelemetry["accelY"]   = filteredMotionData.accelY;
   jsonTelemetry["accelZ"]   = filteredMotionData.accelZ;
+  // Gyroscope in radians/second (rads/s)
   jsonTelemetry["gyroX"]    = filteredMotionData.gyroX;
   jsonTelemetry["gyroY"]    = filteredMotionData.gyroY;
   jsonTelemetry["gyroZ"]    = filteredMotionData.gyroZ;
-  jsonTelemetry["heading"]  = filteredMotionData.heading;
 
   // Serialize JSON object to string.
   serializeJson(jsonTelemetry, telemetryData);

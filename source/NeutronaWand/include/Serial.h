@@ -154,7 +154,8 @@ void wandSerialSend(uint8_t i_command, uint16_t i_value) {
 
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
-  if (!isExcludedCommand(i_command)) {
+  // We make a special case for a disconnected pack, or one in benchtest mode, so that the WebSocket gets updates.
+  if (WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST || !isExcludedCommand(i_command)) {
     notifyWSClients();
   }
 #endif
@@ -164,8 +165,8 @@ void wandSerialSend(uint8_t i_command, uint16_t i_value) {
     return;
   }
 
-  debug(F("Command to Pack: "));
-  debugln(i_command);
+  // debug(F("Command to Pack: "));
+  // debugln(i_command);
 
   sendCmd.s = W_COM_START;
   sendCmd.c = i_command;

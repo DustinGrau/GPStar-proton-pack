@@ -216,6 +216,7 @@ void readMotionSensors() {
       updateFilteredMotionData();
 
       // Print the filtered sensor data to the debug console.
+    #if defined(DEBUG_SEND_TO_CONSOLE)
       debug("\t\tFiltered Mag   X: ");
       debug(filteredMotionData.magX);
       debug(" \tY: ");
@@ -241,6 +242,7 @@ void readMotionSensors() {
       debug(filteredMotionData.heading);
       debugln(" deg ");
       debugln();
+    #endif
 
       // Send telemetry data to connected clients via server-side events.
       sendTelemetryData();
