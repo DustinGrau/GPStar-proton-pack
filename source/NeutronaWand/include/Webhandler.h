@@ -35,6 +35,11 @@
 void setupRouting();
 void getSpecialPreferences();
 
+// Rounds a float to 2 decimal places.
+float roundFloat(float value) {
+  return roundf(value * 100.0f) / 100.0f;
+}
+
 /*
  * Text Helper Functions - Converts ENUM values to user-friendly text
  */
@@ -284,7 +289,7 @@ void startWebServer() {
 
 void handleCommonJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
-  debugln(F("Sending -> Common JavaScript"));
+  debug("Sending -> Common JavaScript");
   AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)COMMONJS_page, strlen(COMMONJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -292,7 +297,7 @@ void handleCommonJS(AsyncWebServerRequest *request) {
 
 void handleRoot(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
-  debugln(F("Sending -> Index HTML"));
+  debug("Sending -> Index HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)INDEX_page, strlen(INDEX_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -300,7 +305,7 @@ void handleRoot(AsyncWebServerRequest *request) {
 
 void handleRootJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
-  debugln(F("Sending -> Index JavaScript"));
+  debug("Sending -> Index JavaScript");
   AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)INDEXJS_page, strlen(INDEXJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -308,7 +313,7 @@ void handleRootJS(AsyncWebServerRequest *request) {
 
 void handleNetwork(AsyncWebServerRequest *request) {
   // Used for the network page from the web server.
-  debugln(F("Sending -> Network HTML"));
+  debug("Sending -> Network HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)NETWORK_page, strlen(NETWORK_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -316,7 +321,7 @@ void handleNetwork(AsyncWebServerRequest *request) {
 
 void handlePassword(AsyncWebServerRequest *request) {
   // Used for the password page from the web server.
-  debugln(F("Sending -> Password HTML"));
+  debug("Sending -> Password HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)PASSWORD_page, strlen(PASSWORD_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -324,7 +329,7 @@ void handlePassword(AsyncWebServerRequest *request) {
 
 void handleDeviceSettings(AsyncWebServerRequest *request) {
   // Used for the device page from the web server.
-  debugln(F("Sending -> Device Settings HTML"));
+  debug("Sending -> Device Settings HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)DEVICE_page, strlen(DEVICE_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -335,7 +340,7 @@ void handleWandSettings(AsyncWebServerRequest *request) {
   //executeCommand(A_REQUEST_PREFERENCES_WAND);
 
   // Used for the settings page from the web server.
-  debugln(F("Sending -> Wand Settings HTML"));
+  debug("Sending -> Wand Settings HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)WAND_SETTINGS_page, strlen(WAND_SETTINGS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -343,7 +348,7 @@ void handleWandSettings(AsyncWebServerRequest *request) {
 
 void handleStylesheet(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
-  debugln(F("Sending -> Main StyleSheet"));
+  debug("Sending -> Main StyleSheet");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/css", (const uint8_t*)STYLE_page, strlen(STYLE_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -351,7 +356,7 @@ void handleStylesheet(AsyncWebServerRequest *request) {
 
 void handleFavIco(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
-  debugln(F("Sending -> Favicon"));
+  debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/x-icon", FAVICON_ico, sizeof(FAVICON_ico));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
@@ -360,7 +365,7 @@ void handleFavIco(AsyncWebServerRequest *request) {
 
 void handleFavSvg(AsyncWebServerRequest *request) {
   // Used for the root page (/) of the web server.
-  debugln(F("Sending -> Favicon"));
+  debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", FAVICON_svg, sizeof(FAVICON_svg));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
@@ -369,7 +374,7 @@ void handleFavSvg(AsyncWebServerRequest *request) {
 
 void handleThreeJS(AsyncWebServerRequest *request) {
   // Used for the root page (/) from the web server.
-  debugln(F("Sending -> Three.js Library"));
+  debug("Sending -> Three.js Library");
   AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)THREEJS_page, strlen(THREEJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   request->send(response); // Serve page content.
@@ -522,11 +527,6 @@ String getWifiSettings() {
   // Serialize JSON object to string.
   serializeJson(jsonBody, wifiNetwork);
   return wifiNetwork;
-}
-
-float roundFloat(float value) {
-  // Rounds a float to 2 decimal places.
-  return roundf(value * 100.0f) / 100.0f;
 }
 
 String getTelemetry() {
