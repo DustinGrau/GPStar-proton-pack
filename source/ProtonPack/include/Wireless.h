@@ -415,20 +415,22 @@ bool startWiFi() {
 
 // Stops the web server and disables WiFi to save power or for security.
 void shutdownWireless() {
-  // Close all websocket connections and stop the web server.
-  ws.closeAll();
-  httpServer.end();
-  b_ws_started = false;
+  if (WiFi.getMode() != WIFI_OFF) {
+    // Close all websocket connections and stop the web server.
+    ws.closeAll();
+    httpServer.end();
+    b_ws_started = false;
 
-  // Disconnect WiFi and turn off radio.
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
-  b_ap_started = false;
-  b_ext_wifi_started = false;
+    // Disconnect WiFi and turn off radio.
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    b_ap_started = false;
+    b_ext_wifi_started = false;
 
-  #if defined(DEBUG_WIRELESS_SETUP)
-    debugln(F("Wireless and web server shut down."));
-  #endif
+    #if defined(DEBUG_WIRELESS_SETUP)
+      debugln(F("Wireless and web server shut down."));
+    #endif
+  }
 }
 
 // Restarts WiFi and web server when needed.
