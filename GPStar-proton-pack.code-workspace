@@ -47,9 +47,7 @@
     "editor.tabSize": 2,
     "files.associations": {
       "string": "cpp",
-      "cstdint": "cpp",
-      "ostream": "cpp",
-      "system_error": "cpp"
+      "cstdint": "cpp"
     },
     "workbench.editor.enablePreview": false
   }
