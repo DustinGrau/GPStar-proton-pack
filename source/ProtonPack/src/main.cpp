@@ -96,11 +96,11 @@ void setup() {
   // Do not set below 80 MHz as it will affect WiFi and other peripherals.
   setCpuFrequencyMhz(160);
 
+  // This is required in order to make sure the board boots successfully.
+  Serial.begin(115200);
+
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
-
-  // Set the baud rate for the Serial console.
-  Serial.begin(115200);
 
   /* This loop changes GPIO39~GPIO42 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
@@ -656,6 +656,9 @@ void loop() {
   // Handle any actions after POST event.
   mainLoop();
 
+  // Update the LEDs
+  updateLEDs();
+
 #ifdef ESP32
   // The ESP32 uses a dual-core CPU with the loop() executing in Core0 by default.
   // Using vTaskDelay even without core-pinning will allow other tasks to run on Core1.
@@ -673,7 +676,7 @@ void loop() {
     // Turn off WiFi and the web server if the Attenuator is connected.
     shutdownWireless();
   }
-  else if(!b_attenuator_connected && !b_attenuator_syncing && !b_ws_started) {
+  else if(!b_attenuator_connected && !b_attenuator_syncing && !b_ws_started && b_pack_post_finish) {
     // Begin by setting up WiFi as a prerequisite to all else.
     if(startWiFi()) {
       // Start the local web server.
@@ -686,7 +689,4 @@ void loop() {
     }
   }
 #endif
-
-  // Update the LEDs
-  updateLEDs();
 }
