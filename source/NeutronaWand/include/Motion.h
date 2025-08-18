@@ -209,7 +209,7 @@ void resetAllMotionData() {
  *   - float: Compass heading in degrees (0-360°)
  */
 float calculateHeading(float magX, float magY) {
-  float headingRad = atan2(-magY, magX); // Get heading in radians from atan2 of Y (flipped) and X.
+  float headingRad = atan2(-magY, -magX); // Get heading in radians from atan2 of Y and X (both flipped).
   float headingDeg = headingRad * (180.0f / PI); // Convert radians to degrees (180/pi).
 
   // Normalize to 0-360°
@@ -321,8 +321,8 @@ void readMotionSensors() {
        */
 
       // Update the magnetometer data (swapping the X and Y axes).
-      motionData.magX = mag.magnetic.y * -1; // Swap X and Y axes due to component's installation.
-      motionData.magY = mag.magnetic.x; // Leave this reading as-is, but heading calculation needs -magY.
+      motionData.magX = mag.magnetic.y; // Swap X and Y axes due to component's installation.
+      motionData.magY = mag.magnetic.x; // Swap X and Y axes due to component's installation.
       motionData.magZ = mag.magnetic.z; // Leave Z as-is because we always expect a positive reading downward.
 
       // Update heading value based on the raw magnetometer X and Y only.
