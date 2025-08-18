@@ -30,6 +30,7 @@
 
 // Forward function declarations.
 void resetAllMotionData();
+void calibrateIMUOffsets(uint8_t numSamples);
 void sendTelemetryData(); // From Webhandler.h
 
 /**
@@ -43,7 +44,6 @@ bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
 const uint16_t i_sensor_read_delay = 100; // Delay between sensor reads in milliseconds
 const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting in milliseconds.
-const float HEADING_OFFSET_DEG = 0.0f; // Correct magnetometer orientation on the controller PCB.
 
 // Create a global filter object
 Madgwick filter;
@@ -189,61 +189,6 @@ void initializeMotionDevices() {
 }
 
 /**
- * Function: calibrateIMUOffsets
- * Purpose: Samples the IMU while stationary to determine and set baseline offsets for accelerometer and gyroscope.
- * Inputs:
- *   - uint8_t numSamples: Number of samples to average for calibration.
- * Outputs: None (updates global motionOffsets struct)
- * Side Effects: Updates motionOffsets for more accurate stationary readings.
- * Note: Samples are collected as fast as possible, no delay.
- */
-void calibrateIMUOffsets(uint8_t numSamples = 20) {
-#ifdef ENABLE_MOTION_SENSORS
-  float axSum = 0.0f, aySum = 0.0f, azSum = 0.0f;
-  float gxSum = 0.0f, gySum = 0.0f, gzSum = 0.0f;
-
-  for (uint8_t i = 0; i < numSamples; i++) {
-    sensors_event_t accel, gyro, temp;
-    imuSensor.getEvent(&accel, &gyro, &temp);
-
-    axSum += accel.acceleration.y * -1; // Invert Y for the component's installation.
-    aySum += accel.acceleration.x; // X reads as-is because it points East already.
-    azSum += accel.acceleration.z * -1; // Invert Z because we install upside down.
-    gxSum += gyro.gyro.y * -1; // Invert Y for the component's installation.
-    gySum += gyro.gyro.x; // X reads as-is because it points East already.
-    gzSum += gyro.gyro.z * -1; // Invert Z because we install upside down.
-  }
-
-  // Calculate average offsets
-  motionOffsets.accelX = axSum / numSamples;
-  motionOffsets.accelY = aySum / numSamples;
-  motionOffsets.accelZ = (azSum / numSamples) - 9.80665f; // Subtract gravity for Z axis (9.81 m/s^2)
-  motionOffsets.gyroX = gxSum / numSamples;
-  motionOffsets.gyroY = gySum / numSamples;
-  motionOffsets.gyroZ = gzSum / numSamples;
-
-  // Print the filtered sensor data to the debug console.
-  #if defined(DEBUG_TELEMETRY_DATA)
-    debug("\t\tOffset Accel X: ");
-    debug(motionOffsets.accelX);
-    debug(" \tY: ");
-    debug(motionOffsets.accelY);
-    debug(" \tZ: ");
-    debug(motionOffsets.accelZ);
-    debugln(" m/s^2 ");
-    debug("\t\tOffset Gyro  X: ");
-    debug(motionOffsets.gyroX);
-    debug(" \tY: ");
-    debug(motionOffsets.gyroY);
-    debug(" \tZ: ");
-    debug(motionOffsets.gyroZ);
-    debugln(" rads/s ");
-    debugln();
-  #endif
-#endif
-}
-
-/**
  * Function: resetAllMotionData
  * Purpose: Resets both global motionData and filteredMotionData objects to zero.
  */
@@ -251,7 +196,7 @@ void resetAllMotionData() {
   resetMotionData(motionData);
   resetMotionData(filteredMotionData);
   resetSpatialData(spatialData);
-  calibrateIMUOffsets();
+  calibrateIMUOffsets(20); // Calibrate IMU offsets with 20 samples.
 }
 
 /**
@@ -266,9 +211,6 @@ void resetAllMotionData() {
 float calculateHeading(float magX, float magY) {
   float headingRad = atan2(magY, magX); // Get heading in radians from atan2 of Y and X.
   float headingDeg = headingRad * (180.0f / PI); // Convert radians to degrees (180/pi).
-
-  // Apply offset for physical chip orientation
-  //headingDeg += HEADING_OFFSET_DEG;
 
   // Normalize to 0-360°
   while (headingDeg < 0.0f) {
@@ -323,13 +265,9 @@ void updateOrientation() {
   float ay = motionData.accelY / 9.80665f;
   float az = motionData.accelZ / 9.80665f;
 
-  // Magnetometer already in micro-Teslas.
-  float mx = motionData.magX;
-  float my = motionData.magY;
-  float mz = motionData.magZ;
-
   // Update the filter, using the calculated sample frequency in Hz.
-  filter.update(gx, gy, gz, ax, ay, az, mx, my, mz);
+  // Magnetometer is already in micro-Teslas so we just use as-is.
+  filter.update(gx, gy, gz, ax, ay, az, motionData.magX, motionData.magY, motionData.magZ);
 
   // Get Euler angles (degrees) for position in NED space.
   spatialData.roll = filter.getRoll();
@@ -383,19 +321,19 @@ void readMotionSensors() {
        */
 
       // Update the magnetometer data (swapping the X and Y axes).
-      motionData.magX = mag.magnetic.y * -1; // Invert Y for the component's installation.
-      motionData.magY = mag.magnetic.x; // X reads as-is because it points East already.
-      motionData.magZ = mag.magnetic.z * -1; // Invert Z because we install upside down.
+      motionData.magX = mag.magnetic.y * -1; // Swap X and Y axes due to component's installation.
+      motionData.magY = mag.magnetic.x * -1; // Additionally invert X for the component's installation.
+      motionData.magZ = mag.magnetic.z; // Leave Z as-is because we always expect a positive reading downward.
 
       // Update heading value based on the raw magnetometer X and Y only.
       motionData.heading = calculateHeading(motionData.magX, motionData.magY);
 
       // Update the acceleration and gyroscope values (swapping the X and Y axes).
-      motionData.accelX = accel.acceleration.y * -1; // Invert Y for the component's installation.
-      motionData.accelY = accel.acceleration.x; // X reads as-is because it points East already.
+      motionData.accelX = accel.acceleration.y; // Swap X and Y axes due to component's installation.
+      motionData.accelY = accel.acceleration.x * -1; // Invert X for the component's installation.
       motionData.accelZ = accel.acceleration.z * -1; // Invert Z because we install upside down.
-      motionData.gyroX = gyro.gyro.y * -1; // Invert Y for the component's installation.
-      motionData.gyroY = gyro.gyro.x; // X reads as-is because it points East already.
+      motionData.gyroX = gyro.gyro.y; // Swap X and Y axes due to component's installation.
+      motionData.gyroY = gyro.gyro.x * -1; // Invert X for the component's installation.
       motionData.gyroZ = gyro.gyro.z * -1; // Invert Z because we install upside down.
 
       // Apply offsets to IMU readings.
@@ -454,5 +392,60 @@ void readMotionSensors() {
       sendTelemetryData();
     }
   }
+#endif
+}
+
+/**
+ * Function: calibrateIMUOffsets
+ * Purpose: Samples the IMU while stationary to determine and set baseline offsets for accelerometer and gyroscope.
+ * Inputs:
+ *   - uint8_t numSamples: Number of samples to average for calibration.
+ * Outputs: None (updates global motionOffsets struct)
+ * Side Effects: Updates motionOffsets for more accurate stationary readings.
+ * Note: Samples are collected as fast as possible, no delay.
+ */
+void calibrateIMUOffsets(uint8_t numSamples) {
+#ifdef ENABLE_MOTION_SENSORS
+  float axSum = 0.0f, aySum = 0.0f, azSum = 0.0f;
+  float gxSum = 0.0f, gySum = 0.0f, gzSum = 0.0f;
+
+  for (uint8_t i = 0; i < numSamples; i++) {
+    sensors_event_t accel, gyro, temp;
+    imuSensor.getEvent(&accel, &gyro, &temp);
+
+    axSum += accel.acceleration.y; // Swap X and Y axes due to component's installation.
+    aySum += accel.acceleration.x * -1; // Invert X for the component's installation.
+    azSum += accel.acceleration.z * -1; // Invert Z because we install upside down.
+    gxSum += gyro.gyro.y; // Swap X and Y axes due to component's installation.
+    gySum += gyro.gyro.x * -1; // Invert X for the component's installation.
+    gzSum += gyro.gyro.z * -1; // Invert Z because we install upside down.
+  }
+
+  // Calculate average offsets
+  motionOffsets.accelX = axSum / numSamples;
+  motionOffsets.accelY = aySum / numSamples;
+  motionOffsets.accelZ = (azSum / numSamples) - 9.80665f; // Subtract gravity for Z axis (9.81 m/s^2)
+  motionOffsets.gyroX = gxSum / numSamples;
+  motionOffsets.gyroY = gySum / numSamples;
+  motionOffsets.gyroZ = gzSum / numSamples;
+
+  // Print the filtered sensor data to the debug console.
+  #if defined(DEBUG_TELEMETRY_DATA)
+    debug("\t\tOffset Accel X: ");
+    debug(motionOffsets.accelX);
+    debug(" \tY: ");
+    debug(motionOffsets.accelY);
+    debug(" \tZ: ");
+    debug(motionOffsets.accelZ);
+    debugln(" m/s^2 ");
+    debug("\t\tOffset Gyro  X: ");
+    debug(motionOffsets.gyroX);
+    debug(" \tY: ");
+    debug(motionOffsets.gyroY);
+    debug(" \tZ: ");
+    debug(motionOffsets.gyroZ);
+    debugln(" rads/s ");
+    debugln();
+  #endif
 #endif
 }
