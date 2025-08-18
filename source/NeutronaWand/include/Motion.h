@@ -273,6 +273,12 @@ void updateOrientation() {
   spatialData.roll = filter.getRoll();
   spatialData.pitch = filter.getPitch();
   spatialData.yaw = filter.getYaw();
+
+  // Mirror along Z-axis to match the heading.
+  spatialData.yaw = 360.0f - spatialData.yaw;
+  if(spatialData.yaw >= 360.0f) {
+    spatialData.yaw -= 360.0f;
+  }
 #endif
 }
 
