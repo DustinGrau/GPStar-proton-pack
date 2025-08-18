@@ -53,7 +53,7 @@ Madgwick filter;
  * Purpose: Controls the smoothing factor for exponential moving average filtering (0 < FILTER_ALPHA <= 1).
  *          Increasing this value makes it more responsive to changes, decreasing smooths out fluctuations.
  */
-const float FILTER_ALPHA = 0.2f;
+const float FILTER_ALPHA = 0.1f;
 
 /**
  * Struct: MotionData
