@@ -319,7 +319,7 @@ void readMotionSensors() {
        *
        * In this orientation both sensors are mounted such that their Y+ is away from the USB port (down), X+ is to the right,
        * and Z+ is toward you (as you look down). However, this does not align with NED (North-East-Down) conventions.
-       * 
+       *
        * We will use the “Aerospace NED Frame” (North–East–Down convention) for positive values on each axis:
        *  +X = Forward (-Backward)
        *  +Y = Right (-Left)
