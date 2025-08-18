@@ -103,7 +103,7 @@ Here be dragons. This section is for VERY ADVANCED users only.
 |------------------|---------------------------------------------|
 | Compile Software | [VSCode + PlatformIO](VSCODE.md)
 | Modify Software  | [Advanced Software Configuration](ADVCONFIG.md) |
-| Upload Software  | [Pack/Wand Flashing](COMPILING_FLASHING.md) or [Attenuator/Wireless Flashing](ATTENUATOR_FLASHING.md) |
+| Upload Software  | [Pack/Wand Flashing](COMPILING_FLASHING.md) or [AttenuatorFlashing](ATTENUATOR_FLASHING.md) |
 
 **Special/Standalone Devices**
 
