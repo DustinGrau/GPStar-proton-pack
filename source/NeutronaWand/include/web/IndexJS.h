@@ -276,12 +276,12 @@ if (!!window.EventSource) {
 
     // Change cube rotation after receiving the readings
     if (cube) {
-      // cube.rotation.x = (obj.roll || 0); // Roll
-      // cube.rotation.y = (obj.pitch || 0); // Pitch
-      // cube.rotation.z = (obj.yaw || 0); // Yaw
-      cube.rotation.x = (obj.gyroX || 0);
-      cube.rotation.y = (obj.gyroY || 0) * -1;
-      cube.rotation.z = (obj.gyroZ || 0);
+      cube.rotation.x = (obj.roll || 0); // Roll
+      cube.rotation.y = (obj.pitch || 0); // Pitch
+      cube.rotation.z = (obj.yaw || 0); // Yaw
+      // cube.rotation.x = (obj.gyroX || 0);
+      // cube.rotation.y = (obj.gyroY || 0) * -1;
+      // cube.rotation.z = (obj.gyroZ || 0);
       renderer.render(scene, camera);
     }
   }, false);
