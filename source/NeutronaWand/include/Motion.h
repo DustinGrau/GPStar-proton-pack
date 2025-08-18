@@ -209,7 +209,7 @@ void resetAllMotionData() {
  *   - float: Compass heading in degrees (0-360°)
  */
 float calculateHeading(float magX, float magY) {
-  float headingRad = atan2(magY, magX); // Get heading in radians from atan2 of Y and X.
+  float headingRad = atan2(-magY, magX); // Get heading in radians from atan2 of Y (flipped) and X.
   float headingDeg = headingRad * (180.0f / PI); // Convert radians to degrees (180/pi).
 
   // Normalize to 0-360°
@@ -256,18 +256,18 @@ void updateOrientation() {
    */
 
   // Convert gyroscope from rad/s to deg/s by multiplying by (180.0f / PI).
-  float gx = motionData.gyroX * (180.0f / PI);
-  float gy = motionData.gyroY * (180.0f / PI);
-  float gz = motionData.gyroZ * (180.0f / PI);
+  float gx = filteredMotionData.gyroX * (180.0f / PI);
+  float gy = filteredMotionData.gyroY * (180.0f / PI);
+  float gz = filteredMotionData.gyroZ * (180.0f / PI);
 
   // Convert accelerometer from m/s^2 to g.
-  float ax = motionData.accelX / 9.80665f;
-  float ay = motionData.accelY / 9.80665f;
-  float az = motionData.accelZ / 9.80665f;
+  float ax = filteredMotionData.accelX / 9.80665f;
+  float ay = filteredMotionData.accelY / 9.80665f;
+  float az = filteredMotionData.accelZ / 9.80665f;
 
   // Update the filter, using the calculated sample frequency in Hz.
   // Magnetometer is already in micro-Teslas so we just use as-is.
-  filter.update(gx, gy, gz, ax, ay, az, motionData.magX, motionData.magY, motionData.magZ);
+  filter.update(gx, gy, gz, ax, ay, az, filteredMotionData.magX, filteredMotionData.magY, filteredMotionData.magZ);
 
   // Get Euler angles (degrees) for position in NED space.
   spatialData.roll = filter.getRoll();
@@ -322,7 +322,7 @@ void readMotionSensors() {
 
       // Update the magnetometer data (swapping the X and Y axes).
       motionData.magX = mag.magnetic.y * -1; // Swap X and Y axes due to component's installation.
-      motionData.magY = mag.magnetic.x * -1; // Additionally invert X for the component's installation.
+      motionData.magY = mag.magnetic.x; // Leave this reading as-is, but heading calculation needs -magY.
       motionData.magZ = mag.magnetic.z; // Leave Z as-is because we always expect a positive reading downward.
 
       // Update heading value based on the raw magnetometer X and Y only.
