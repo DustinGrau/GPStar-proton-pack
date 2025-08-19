@@ -44,13 +44,13 @@ const char INDEX_page[] PROGMEM = R"=====(
   <div id="tab1" class="tab">
     <div id="equipCRT" class="equipment">
       <div class="telemetry">
-        <p><span class="infoLabel">Heading:</span> <span class="infoState" id="heading">&mdash;</span> &deg;</p>
-        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. X:</span> <span class="infoState" id="gyroX">&mdash;</span> rads/s</p>
-        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. Y:</span> <span class="infoState" id="gyroY">&mdash;</span> rads/s</p>
-        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. Z:</span> <span class="infoState" id="gyroZ">&mdash;</span> rads/s</p>
-        <p><span class="infoLabel">&nbsp;Accel. X:</span> <span class="infoState" id="accelX">&mdash;</span> m/s<sup>2</sup></p>
-        <p><span class="infoLabel">&nbsp;Accel. Y:</span> <span class="infoState" id="accelY">&mdash;</span> m/s<sup>2</sup></p>
-        <p><span class="infoLabel">&nbsp;Accel. Z:</span> <span class="infoState" id="accelZ">&mdash;</span> m/s<sup>2</sup></p>
+        <p><span class="infoLabel">Heading:</span> <span class="infoState" id="heading">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. X:</span> <span class="infoState" id="gyroX">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. Y:</span> <span class="infoState" id="gyroY">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;&nbsp;&nbsp;&nbsp;Rot. Z:</span> <span class="infoState" id="gyroZ">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;Accel. X:</span> <span class="infoState" id="accelX">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;Accel. Y:</span> <span class="infoState" id="accelY">&mdash;</span></p>
+        <p><span class="infoLabel">&nbsp;Accel. Z:</span> <span class="infoState" id="accelZ">&mdash;</span></p>
         <p><span class="infoLabel">&nbsp;&nbsp;Roll (X):</span> <span class="infoState" id="roll">&mdash;</span></p>
         <p><span class="infoLabel">Pitch (Y):</span> <span class="infoState" id="pitch">&mdash;</span></p>
         <p><span class="infoLabel">&nbsp;&nbsp;Yaw (Z):</span> <span class="infoState" id="yaw">&mdash;</span></p>
