@@ -281,9 +281,9 @@ if (!!window.EventSource) {
 
     // Change cube rotation after receiving the readings
     if (cube) {
-      cube.rotation.x = pitchRads * -1; // Invert pitch (down is down)
-      cube.rotation.y = yawRads;
-      cube.rotation.z = rollRads;
+      cube.rotation.x = rollRads;
+      cube.rotation.y = pitchRads;
+      cube.rotation.z = yawRads;
       renderer.render(scene, camera);
     }
   }, false);

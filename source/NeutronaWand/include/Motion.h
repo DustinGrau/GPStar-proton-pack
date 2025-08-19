@@ -72,7 +72,7 @@ Madgwick filter;
  *   - Increase FILTER_ALPHA if you want the sensor data to react faster to changes.
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
-const float FILTER_ALPHA = 0.2f;
+const float FILTER_ALPHA = 0.5f;
 
 /**
  * Struct: MotionData
