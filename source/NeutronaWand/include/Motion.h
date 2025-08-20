@@ -44,7 +44,7 @@ bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
 const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms/50Hz).
-const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting in milliseconds.
+const uint16_t i_sensor_report_delay = 100; // Delay between telemetry reporting in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
 
 /**
@@ -70,12 +70,12 @@ Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Ro
  *   - Increase FILTER_ALPHA if you want the sensor data to react faster to changes.
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
-const float FILTER_ALPHA = 0.3f;
+const float FILTER_ALPHA = 0.5f;
 
 // Thresholds: adjust as needed for the sensor's noise profile.
-const float MAG_THRESHOLD = 50.0f; // uTesla
-const float ACCEL_THRESHOLD = 5.0f; // m/s^2
-const float GYRO_THRESHOLD = 5.0f; // rads/s
+const float MAG_THRESHOLD = 20.0f; // uTesla
+const float ACCEL_THRESHOLD = 2.0f; // m/s^2
+const float GYRO_THRESHOLD = 2.0f; // rads/s
 
 /**
  * Struct: MotionData
@@ -213,7 +213,7 @@ void initializeMotionDevices() {
      *   - LIS3MDL_DATARATE_40_HZ: 40 Hz.
      *   - LIS3MDL_DATARATE_80_HZ: 80 Hz (recommended for matching CPU polling).
      */
-    magSensor.setDataRate(LIS3MDL_DATARATE_20_HZ);
+    magSensor.setDataRate(LIS3MDL_DATARATE_80_HZ);
 
     /**
      * Purpose: Sets the LIS3MDL magnetometer's measurement range (sensitivity).
@@ -243,10 +243,10 @@ void initializeMotionDevices() {
      *   - latch: Latch interrupt (true = latched until cleared, false = pulse).
      *   - enabled: Enable the interrupt (true/false).
      */
-    magSensor.configInterrupt(false, false, true, // Enable Z Axis
+    magSensor.configInterrupt(false, false, false, // Enable one or more axis
                               true, // Polarity active high
                               false, // Don't latch (pulse)
-                              true); // Enable the interrupt
+                              false); // Disable the interrupt
   }
 
   // Initialize the LSM6DS3TR-C IMU.
