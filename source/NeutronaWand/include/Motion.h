@@ -43,7 +43,7 @@ Adafruit_LSM6DS3TRC imuSensor;
 bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
-const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms/50Hz).
+const uint16_t i_sensor_read_delay = 19; // Delay between sensor reads in milliseconds (19ms = ~52Hz).
 const uint16_t i_sensor_report_delay = 100; // Delay between telemetry reporting in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
 
@@ -71,11 +71,6 @@ Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Ro
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
 const float FILTER_ALPHA = 0.5f;
-
-// Thresholds: adjust as needed for the sensor's noise profile.
-const float MAG_THRESHOLD = 20.0f; // uTesla
-const float ACCEL_THRESHOLD = 2.0f; // m/s^2
-const float GYRO_THRESHOLD = 2.0f; // rads/s
 
 /**
  * Struct: MotionData
@@ -211,9 +206,9 @@ void initializeMotionDevices() {
      *   - LIS3MDL_DATARATE_10_HZ: 10 Hz.
      *   - LIS3MDL_DATARATE_20_HZ: 20 Hz.
      *   - LIS3MDL_DATARATE_40_HZ: 40 Hz.
-     *   - LIS3MDL_DATARATE_80_HZ: 80 Hz (recommended for matching CPU polling).
+     *   - LIS3MDL_DATARATE_80_HZ: 80 Hz.
      */
-    magSensor.setDataRate(LIS3MDL_DATARATE_80_HZ);
+    magSensor.setDataRate(LIS3MDL_DATARATE_40_HZ);
 
     /**
      * Purpose: Sets the LIS3MDL magnetometer's measurement range (sensitivity).
@@ -223,7 +218,7 @@ void initializeMotionDevices() {
      *   - LIS3MDL_RANGE_12_GAUSS: ±12 Gauss.
      *   - LIS3MDL_RANGE_16_GAUSS: ±16 Gauss (lowest sensitivity, highest max field).
      */
-    magSensor.setRange(LIS3MDL_RANGE_16_GAUSS);
+    magSensor.setRange(LIS3MDL_RANGE_4_GAUSS);
 
     /**
      * Purpose: Sets the LIS3MDL magnetometer's interrupt threshold.
@@ -262,7 +257,7 @@ void initializeMotionDevices() {
      *   - LSM6DS_ACCEL_RANGE_8_G: ±8g (mid sensitivity, low max acceleration).
      *   - LSM6DS_ACCEL_RANGE_16_G: ±16g (lowest sensitivity, highest max acceleration).
      */
-    imuSensor.setAccelRange(LSM6DS_ACCEL_RANGE_16_G);
+    imuSensor.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
 
     /**
      * Purpose: Sets the LSM6DS3TR-C IMU's gyroscope measurement range.
@@ -273,7 +268,7 @@ void initializeMotionDevices() {
      *   - LSM6DS_GYRO_RANGE_1000_DPS: ±1000°/s.
      *   - LSM6DS_GYRO_RANGE_2000_DPS: ±2000°/s (lowest sensitivity, highest max rotation).
      */
-    imuSensor.setGyroRange(LSM6DS_GYRO_RANGE_500_DPS);
+    imuSensor.setGyroRange(LSM6DS_GYRO_RANGE_250_DPS);
 
     /**
      * Purpose: Sets the LSM6DS3TR-C IMU's accelerometer output data rate (ODR).
@@ -283,15 +278,15 @@ void initializeMotionDevices() {
      *   - LSM6DS_RATE_26_HZ: 26 Hz.
      *   - LSM6DS_RATE_52_HZ: 52 Hz.
      *   - LSM6DS_RATE_104_HZ: 104 Hz.
-     *   - LSM6DS_RATE_208_HZ: 208 Hz (recommended for responsive motion tracking).
+     *   - LSM6DS_RATE_208_HZ: 208 Hz.
      *   - LSM6DS_RATE_416_HZ: 416 Hz.
      *   - LSM6DS_RATE_833_HZ: 833 Hz.
      *   - LSM6DS_RATE_1660_HZ: 1660 Hz.
      *   - LSM6DS_RATE_3330_HZ: 3330 Hz.
      *   - LSM6DS_RATE_6660_HZ: 6660 Hz.
      */
-    imuSensor.setAccelDataRate(LSM6DS_RATE_208_HZ);
-    imuSensor.setGyroDataRate(LSM6DS_RATE_208_HZ);
+    imuSensor.setAccelDataRate(LSM6DS_RATE_52_HZ);
+    imuSensor.setGyroDataRate(LSM6DS_RATE_52_HZ);
 
     /**
      * Purpose: Enables or disables the LSM6DS3TR-C IMU's high-pass filter and sets the divisor.
@@ -299,11 +294,11 @@ void initializeMotionDevices() {
      *   - enable: Enable high-pass filter (true/false).
      *   - divisor: Filter divisor, options:
      *     - LSM6DS_HPF_ODR_DIV_50: ODR/50
-     *     - LSM6DS_HPF_ODR_DIV_100: ODR/100 (recommended for most applications)
+     *     - LSM6DS_HPF_ODR_DIV_100: ODR/100
      *     - LSM6DS_HPF_ODR_DIV_9: ODR/9
      *     - LSM6DS_HPF_ODR_DIV_400: ODR/400
      */
-    imuSensor.highPassFilter(true, LSM6DS_HPF_ODR_DIV_100);
+    imuSensor.highPassFilter(false, LSM6DS_HPF_ODR_DIV_100);
 
     /**
      * Purpose: Configures the LSM6DS3TR-C IMU's INT1 interrupt pin (GYRO_INT1_PIN).
@@ -411,7 +406,7 @@ void updateOrientation() {
   // Convert accelerometer from m/s^2 to g.
   float ax = filteredMotionData.accelX / 9.80665f;
   float ay = filteredMotionData.accelY / 9.80665f;
-  float az = (filteredMotionData.accelZ -9.80665f) / 9.80665f; // Always subtract gravity for Z axis (9.81 m/s^2)
+  float az = filteredMotionData.accelZ / 9.80665f;
 
   // Update the filter, using the calculated sample frequency in Hz.
   // Magnetometer is already in micro-Teslas so we just use as-is.
@@ -461,20 +456,6 @@ bool isValidReading(float value) {
 }
 
 /**
- * Function: isOutlier
- * Purpose: Determines if a new sensor reading is an outlier compared to the previous value.
- * Inputs:
- *   - float newValue: The new sensor reading.
- *   - float prevValue: The previous sensor reading.
- *   - float threshold: The maximum allowed change for a valid reading.
- * Outputs:
- *   - bool: True if the new value is an outlier, false otherwise.
- */
-bool isOutlier(float newValue, float prevValue, float threshold) {
-  return fabs(newValue - prevValue) > threshold;
-}
-
-/**
  * Function: readMotionSensors
  * Purpose: Reads the motion sensors and prints the data to the debug console (if enabled).
  */
@@ -496,6 +477,14 @@ void checkMotionSensors() {
     else if(ms_sensor_report_delay.justFinished()) {
       // Print the filtered sensor data to the debug console.
     #if defined(DEBUG_TELEMETRY_DATA)
+      debug("\t\tOff Accel X: ");
+      debug(formatSignedFloat(motionOffsets.accelX));
+      debug(" \tY: ");
+      debug(formatSignedFloat(motionOffsets.accelY));
+      debug(" \tZ: ");
+      debug(formatSignedFloat(motionOffsets.accelZ));
+      debugln(" m/s^2 ");
+
       debug("\t\tRaw Accel X: ");
       debug(formatSignedFloat(motionData.accelX));
       debug(" \tY: ");
@@ -503,6 +492,7 @@ void checkMotionSensors() {
       debug(" \tZ: ");
       debug(formatSignedFloat(motionData.accelZ));
       debugln(" m/s^2 ");
+
       debug("\t\tAvg Accel X: ");
       debug(formatSignedFloat(filteredMotionData.accelX));
       debug(" \tY: ");
@@ -512,6 +502,15 @@ void checkMotionSensors() {
       debugln(" m/s^2 ");
       debugln();
 
+      debug("\t\tOff Gyro  X: ");
+      debug(formatSignedFloat(motionOffsets.gyroX));
+      debug(" \tY: ");
+      debug(formatSignedFloat(motionOffsets.gyroY));
+      debug(" \tZ: ");
+      debug(formatSignedFloat(motionOffsets.gyroZ));
+      debugln(" rads/s ");
+      debugln();
+
       debug("\t\tRaw Gyro  X: ");
       debug(formatSignedFloat(motionData.gyroX));
       debug(" \tY: ");
@@ -519,6 +518,7 @@ void checkMotionSensors() {
       debug(" \tZ: ");
       debug(formatSignedFloat(motionData.gyroZ));
       debugln(" rads/s ");
+
       debug("\t\tAvg Gyro  X: ");
       debug(formatSignedFloat(filteredMotionData.gyroX));
       debug(" \tY: ");
@@ -535,6 +535,7 @@ void checkMotionSensors() {
       debug(" \tZ: ");
       debug(formatSignedFloat(motionData.magZ));
       debugln(" uTesla ");
+
       debug("\t\tAvg Mag   X: ");
       debug(formatSignedFloat(filteredMotionData.magX));
       debug(" \tY: ");
@@ -602,23 +603,24 @@ void readMotionSensors() {
      */
 
     // Update the magnetometer data (swapping the X and Y axes due to component's installation).
-    motionData.magX = (isValidReading(mag.magnetic.y) && !isOutlier(mag.magnetic.y, motionData.magX, MAG_THRESHOLD)) ? mag.magnetic.y : motionData.magX;
-    motionData.magY = (isValidReading(mag.magnetic.x) && !isOutlier(mag.magnetic.x, motionData.magY, MAG_THRESHOLD)) ? mag.magnetic.x : motionData.magY;
-    motionData.magZ = (isValidReading(mag.magnetic.z) && !isOutlier(mag.magnetic.z, motionData.magZ, MAG_THRESHOLD)) ? mag.magnetic.z : motionData.magZ;
+    // Note: We want to ignore any readings which suddenly go to zero, keeping the last value.
+    motionData.magX = isValidReading(mag.magnetic.y) ? mag.magnetic.y : motionData.magX;
+    motionData.magY = isValidReading(mag.magnetic.x) ? mag.magnetic.x : motionData.magY;
+    motionData.magZ = isValidReading(mag.magnetic.z) ? mag.magnetic.z : motionData.magZ;
 
     // Update heading value based on the raw magnetometer X and Y only.
     motionData.heading = calculateHeading(motionData.magX, motionData.magY);
 
     // Update the acceleration and gyroscope values (swapping the X and Y axes due to component's installation).
-    // Note: We must invert Z because the device is typically installed upside down.
-    motionData.accelX = !isOutlier(accel.acceleration.y, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.y : motionData.accelX;
-    motionData.accelY = !isOutlier(accel.acceleration.x * -1, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.x * -1 : motionData.accelY;
-    motionData.accelZ = !isOutlier(accel.acceleration.z * -1, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.z * -1 : motionData.accelZ;
-    motionData.gyroX = !isOutlier(gyro.gyro.y, motionData.gyroX, GYRO_THRESHOLD) ? gyro.gyro.y : motionData.gyroX;
-    motionData.gyroY = !isOutlier(gyro.gyro.x * -1, motionData.gyroY, GYRO_THRESHOLD) ? gyro.gyro.x * -1 : motionData.gyroY;
-    motionData.gyroZ = !isOutlier(gyro.gyro.z * -1, motionData.gyroZ, GYRO_THRESHOLD) ? gyro.gyro.z * -1 : motionData.gyroZ;
+    // Note: We must invert Y (L-R) and Z (U-D) values because the device is typically installed upside down.
+    motionData.accelX = accel.acceleration.y;
+    motionData.accelY = accel.acceleration.x * -1;
+    motionData.accelZ = accel.acceleration.z * -1;
+    motionData.gyroX = gyro.gyro.y;
+    motionData.gyroY = gyro.gyro.x * -1;
+    motionData.gyroZ = gyro.gyro.z * -1;
 
-    // Apply offsets to IMU readings.
+    // Apply offsets to IMU readings (values should be 0 if not calculated).
     motionData.accelX -= motionOffsets.accelX;
     motionData.accelY -= motionOffsets.accelY;
     motionData.accelZ -= motionOffsets.accelZ;
@@ -626,13 +628,13 @@ void readMotionSensors() {
     motionData.gyroY -= motionOffsets.gyroY;
     motionData.gyroZ -= motionOffsets.gyroZ;
 
-    // Apply smoothing filter to sensor data.
+    // Apply exponential moving average (EMA) smoothing filter to sensor data.
     updateFilteredMotionData();
 
     // Update heading value based on the moving average magnetometer X and Y only.
     filteredMotionData.heading = calculateHeading(filteredMotionData.magX, filteredMotionData.magY);
 
-    // Update the orientation using the filtered data.
+    // Update the orientation via sensor fusion by using the filtered data.
     updateOrientation();
   }
 #endif
@@ -679,24 +681,5 @@ void calibrateIMUOffsets(uint8_t numSamples) {
   motionOffsets.gyroX = gxSum / numSamples;
   motionOffsets.gyroY = gySum / numSamples;
   motionOffsets.gyroZ = gzSum / numSamples;
-
-  // Print the filtered sensor data to the debug console.
-  #if defined(DEBUG_TELEMETRY_DATA)
-    debug("\t\tOffset Accel X: ");
-    debug(formatSignedFloat(motionOffsets.accelX));
-    debug(" \tY: ");
-    debug(formatSignedFloat(motionOffsets.accelY));
-    debug(" \tZ: ");
-    debug(formatSignedFloat(motionOffsets.accelZ));
-    debugln(" m/s^2 ");
-    debug("\t\tOffset Gyro  X: ");
-    debug(formatSignedFloat(motionOffsets.gyroX));
-    debug(" \tY: ");
-    debug(formatSignedFloat(motionOffsets.gyroY));
-    debug(" \tZ: ");
-    debug(formatSignedFloat(motionOffsets.gyroZ));
-    debugln(" rads/s ");
-    debugln();
-  #endif
 #endif
 }
