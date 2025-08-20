@@ -1509,6 +1509,7 @@ void postActivation(bool shortBoot = false) {
 #ifdef ESP32
   // When the wand is activated we should consider the user's current orientation by
   // way of holding of the device as the new reference position for motion tracking.
+  debugln(F("postActivation() - Resetting all motion data."));
   resetAllMotionData();
 #endif
 
@@ -7087,12 +7088,13 @@ void mixExtraFiringEffects() {
     filteredMotionData.accelZ * filteredMotionData.accelZ
   );
 
-  // Threshold for sudden movement. For instance, 2g ≈ 19.6 m/s^2 (2x9.8 m/s^2), and can be tuned as needed.
-  const float IMPACT_THRESHOLD = 18.0f;
+  // Threshold for sudden movement and can be tuned as needed. For instance, 3g = 29.4 m/s^2.
+  const float IMPACT_THRESHOLD = 32.0f;
 
   // Mix some impact sound based on user motions while firing.  
   if (STREAM_MODE == PROTON && !b_firing_cross_streams && b_stream_effects && accelMagnitude > IMPACT_THRESHOLD) {
     // Only play impact sound if firing, in Proton mode, and threshold exceeded.
+    stopEffect(S_FIRE_LOOP_IMPACT); // Stop any existing impact sound to avoid overlap.
     playEffect(S_FIRE_LOOP_IMPACT, false, i_volume_effects, false, 0, false);
     debugln(String("Impact sound played. Motion Threshold: ") + IMPACT_THRESHOLD + "; Detected Magnitude: " + accelMagnitude);
   }
