@@ -22,7 +22,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250818064749";
+String build_date = "V6_20250819203355";
 
 /*
  * Preferred WiFi Network Defaults (only for ESP32)
@@ -348,6 +348,7 @@ bool b_demo_light_mode = false;
 
 /*
  * When set to true, various impact and other stream effects will overlap and mix randomly into the Proton Stream for an added experience.
+ * For the Wand II board this will utilize motion sensors to help enhance when effects are triggered as opposed to using a random timing.
  */
 bool b_stream_effects = true;
 
