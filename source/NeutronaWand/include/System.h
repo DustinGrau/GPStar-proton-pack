@@ -7090,7 +7090,7 @@ void mixExtraFiringEffects() {
   // Threshold for sudden movement and can be tuned as needed. For instance, 3g = 29.4 m/s^2.
   const float IMPACT_THRESHOLD = 32.0f;
 
-  // Mix some impact sound based on user motions while firing.  
+  // Mix some impact sound based on user motions while firing.
   if (STREAM_MODE == PROTON && !b_firing_cross_streams && b_stream_effects && accelMagnitude > IMPACT_THRESHOLD) {
     // Only play impact sound if firing, in Proton mode, and threshold exceeded.
     stopEffect(S_FIRE_LOOP_IMPACT); // Stop any existing impact sound to avoid overlap.

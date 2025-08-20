@@ -555,7 +555,7 @@ void checkMotionSensors() {
 
       // Send telemetry data to connected clients via server-side events.
       sendTelemetryData();
-    } 
+    }
   }
 #endif
 }
@@ -602,7 +602,7 @@ void readMotionSensors() {
      */
 
     // Update the magnetometer data (swapping the X and Y axes due to component's installation).
-    motionData.magX = (isValidReading(mag.magnetic.y) && !isOutlier(mag.magnetic.y, motionData.magX, MAG_THRESHOLD)) ? mag.magnetic.y : motionData.magX; 
+    motionData.magX = (isValidReading(mag.magnetic.y) && !isOutlier(mag.magnetic.y, motionData.magX, MAG_THRESHOLD)) ? mag.magnetic.y : motionData.magX;
     motionData.magY = (isValidReading(mag.magnetic.x) && !isOutlier(mag.magnetic.x, motionData.magY, MAG_THRESHOLD)) ? mag.magnetic.x : motionData.magY;
     motionData.magZ = (isValidReading(mag.magnetic.z) && !isOutlier(mag.magnetic.z, motionData.magZ, MAG_THRESHOLD)) ? mag.magnetic.z : motionData.magZ;
 
