@@ -72,7 +72,7 @@ Madgwick filter;
  *   - Increase FILTER_ALPHA if you want the sensor data to react faster to changes.
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
-const float FILTER_ALPHA = 0.5f;
+const float FILTER_ALPHA = 0.3f;
 
 /**
  * Struct: MotionData
@@ -411,8 +411,37 @@ void checkMotionSensors() {
 }
 
 /**
+ * Function: isValidReading
+ * Purpose: Checks if a reading is valid (not a spurious zero).
+ * Inputs:
+ *   - float value: axis value.
+ * Outputs:
+ *   - bool: True if valid, false if likely a glitch.
+ */
+bool isValidReading(float value) {
+  // Accept values not exactly zero or within a small threshold.
+  return fabs(value) > 0.01f;
+}
+
+/**
+ * Function: isOutlier
+ * Purpose: Determines if a new sensor reading is an outlier compared to the previous value.
+ * Inputs:
+ *   - float newValue: The new sensor reading.
+ *   - float prevValue: The previous sensor reading.
+ *   - float threshold: The maximum allowed change for a valid reading.
+ * Outputs:
+ *   - bool: True if the new value is an outlier, false otherwise.
+ */
+bool isOutlier(float newValue, float prevValue, float threshold) {
+  return fabs(newValue - prevValue) > threshold;
+}
+
+/**
  * Function: readMotionSensors
  * Purpose: Reads the motion sensors and prints the data to the debug console (if enabled).
+ * Inputs: None, operates on sensor objects.
+ * Outputs: None, operates on global motionData and filteredMotionData.
  */
 void readMotionSensors() {
 #ifdef MOTION_SENSORS
@@ -449,21 +478,27 @@ void readMotionSensors() {
      *  +Z = Down (toward the Earth at +9.81 m/s^2) remaining "gravity positive" for NED orientation.
      */
 
-    // Update the magnetometer data (swapping the X and Y axes).
-    motionData.magX = mag.magnetic.y; // Swap X and Y axes due to component's installation.
-    motionData.magY = mag.magnetic.x; // Swap X and Y axes due to component's installation.
-    motionData.magZ = mag.magnetic.z; // Leave Z as-is because we always expect a positive reading downward.
+     // Thresholds: adjust as needed for the sensor's noise profile.
+    const float MAG_THRESHOLD = 50.0f; // uTesla
+    const float ACCEL_THRESHOLD = 5.0f; // m/s^2
+    const float GYRO_THRESHOLD = 5.0f; // rads/s
+
+    // Update the magnetometer data (swapping the X and Y axes due to component's installation).
+    motionData.magX = (isValidReading(mag.magnetic.y) && !isOutlier(mag.magnetic.y, motionData.magX, MAG_THRESHOLD)) ? mag.magnetic.y : motionData.magX; 
+    motionData.magY = (isValidReading(mag.magnetic.x) && !isOutlier(mag.magnetic.x, motionData.magY, MAG_THRESHOLD)) ? mag.magnetic.x : motionData.magY;
+    motionData.magZ = (isValidReading(mag.magnetic.z) && !isOutlier(mag.magnetic.z, motionData.magZ, MAG_THRESHOLD)) ? mag.magnetic.z : motionData.magZ;
 
     // Update heading value based on the raw magnetometer X and Y only.
     motionData.heading = calculateHeading(motionData.magX, motionData.magY);
 
-    // Update the acceleration and gyroscope values (swapping the X and Y axes).
-    motionData.accelX = accel.acceleration.y; // Swap X and Y axes due to component's installation.
-    motionData.accelY = accel.acceleration.x * -1; // Invert X for the component's installation.
-    motionData.accelZ = accel.acceleration.z * -1; // Invert Z because we install upside down.
-    motionData.gyroX = gyro.gyro.y; // Swap X and Y axes due to component's installation.
-    motionData.gyroY = gyro.gyro.x * -1; // Invert X for the component's installation.
-    motionData.gyroZ = gyro.gyro.z * -1; // Invert Z because we install upside down.
+    // Update the acceleration and gyroscope values (swapping the X and Y axes due to component's installation).
+    // Note: We must invert Z because the device is typically installed upside down.
+    motionData.accelX = !isOutlier(accel.acceleration.y, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.y : motionData.accelX;
+    motionData.accelY = !isOutlier(accel.acceleration.x * -1, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.x * -1 : motionData.accelY;
+    motionData.accelZ = !isOutlier(accel.acceleration.z * -1, motionData.accelX, ACCEL_THRESHOLD) ? accel.acceleration.z * -1 : motionData.accelZ;
+    motionData.gyroX = !isOutlier(gyro.gyro.y, motionData.gyroX, GYRO_THRESHOLD) ? gyro.gyro.y : motionData.gyroX;
+    motionData.gyroY = !isOutlier(gyro.gyro.x * -1, motionData.gyroY, GYRO_THRESHOLD) ? gyro.gyro.x * -1 : motionData.gyroY;
+    motionData.gyroZ = !isOutlier(gyro.gyro.z * -1, motionData.gyroZ, GYRO_THRESHOLD) ? gyro.gyro.z * -1 : motionData.gyroZ;
 
     // Apply offsets to IMU readings.
     motionData.accelX -= motionOffsets.accelX;
