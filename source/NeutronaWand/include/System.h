@@ -1509,7 +1509,6 @@ void postActivation(bool shortBoot = false) {
 #ifdef ESP32
   // When the wand is activated we should consider the user's current orientation by
   // way of holding of the device as the new reference position for motion tracking.
-  debugln(F("postActivation() - Resetting all motion data."));
   resetAllMotionData();
 #endif
 
