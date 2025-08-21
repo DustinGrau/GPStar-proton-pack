@@ -32,6 +32,10 @@
       "path": "source/ProtonPack"
     },
     {
+      "name": "SensorTest",
+      "path": "source/SensorTest"
+    },
+    {
       "name": "SingleShot",
       "path": "source/SingleShot"
     },
