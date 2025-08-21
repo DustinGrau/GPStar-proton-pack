@@ -29,10 +29,15 @@
 #include <MadgwickAHRS.h>
 
 // Forward function declarations.
-void calibrateIMUOffsets(uint8_t numSamples);
-void readMotionSensors();
+float calculateHeading(float magX, float magY);
+void calibrateMotionOffsets();
+void processMotionData();
 void resetAllMotionData();
 void sendTelemetryData(); // From Webhandler.h
+
+// Current state of the motion sensors and target for telemetry.
+enum SENSOR_READ_TARGETS { NOT_INITIALIZED, CALIBRATION, TELEMETRY };
+enum SENSOR_READ_TARGETS SENSOR_READ_TARGET = NOT_INITIALIZED;
 
 /**
  * Magnetometer and IMU
@@ -43,7 +48,8 @@ Adafruit_LSM6DS3TRC imuSensor;
 bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
-const uint16_t i_sensor_read_delay = 19; // Delay between sensor reads in milliseconds (19ms = ~52Hz).
+const uint8_t i_sensor_samples = 20; // How many samples to take for averaging offsets.
+const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms = 50Hz).
 const uint16_t i_sensor_report_delay = 100; // Delay between telemetry reporting in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
 
@@ -82,20 +88,46 @@ const float FILTER_ALPHA = 0.5f;
  *   - heading: Compass heading in degrees (0-360°), derived from magX and magY
  */
 struct MotionData {
-  float magX;
-  float magY;
-  float magZ;
-  float heading;
-  float accelX;
-  float accelY;
-  float accelZ;
-  float gyroX;
-  float gyroY;
-  float gyroZ;
+  float magX = 0.0f;
+  float magY = 0.0f;
+  float magZ = 0.0f;
+  float heading = 0.0f;
+  float accelX = 0.0f;
+  float accelY = 0.0f;
+  float accelZ = 0.0f;
+  float gyroX = 0.0f;
+  float gyroY = 0.0f;
+  float gyroZ = 0.0f;
 };
 
-// Global objects to hold the latest raw or averaged sensor readings.
+// Global objects to hold the latest raw or filtered sensor readings.
 MotionData motionData, filteredMotionData;
+
+/**
+ * Struct: MotionOffsets
+ * Purpose: Holds baseline offsets for accelerometer and gyroscope to correct sensor drift.
+ * Members:
+ *   - accelX, accelY, accelZ: Accelerometer offsets (m/s^2)
+ *   - gyroX, gyroY, gyroZ: Gyroscope offsets (rads/s)
+ */
+struct MotionOffsets {
+  float sumAccelX = 0.0f;
+  float sumAccelY = 0.0f;
+  float sumAccelZ = 0.0f;
+  float sumGyroX = 0.0f;
+  float sumGyroY = 0.0f;
+  float sumGyroZ = 0.0f;
+  uint8_t samples = 0;
+  float accelX = 0.0f;
+  float accelY = 0.0f;
+  float accelZ = 0.0f;
+  float gyroX = 0.0f;
+  float gyroY = 0.0f;
+  float gyroZ = 0.0f;
+};
+
+// Global object to hold the calibration readings.
+MotionOffsets motionOffsets;
 
 /**
  * Struct: SpatialData
@@ -104,9 +136,9 @@ MotionData motionData, filteredMotionData;
  *   - roll, pitch, yaw: Euler angles in degrees representing the orientation of the device.
  */
 struct SpatialData {
-  float roll;
-  float pitch;
-  float yaw;
+  float roll = 0.0f;
+  float pitch = 0.0f;
+  float yaw = 0.0f;
 };
 
 // Global object to hold the fused sensor readings.
@@ -146,23 +178,27 @@ void resetSpatialData(SpatialData &data) {
 }
 
 /**
- * Struct: MotionOffsets
- * Purpose: Holds baseline offsets for accelerometer and gyroscope to correct sensor drift.
- * Members:
- *   - accelX, accelY, accelZ: Accelerometer offsets (m/s^2)
- *   - gyroX, gyroY, gyroZ: Gyroscope offsets (rads/s)
+ * Function: resetMotionOffsets
+ * Purpose: Resets all fields of a MotionOffsets object to zero.
+ * Inputs:
+ *   - MotionOffsets &data: Reference to the MotionOffsets object to reset.
+ * Outputs: None (modifies the object in place)
  */
-struct MotionOffsets {
-  float accelX;
-  float accelY;
-  float accelZ;
-  float gyroX;
-  float gyroY;
-  float gyroZ;
-};
-
-// Global object to hold the latest IMU offsets.
-MotionOffsets motionOffsets = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+void resetMotionOffsets(MotionOffsets &data) {
+  data.sumAccelX = 0.0f;
+  data.sumAccelY = 0.0f;
+  data.sumAccelZ = 0.0f;
+  data.sumGyroX = 0.0f;
+  data.sumGyroY = 0.0f;
+  data.sumGyroZ = 0.0f;
+  data.samples = 0;
+  data.accelX = 0.0f;
+  data.accelY = 0.0f;
+  data.accelZ = 0.0f;
+  data.gyroX = 0.0f;
+  data.gyroY = 0.0f;
+  data.gyroZ = 0.0f;
+}
 
 /**
  * Function: initializeMotionDevices
@@ -323,11 +359,6 @@ void initializeMotionDevices() {
   float f_sample_freq = (1000.0f / i_sensor_read_delay);
   filter.begin(f_sample_freq);
 #endif
-
-  // Reset all motion data, then perform a read, followed by another reset.
-  resetAllMotionData();
-  readMotionSensors();
-  resetAllMotionData();
 }
 
 /**
@@ -338,8 +369,70 @@ void resetAllMotionData() {
   debugln(F("Resetting all motion data."));
   resetMotionData(motionData);
   resetMotionData(filteredMotionData);
+  resetMotionOffsets(motionOffsets);
   resetSpatialData(spatialData);
-  calibrateIMUOffsets(20); // Calibrate IMU offsets with 20 samples.
+  SENSOR_READ_TARGET = CALIBRATION; // Set target to calibration after reset.
+  calibrateMotionOffsets(); // Calibrate IMU offsets with X samples.
+}
+
+/**
+ * Function: readRawSensorData
+ * Purpose: Reads all sensor data directly from the magnetometer and IMU without filtering.
+ */
+void readRawSensorData() {
+#ifdef MOTION_SENSORS
+  if(b_imu_found && b_mag_found) {
+    // Poll the sensors.
+    sensors_event_t mag, accel, gyro, temp;
+    magSensor.getEvent(&mag);
+    imuSensor.getEvent(&accel, &gyro, &temp);
+
+    /**
+     * Update the raw IMU data in a global object, accounting for the orientation of the magnetometer and IMU sensors relative
+     * to the mounted position of the PCB in the wand. In our case, the PCB is mounted upside down, so we need to consider the
+     * orientation of the components as looking at the BACK of the PCB with the USB port facing forward (up/north) and the two
+     * terminal blocks are on the RIGHT (long edge) of the board. Note that the X/Y orientation of the sensors is based on the
+     * robotic coordinate system and mounted face-up so we'll need to adjust for 3D spatial orientation.
+     *
+     *     |---|
+     * |-----------|_
+     * |    USB    ||
+     * | .G/A      ||  Gyro/Accel Sensor
+     * |           |-
+     * |           |_
+     * |         . ||
+     * |        M  ||  Magnetometer
+     * |           ||
+     * |-----------|-
+     *
+     * In this orientation both sensors are mounted such that their Y+ is away from the USB port (down), X+ is to the right,
+     * and Z+ is toward you (as you look down). However, this does not align with NED (North-East-Down) conventions.
+     *
+     * We will use the “Aerospace NED Frame” (North–East–Down convention) for positive values on each axis:
+     *  +X = Forward (-Backward)
+     *  +Y = Right (-Left)
+     *  +Z = Down (toward the Earth at +9.81 m/s^2) remaining "gravity positive" for NED orientation.
+     */
+
+    // Update the magnetometer data (swapping the X and Y axes due to component's installation).
+    // Note: We want to ignore any readings which suddenly go to zero, keeping the last value.
+    motionData.magX = mag.magnetic.y;
+    motionData.magY = mag.magnetic.x;
+    motionData.magZ = mag.magnetic.z;
+
+    // Update heading value based on the raw magnetometer X and Y only.
+    motionData.heading = calculateHeading(motionData.magX, motionData.magY);
+
+    // Update the acceleration and gyroscope values (swapping the X and Y axes due to component's installation).
+    // Note: We must invert Y (L-R) and Z (U-D) values because the device is typically installed upside down.
+    motionData.accelX = accel.acceleration.y;
+    motionData.accelY = accel.acceleration.x * -1;
+    motionData.accelZ = accel.acceleration.z * -1;
+    motionData.gyroX = gyro.gyro.y;
+    motionData.gyroY = gyro.gyro.x * -1;
+    motionData.gyroZ = gyro.gyro.z * -1;
+  }
+#endif
 }
 
 /**
@@ -456,18 +549,20 @@ bool isValidReading(float value) {
 }
 
 /**
- * Function: readMotionSensors
- * Purpose: Reads the motion sensors and prints the data to the debug console (if enabled).
+ * Function: checkMotionSensors
+ * Purpose: Checks the timer to know when to read the lastest motion sensor data and prints the data to the debug console (if enabled).
  */
 void checkMotionSensors() {
 #ifdef MOTION_SENSORS
   if(b_imu_found && b_mag_found) {
     // Read the IMU/MAG values every N milliseconds.
     if(!ms_sensor_read_delay.isRunning()) {
+      // Start the delay timer if not already running.
       ms_sensor_read_delay.start(i_sensor_read_delay);
     }
     else if(ms_sensor_read_delay.justFinished()) {
-      readMotionSensors();
+      // Read the latest data, using it for calibration or telemetry processing.
+      processMotionData();
     }
 
     // Report the averaged IMU/MAG values every N milliseconds.
@@ -562,63 +657,20 @@ void checkMotionSensors() {
 }
 
 /**
- * Function: readMotionSensors
+ * Function: processMotionData
  * Purpose: Reads the motion sensors and prints the data to the debug console (if enabled).
  * Inputs: None, operates on sensor objects.
  * Outputs: None, operates on global motionData and filteredMotionData.
  */
-void readMotionSensors() {
+void processMotionData() {
 #ifdef MOTION_SENSORS
-  if(b_imu_found && b_mag_found) {
-    // Poll the sensors.
-    sensors_event_t mag, accel, gyro, temp;
-    magSensor.getEvent(&mag);
-    imuSensor.getEvent(&accel, &gyro, &temp);
-
-    /**
-     * Update the raw IMU data in a global object, accounting for the orientation of the magnetometer and IMU sensors relative
-     * to the mounted position of the PCB in the wand. In our case, the PCB is mounted upside down, so we need to consider the
-     * orientation of the components as looking at the BACK of the PCB with the USB port facing forward (up/north) and the two
-     * terminal blocks are on the RIGHT (long edge) of the board. Note that the X/Y orientation of the sensors is based on the
-     * robotic coordinate system and mounted face-up so we'll need to adjust for 3D spatial orientation.
-     *
-     *     |---|
-     * |-----------|_
-     * |    USB    ||
-     * | .G/A      ||  Gyro/Accel Sensor
-     * |           |-
-     * |           |_
-     * |         . ||
-     * |        M  ||  Magnetometer
-     * |           ||
-     * |-----------|-
-     *
-     * In this orientation both sensors are mounted such that their Y+ is away from the USB port (down), X+ is to the right,
-     * and Z+ is toward you (as you look down). However, this does not align with NED (North-East-Down) conventions.
-     *
-     * We will use the “Aerospace NED Frame” (North–East–Down convention) for positive values on each axis:
-     *  +X = Forward (-Backward)
-     *  +Y = Right (-Left)
-     *  +Z = Down (toward the Earth at +9.81 m/s^2) remaining "gravity positive" for NED orientation.
-     */
-
-    // Update the magnetometer data (swapping the X and Y axes due to component's installation).
-    // Note: We want to ignore any readings which suddenly go to zero, keeping the last value.
-    motionData.magX = isValidReading(mag.magnetic.y) ? mag.magnetic.y : motionData.magX;
-    motionData.magY = isValidReading(mag.magnetic.x) ? mag.magnetic.x : motionData.magY;
-    motionData.magZ = isValidReading(mag.magnetic.z) ? mag.magnetic.z : motionData.magZ;
-
-    // Update heading value based on the raw magnetometer X and Y only.
-    motionData.heading = calculateHeading(motionData.magX, motionData.magY);
-
-    // Update the acceleration and gyroscope values (swapping the X and Y axes due to component's installation).
-    // Note: We must invert Y (L-R) and Z (U-D) values because the device is typically installed upside down.
-    motionData.accelX = accel.acceleration.y;
-    motionData.accelY = accel.acceleration.x * -1;
-    motionData.accelZ = accel.acceleration.z * -1;
-    motionData.gyroX = gyro.gyro.y;
-    motionData.gyroY = gyro.gyro.x * -1;
-    motionData.gyroZ = gyro.gyro.z * -1;
+  if(SENSOR_READ_TARGET == CALIBRATION) {
+    calibrateMotionOffsets(); // Calibrate IMU offsets with X samples.
+    return; // Skip further processing during calibration.
+  }
+  else if(SENSOR_READ_TARGET == TELEMETRY) {
+    // Read the raw sensor data into the motionData struct, nothing more.
+    readRawSensorData();
 
     // Apply offsets to IMU readings (values should be 0 if not calculated).
     motionData.accelX -= motionOffsets.accelX;
@@ -641,45 +693,33 @@ void readMotionSensors() {
 }
 
 /**
- * Function: calibrateIMUOffsets
+ * Function: calibrateMotionOffsets
  * Purpose: Samples the IMU while stationary to determine and set baseline offsets for accelerometer and gyroscope.
- * Inputs:
- *   - uint8_t numSamples: Number of samples to average for calibration.
+ * Inputs: None (uses global motionOffsets and samples count).
  * Outputs: None (updates global motionOffsets struct)
- * Side Effects: Updates motionOffsets for more accurate stationary readings.
- * Note: Samples are collected as fast as possible, no delay.
  */
-void calibrateIMUOffsets(uint8_t numSamples) {
-  // Reset all motion offset data offsets
-  motionOffsets.accelX = 0.0f;
-  motionOffsets.accelY = 0.0f;
-  motionOffsets.accelZ = 0.0f;
-  motionOffsets.gyroX = 0.0f;
-  motionOffsets.gyroY = 0.0f;
-  motionOffsets.gyroZ = 0.0f;
-
+void calibrateMotionOffsets() {
 #if defined(MOTION_SENSORS) && defined(MOTION_OFFSETS)
-  float axSum = 0.0f, aySum = 0.0f, azSum = 0.0f;
-  float gxSum = 0.0f, gySum = 0.0f, gzSum = 0.0f;
+  if(motionOffsets.samples < i_sensor_samples) {
+    motionOffsets.samples++; // Increment the sample count.
+    readRawSensorData(); // Read the raw sensor data.
+    motionOffsets.sumAccelX += motionData.accelX; // Accumulate accelerometer X values.
+    motionOffsets.sumAccelY += motionData.accelY; // Accumulate accelerometer Y values.
+    motionOffsets.sumAccelZ += motionData.accelZ; // Accumulate accelerometer Z values.
+    motionOffsets.sumGyroX += motionData.gyroX; // Accumulate gyroscope X values.
+    motionOffsets.sumGyroY += motionData.gyroY; // Accumulate gyroscope Y values.
+    motionOffsets.sumGyroZ += motionData.gyroZ; // Accumulate gyroscope Z values.
 
-  for (uint8_t i = 0; i < numSamples; i++) {
-    sensors_event_t accel, gyro, temp;
-    imuSensor.getEvent(&accel, &gyro, &temp);
-
-    axSum += accel.acceleration.y; // Swap X and Y axes due to component's installation.
-    aySum += accel.acceleration.x * -1; // Invert X for the component's installation.
-    azSum += accel.acceleration.z * -1; // Invert Z because we install upside down.
-    gxSum += gyro.gyro.y; // Swap X and Y axes due to component's installation.
-    gySum += gyro.gyro.x * -1; // Invert X for the component's installation.
-    gzSum += gyro.gyro.z * -1; // Invert Z because we install upside down.
+    // Calculate average offsets
+    motionOffsets.accelX = motionOffsets.sumAccelX / motionOffsets.samples;
+    motionOffsets.accelY = motionOffsets.sumAccelY / motionOffsets.samples;
+    motionOffsets.accelZ = (motionOffsets.sumAccelZ / motionOffsets.samples) - 9.80665f; // Subtract gravity for Z axis (9.81 m/s^2)
+    motionOffsets.gyroX = motionOffsets.sumGyroX / motionOffsets.samples;
+    motionOffsets.gyroY = motionOffsets.sumGyroY / motionOffsets.samples;
+    motionOffsets.gyroZ = motionOffsets.sumGyroZ / motionOffsets.samples;
   }
-
-  // Calculate average offsets
-  motionOffsets.accelX = axSum / numSamples;
-  motionOffsets.accelY = aySum / numSamples;
-  motionOffsets.accelZ = (azSum / numSamples) - 9.80665f; // Subtract gravity for Z axis (9.81 m/s^2)
-  motionOffsets.gyroX = gxSum / numSamples;
-  motionOffsets.gyroY = gySum / numSamples;
-  motionOffsets.gyroZ = gzSum / numSamples;
+  else {
+    SENSOR_READ_TARGET = TELEMETRY; // Set target to telemetry after calibration.
+  }
 #endif
 }

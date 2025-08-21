@@ -196,6 +196,8 @@ void setup() {
 
   // Initialize the secondary I2C bus for the Magnetometer and IMU.
   initializeMotionDevices();
+  delay(40); // Wait for the devices to start.
+  resetAllMotionData(); // Reset and calibrate.
 #else
   Wire.begin();
   Wire.setClock(400000UL); // Sets the i2c bus to 400kHz

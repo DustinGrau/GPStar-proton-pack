@@ -39,7 +39,7 @@ void calibrateIMUOffsets(uint8_t numSamples) {
     gxSum += gyro.gyro.y;
     gySum += gyro.gyro.x * -1;
     gzSum += gyro.gyro.z * -1;
-    delay(5);
+    delay(20);
   }
   accelOffsetX = axSum / numSamples;
   accelOffsetY = aySum / numSamples;
@@ -103,6 +103,21 @@ String formatSignedFloat(float value) {
   const char* pad = (whole < 10) ? "  " : (whole < 100) ? " " : "";
   sprintf(buf, "%c%s%.2f", (value >= 0 ? '+' : '-'), pad, abs(value));
   return String(buf);
+}
+
+float calculateHeading(float magX, float magY) {
+  float headingRad = atan2(-magY, -magX); // Get heading in radians from atan2 of Y and X (both flipped).
+  float headingDeg = headingRad * (180.0f / PI); // Convert radians to degrees (180/pi).
+
+  // Normalize to 0-360°
+  while (headingDeg < 0.0f) {
+    headingDeg += 360.0f;
+  }
+  while (headingDeg >= 360.0f) {
+    headingDeg -= 360.0f;
+  }
+
+  return headingDeg;
 }
 
 void loop() {
@@ -174,6 +189,8 @@ void loop() {
   Serial.print("\tY: "); Serial.print(formatSignedFloat(filteredMagY));
   Serial.print("\tZ: "); Serial.println(formatSignedFloat(filteredMagZ));
 
+  Serial.print("\tHeading: "); Serial.println(calculateHeading(filteredMagX, filteredMagY), 2);
+
   Serial.println("---------------------");
-  delay(200);
+  delay(100);
 }
