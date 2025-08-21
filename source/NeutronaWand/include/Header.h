@@ -538,9 +538,7 @@ const uint16_t i_ms_power_indicator_blink = 500;
 /**
  * Infrared (IR) signal for the Ghost Trap or other devices.
  */
-#ifdef ESP32
-  #define CARRIER_KHZ 38 // Defines the standard IR carrier frequency in kHz.
-  
+#ifdef ESP32 
   // Defines an IR command as captured from the PKE device at full power.
   const uint16_t ir_GhostInTrap[] = {
     1770, 1200, 600, 600, 600, 600, 580, 1200, 600, 600,

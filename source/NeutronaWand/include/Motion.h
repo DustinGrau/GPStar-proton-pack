@@ -215,7 +215,8 @@ void resetMotionOffsets(MotionOffsets &data) {
  */
 void initializeMotionDevices() {
 #ifdef MOTION_SENSORS
-  Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
+  //Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
+  Wire1.begin(IMU_SDA, IMU_SCL, 100000UL);
 
   // Initialize the LIS3MDL magnetometer.
   if(magSensor.begin_I2C(LIS3MDL_I2CADDR_DEFAULT, &Wire1)) {
@@ -587,7 +588,7 @@ bool isValidReading(float value) {
 
 /**
  * Function: checkMotionSensors
- * Purpose: Checks the timer to know when to read the lastest motion sensor data and prints the data to the debug console (if enabled).
+ * Purpose: Checks the timer to know when to read the latest motion sensor data and prints the data to the debug console (if enabled).
  */
 void checkMotionSensors() {
 #ifdef MOTION_SENSORS
