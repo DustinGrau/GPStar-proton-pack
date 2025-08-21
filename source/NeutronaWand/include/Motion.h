@@ -133,6 +133,7 @@ struct SpatialData {
   float roll = 0.0f;
   float pitch = 0.0f;
   float yaw = 0.0f;
+  float quaternion[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // Quaternion representation for orientation.
 };
 
 // Global object to hold the fused sensor readings.
@@ -179,6 +180,10 @@ void resetSpatialData(SpatialData &data) {
   data.pitch = 0.0f;
   data.yaw = 0.0f;
   data.roll = 0.0f;
+  data.quaternion[0] = 1.0f; // w component of quaternion
+  data.quaternion[1] = 0.0f; // x component of quaternion
+  data.quaternion[2] = 0.0f; // y component of quaternion
+  data.quaternion[3] = 0.0f; // z component of quaternion
 }
 
 /**
@@ -502,6 +507,31 @@ void updateFilteredMotionData() {
 }
 
 /**
+ * Function: eulerToQuaternion
+ * Purpose: Converts Euler angles (roll, pitch, yaw) in radians to a quaternion (w, x, y, z).
+ * Inputs:
+ *   - float roll: Rotation around X axis (radians)
+ *   - float pitch: Rotation around Y axis (radians)
+ *   - float yaw: Rotation around Z axis (radians)
+ * Outputs:
+ *   - float q[4]: Quaternion array [w, x, y, z]
+ */
+void eulerToQuaternion(float roll, float pitch, float yaw, float q[4]) {
+  // Abbreviations for the various angular functions
+  float cy = cos(yaw * 0.5f);
+  float sy = sin(yaw * 0.5f);
+  float cp = cos(pitch * 0.5f);
+  float sp = sin(pitch * 0.5f);
+  float cr = cos(roll * 0.5f);
+  float sr = sin(roll * 0.5f);
+
+  q[0] = cr * cp * cy + sr * sp * sy; // w
+  q[1] = sr * cp * cy - cr * sp * sy; // x
+  q[2] = cr * sp * cy + sr * cp * sy; // y
+  q[3] = cr * cp * sy - sr * sp * cy; // z
+}
+
+/**
  * Function: updateOrientation
  * Purpose: Updates the orientation using sensor fusion (Madgwick filter).
  * Inputs: None (uses filteredMotionData)
@@ -533,6 +563,9 @@ void updateOrientation() {
   spatialData.roll = filter.getRoll();
   spatialData.pitch = filter.getPitch();
   spatialData.yaw = filter.getYaw();
+
+  // Convert Euler angles to quaternion representation.
+  eulerToQuaternion(spatialData.roll, spatialData.pitch, spatialData.yaw, spatialData.quaternion);
 
   // Mirror along Z-axis to match the heading.
   spatialData.yaw = 360.0f - spatialData.yaw;

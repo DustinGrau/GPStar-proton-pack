@@ -276,13 +276,15 @@ if (!!window.EventSource) {
     setHtml("yaw",     yawRads.toFixed(2) + " rads / " + parseFloat(obj.yaw || 0).toFixed(2) + "&deg;");
 
     // Change cube rotation after receiving the readings (values in radians, not degrees).
-    if (cube) {
-      cube.rotation.x = rollRads;
-      cube.rotation.y = pitchRads;
-      cube.rotation.z = yawRads;
-      // cube.rotation.x = (obj.gyroX || 0);
-      // cube.rotation.y = (obj.gyroY || 0);
-      // cube.rotation.z = (obj.gyroZ || 0);
+    if (cube && obj.qw !== undefined) {
+      // Use quaternion from sensor data if available.
+      cube.quaternion.set(obj.qx, obj.qy, obj.qz, obj.qw);
+      renderer.render(scene, camera);
+    } else if (cube) {
+      // Fallback to Euler angles if quaternion not available.
+      cube.rotation.x = pitchRads;
+      cube.rotation.y = yawRads;
+      cube.rotation.z = -rollRads;
       renderer.render(scene, camera);
     }
   }, false);

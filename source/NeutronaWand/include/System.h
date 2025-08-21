@@ -7080,7 +7080,7 @@ void fireStreamStart(CRGB c_colour) {
 void mixExtraFiringEffects() {
 #ifdef ESP32
   // Threshold for sudden movement and can be tuned as needed, measured in G-force (m/s^2 / gravity).
-  const float IMPACT_THRESHOLD = 2.0f;
+  const float IMPACT_THRESHOLD = 1.5f;
 
   // Mix some impact sound based on user motions while firing.
   if (STREAM_MODE == PROTON && !b_firing_cross_streams && b_stream_effects && filteredMotionData.gForce > IMPACT_THRESHOLD) {
