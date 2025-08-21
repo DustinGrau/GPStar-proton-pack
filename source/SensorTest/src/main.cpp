@@ -9,6 +9,9 @@
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_LSM6DS3TRC.h>
 
+#define IMU_SCL 47
+#define IMU_SDA 48
+
 // Sensor objects
 Adafruit_LIS3MDL magSensor;
 Adafruit_LSM6DS3TRC imuSensor;
@@ -47,12 +50,21 @@ void calibrateIMUOffsets(uint8_t numSamples) {
 }
 
 void setup() {
+  // Reduce CPU frequency to 160 MHz to save ~33% power compared to 240 MHz.
+  // Alternatively set CPU to 80 MHz to save ~50% power compared to 240 MHz.
+  // Do not set below 80 MHz as it will affect WiFi and other peripherals.
+  setCpuFrequencyMhz(80);
+
+  // This is required in order to make sure the board boots successfully.
   Serial.begin(115200);
-  delay(1000);
-  Wire.begin();
+
+  // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
+  Serial0.end();
+
+  Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
 
   // Magnetometer setup
-  if (magSensor.begin_I2C(LIS3MDL_I2CADDR_DEFAULT, &Wire)) {
+  if (magSensor.begin_I2C(LIS3MDL_I2CADDR_DEFAULT, &Wire1)) {
     magSensor.setPerformanceMode(LIS3MDL_LOWPOWERMODE);
     magSensor.setOperationMode(LIS3MDL_CONTINUOUSMODE);
     magSensor.setDataRate(LIS3MDL_DATARATE_40_HZ);
@@ -65,7 +77,7 @@ void setup() {
   }
 
   // IMU setup
-  if (imuSensor.begin_I2C(LSM6DS_I2CADDR_DEFAULT, &Wire)) {
+  if (imuSensor.begin_I2C(LSM6DS_I2CADDR_DEFAULT, &Wire1)) {
     imuSensor.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
     imuSensor.setGyroRange(LSM6DS_GYRO_RANGE_250_DPS);
     imuSensor.setAccelDataRate(LSM6DS_RATE_52_HZ);
@@ -82,6 +94,15 @@ void setup() {
   Serial.println("Calibrating IMU offsets...");
   calibrateIMUOffsets(20);
   Serial.println("Calibration complete.");
+}
+
+String formatSignedFloat(float value) {
+  char buf[16];
+  int whole = abs((int)value);
+  // Determine padding: if whole < 10, pad 2 spaces; < 100, pad 1 space; else no pad
+  const char* pad = (whole < 10) ? "  " : (whole < 100) ? " " : "";
+  sprintf(buf, "%c%s%.2f", (value >= 0 ? '+' : '-'), pad, abs(value));
+  return String(buf);
 }
 
 void loop() {
@@ -121,38 +142,38 @@ void loop() {
 
   // Print results
   Serial.println("---- Sensor Test ----");
-  Serial.print("Raw Accel: X: "); Serial.print(rawAccelX, 2);
-  Serial.print(" Y: "); Serial.print(rawAccelY, 2);
-  Serial.print(" Z: "); Serial.println(rawAccelZ, 2);
+  Serial.print("Direct Accel:\tX: "); Serial.print(formatSignedFloat(rawAccelX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(rawAccelY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(rawAccelZ));
 
-  Serial.print("Offset Accel: X: "); Serial.print(offsetAccelX, 2);
-  Serial.print(" Y: "); Serial.print(offsetAccelY, 2);
-  Serial.print(" Z: "); Serial.println(offsetAccelZ, 2);
+  Serial.print("Offset Accel:\tX: "); Serial.print(formatSignedFloat(offsetAccelX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(offsetAccelY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(offsetAccelZ));
 
-  Serial.print("Filtered Accel: X: "); Serial.print(filteredAccelX, 2);
-  Serial.print(" Y: "); Serial.print(filteredAccelY, 2);
-  Serial.print(" Z: "); Serial.println(filteredAccelZ, 2);
+  Serial.print("Filter Accel:\tX: "); Serial.print(formatSignedFloat(filteredAccelX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(filteredAccelY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(filteredAccelZ));
 
-  Serial.print("Raw Gyro: X: "); Serial.print(rawGyroX, 2);
-  Serial.print(" Y: "); Serial.print(rawGyroY, 2);
-  Serial.print(" Z: "); Serial.println(rawGyroZ, 2);
+  Serial.print(" Direct Gyro:\tX: "); Serial.print(formatSignedFloat(rawGyroX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(rawGyroY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(rawGyroZ));
 
-  Serial.print("Offset Gyro: X: "); Serial.print(offsetGyroX, 2);
-  Serial.print(" Y: "); Serial.print(offsetGyroY, 2);
-  Serial.print(" Z: "); Serial.println(offsetGyroZ, 2);
+  Serial.print(" Offset Gyro:\tX: "); Serial.print(formatSignedFloat(offsetGyroX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(offsetGyroY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(offsetGyroZ));
 
-  Serial.print("Filtered Gyro: X: "); Serial.print(filteredGyroX, 2);
-  Serial.print(" Y: "); Serial.print(filteredGyroY, 2);
-  Serial.print(" Z: "); Serial.println(filteredGyroZ, 2);
+  Serial.print(" Filter Gyro:\tX: "); Serial.print(formatSignedFloat(filteredGyroX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(filteredGyroY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(filteredGyroZ));
 
-  Serial.print("Raw Mag: X: "); Serial.print(rawMagX, 2);
-  Serial.print(" Y: "); Serial.print(rawMagY, 2);
-  Serial.print(" Z: "); Serial.println(rawMagZ, 2);
+  Serial.print("  Direct Mag:\tX: "); Serial.print(formatSignedFloat(rawMagX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(rawMagY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(rawMagZ));
 
-  Serial.print("Filtered Mag: X: "); Serial.print(filteredMagX, 2);
-  Serial.print(" Y: "); Serial.print(filteredMagY, 2);
-  Serial.print(" Z: "); Serial.println(filteredMagZ, 2);
+  Serial.print("  Filter Mag:\tX: "); Serial.print(formatSignedFloat(filteredMagX));
+  Serial.print("\tY: "); Serial.print(formatSignedFloat(filteredMagY));
+  Serial.print("\tZ: "); Serial.println(formatSignedFloat(filteredMagZ));
 
   Serial.println("---------------------");
-  delay(100);
+  delay(200);
 }
