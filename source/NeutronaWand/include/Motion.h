@@ -26,7 +26,7 @@
 
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_LSM6DS3TRC.h>
-#include <MadgwickAHRS.h>
+#include <Adafruit_AHRS.h>
 
 /**
  * Magnetometer and IMU
@@ -38,9 +38,9 @@ bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
 const uint8_t i_sensor_samples = 50; // Sets count of samples to take for averaging offsets.
-const uint16_t i_sensor_read_delay = 40; // Delay between sensor reads in milliseconds (20ms = 50Hz, 40ms = 25Hz).
-const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting (console/web) in milliseconds.
-Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
+const uint16_t i_sensor_read_delay = 40; // Delay between sensor reads in milliseconds (20ms = 50Hz).
+const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting (via console/web) in milliseconds.
+Adafruit_Mahony filter; // Create a filter object for sensor fusion (AHRS); Mahony better suited for human motion.
 
 // Current state of the motion sensors and target for telemetry.
 enum SENSOR_READ_TARGETS { NOT_INITIALIZED, CALIBRATION, TELEMETRY };
@@ -507,31 +507,6 @@ void updateFilteredMotionData() {
 }
 
 /**
- * Function: eulerToQuaternion
- * Purpose: Converts Euler angles (roll, pitch, yaw) in radians to a quaternion (w, x, y, z).
- * Inputs:
- *   - float roll: Rotation around X axis (radians)
- *   - float pitch: Rotation around Y axis (radians)
- *   - float yaw: Rotation around Z axis (radians)
- * Outputs:
- *   - float q[4]: Quaternion array [w, x, y, z]
- */
-void eulerToQuaternion(float roll, float pitch, float yaw, float q[4]) {
-  // Abbreviations for the various angular functions
-  float cy = cos(yaw * 0.5f);
-  float sy = sin(yaw * 0.5f);
-  float cp = cos(pitch * 0.5f);
-  float sp = sin(pitch * 0.5f);
-  float cr = cos(roll * 0.5f);
-  float sr = sin(roll * 0.5f);
-
-  q[0] = cr * cp * cy + sr * sp * sy; // w
-  q[1] = sr * cp * cy - cr * sp * sy; // x
-  q[2] = cr * sp * cy + sr * cp * sy; // y
-  q[3] = cr * cp * sy - sr * sp * cy; // z
-}
-
-/**
  * Function: updateOrientation
  * Purpose: Updates the orientation using sensor fusion (Madgwick filter).
  * Inputs: None (uses filteredMotionData)
@@ -559,13 +534,18 @@ void updateOrientation() {
   // Magnetometer is already in micro-Teslas so we just use as-is.
   filter.update(gx, gy, gz, ax, ay, az, filteredMotionData.magX, filteredMotionData.magY, filteredMotionData.magZ);
 
-  // Get Euler angles (degrees) for position in NED space.
+  // Get position in Euler angles (degrees) for orientation in NED space.
   spatialData.roll = filter.getRoll();
   spatialData.pitch = filter.getPitch();
   spatialData.yaw = filter.getYaw();
 
-  // Convert Euler angles to quaternion representation.
-  eulerToQuaternion(spatialData.roll, spatialData.pitch, spatialData.yaw, spatialData.quaternion);
+  // Obtain the quaternion representation for visualization.
+  float qw, qx, qy, qz;
+  filter.getQuaternion(&qw, &qx, &qy, &qz);
+  spatialData.quaternion[0] = qw;
+  spatialData.quaternion[1] = qx;
+  spatialData.quaternion[2] = qy;
+  spatialData.quaternion[3] = qz;
 
   // Mirror along Z-axis to match the heading.
   spatialData.yaw = 360.0f - spatialData.yaw;
