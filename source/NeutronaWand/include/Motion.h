@@ -28,18 +28,6 @@
 #include <Adafruit_LSM6DS3TRC.h>
 #include <MadgwickAHRS.h>
 
-// Forward function declarations.
-float calculateHeading(float magX, float magY);
-void calibrateMotionOffsets();
-void processMotionData();
-void readRawSensorData();
-void resetAllMotionData();
-void sendTelemetryData(); // From Webhandler.h
-
-// Current state of the motion sensors and target for telemetry.
-enum SENSOR_READ_TARGETS { NOT_INITIALIZED, CALIBRATION, TELEMETRY };
-enum SENSOR_READ_TARGETS SENSOR_READ_TARGET = NOT_INITIALIZED;
-
 /**
  * Magnetometer and IMU
  * Defines all device objects and variables.
@@ -53,6 +41,10 @@ const uint8_t i_sensor_samples = 50; // Sets count of samples to take for averag
 const uint16_t i_sensor_read_delay = 40; // Delay between sensor reads in milliseconds (20ms = 50Hz, 40ms = 25Hz).
 const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting (console/web) in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
+
+// Current state of the motion sensors and target for telemetry.
+enum SENSOR_READ_TARGETS { NOT_INITIALIZED, CALIBRATION, TELEMETRY };
+enum SENSOR_READ_TARGETS SENSOR_READ_TARGET = NOT_INITIALIZED;
 
 /**
  * Constant: FILTER_ALPHA
@@ -96,6 +88,7 @@ struct MotionData {
   float accelX = 0.0f;
   float accelY = 0.0f;
   float accelZ = 0.0f;
+  float gForce = 0.0f;
   float gyroX = 0.0f;
   float gyroY = 0.0f;
   float gyroZ = 0.0f;
@@ -145,6 +138,15 @@ struct SpatialData {
 // Global object to hold the fused sensor readings.
 SpatialData spatialData;
 
+// Forward function declarations.
+float calculateHeading(float magX, float magY);
+float calculateGForce(const MotionData& data);
+void calibrateMotionOffsets();
+void processMotionData();
+void readRawSensorData();
+void resetAllMotionData();
+void sendTelemetryData(); // From Webhandler.h
+
 /**
  * Function: resetMotionData
  * Purpose: Resets all fields of a MotionData object to zero.
@@ -156,13 +158,14 @@ void resetMotionData(MotionData &data) {
   data.magX = 0.0f;
   data.magY = 0.0f;
   data.magZ = 0.0f;
+  data.heading = 0.0f;
   data.accelX = 0.0f;
   data.accelY = 0.0f;
   data.accelZ = 0.0f;
+  data.gForce = 0.0f;
   data.gyroX = 0.0f;
   data.gyroY = 0.0f;
   data.gyroZ = 0.0f;
-  data.heading = 0.0f;
 }
 
 /**
@@ -440,6 +443,23 @@ void readRawSensorData() {
 }
 
 /**
+ * Function: calculateGForce
+ * Purpose: Calculates the magnitude of the acceleration vector (g-force) from a MotionData struct.
+ * Inputs:
+ *   - const MotionData& data: Reference to the MotionData object.
+ * Outputs:
+ *   - float: Calculated g-force (unit: g)
+ */
+float calculateGForce(const MotionData& data) {
+  // Use the Euclidean norm for the acceleration vector and convert to g.
+  return sqrt(
+    data.accelX * data.accelX +
+    data.accelY * data.accelY +
+    data.accelZ * data.accelZ
+  ) / 9.80665f; // 1g = 9.80665 m/s^2
+}
+
+/**
  * Function: calculateHeading
  * Purpose: Computes the compass heading (in degrees) from magnetometer X and Y values, applying a device-specific offset and optional inversion for mounting.
  * Inputs:
@@ -601,6 +621,14 @@ void checkMotionSensors() {
       debugln(" m/s^2 ");
       debugln();
 
+      debug("\t\tRaw G-Force: ");
+      debug(motionData.gForce);
+      debugln("g ");
+      debug("\t\tAvg G-Force: ");
+      debug(filteredMotionData.gForce);
+      debugln("g ");
+      debugln();
+
       debug("\t\tOff Gyro  X: ");
       debug(formatSignedFloat(motionOffsets.gyroX));
       debug(" \tY: ");
@@ -674,6 +702,9 @@ void processMotionData() {
     // Read the raw sensor data into the motionData struct, nothing more.
     readRawSensorData();
 
+    // Calculate the magnitude of the filtered acceleration vector (g-force).
+    motionData.gForce = calculateGForce(motionData);
+
     // Apply offsets to IMU readings (values should be 0 if not calculated).
     motionData.accelX -= motionOffsets.accelX;
     motionData.accelY -= motionOffsets.accelY;
@@ -687,6 +718,9 @@ void processMotionData() {
 
     // Update heading value based on the moving average magnetometer X and Y only.
     filteredMotionData.heading = calculateHeading(filteredMotionData.magX, filteredMotionData.magY);
+
+    // Calculate the magnitude of the filtered acceleration vector (g-force).
+    filteredMotionData.gForce = calculateGForce(filteredMotionData);
 
     // Update the orientation via sensor fusion by using the filtered data.
     updateOrientation();
