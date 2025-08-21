@@ -117,6 +117,7 @@ void setup() {
 
   // This is required in order to make sure the board boots successfully.
   Serial.begin(115200);
+  delay(10);
 
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
@@ -143,10 +144,10 @@ void setup() {
   // Setup the audio device for this controller.
   setupAudioDevice();
 
-  // Change PWM frequency for the vibration motor, we do not want it high pitched.
 #ifdef ESP32
   // Use of the register is not needed by ESP32, as it uses a different method for PWM.
 #else
+  // Change PWM frequency for the vibration motor, we do not want it high pitched.
   // For ATmega2560, we set the PWM frequency for pin 11 (TCCR5B) to 122.55 Hz.
   TCCR1B = (TCCR1B & B11111000) | B00000100;
   pinMode(VIBRATION_PIN, OUTPUT); // Vibration motor is PWM, so fallback to default pinMode just to be safe.

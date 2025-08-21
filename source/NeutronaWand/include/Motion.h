@@ -32,6 +32,7 @@
 float calculateHeading(float magX, float magY);
 void calibrateMotionOffsets();
 void processMotionData();
+void readRawSensorData();
 void resetAllMotionData();
 void sendTelemetryData(); // From Webhandler.h
 
@@ -48,9 +49,9 @@ Adafruit_LSM6DS3TRC imuSensor;
 bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
-const uint8_t i_sensor_samples = 20; // How many samples to take for averaging offsets.
+const uint8_t i_sensor_samples = 50; // Sets count of samples to take for averaging offsets.
 const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms = 50Hz).
-const uint16_t i_sensor_report_delay = 100; // Delay between telemetry reporting in milliseconds.
+const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
 
 /**
@@ -358,6 +359,9 @@ void initializeMotionDevices() {
   // Set the sample frequency for the Madgwick filter (converting our sensor delay interval from milliseconds to Hz).
   float f_sample_freq = (1000.0f / i_sensor_read_delay);
   filter.begin(f_sample_freq);
+
+  // Read the first raw sensor data which should be cleared by the first calibration.
+  readRawSensorData();
 #endif
 }
 
@@ -604,7 +608,6 @@ void checkMotionSensors() {
       debug(" \tZ: ");
       debug(formatSignedFloat(motionOffsets.gyroZ));
       debugln(" rads/s ");
-      debugln();
 
       debug("\t\tRaw Gyro  X: ");
       debug(formatSignedFloat(motionData.gyroX));
@@ -665,8 +668,7 @@ void checkMotionSensors() {
 void processMotionData() {
 #ifdef MOTION_SENSORS
   if(SENSOR_READ_TARGET == CALIBRATION) {
-    calibrateMotionOffsets(); // Calibrate IMU offsets with X samples.
-    return; // Skip further processing during calibration.
+    calibrateMotionOffsets(); // Calibrate IMU offsets with N samples.
   }
   else if(SENSOR_READ_TARGET == TELEMETRY) {
     // Read the raw sensor data into the motionData struct, nothing more.
@@ -702,7 +704,11 @@ void calibrateMotionOffsets() {
 #if defined(MOTION_SENSORS) && defined(MOTION_OFFSETS)
   if(motionOffsets.samples < i_sensor_samples) {
     motionOffsets.samples++; // Increment the sample count.
+    debugln("Calibrating motion offsets... Sample " + String(motionOffsets.samples) + " of " + String(i_sensor_samples));
+
     readRawSensorData(); // Read the raw sensor data.
+
+    // Keep a running sum of the accelerometer and gyroscope values per axis.
     motionOffsets.sumAccelX += motionData.accelX; // Accumulate accelerometer X values.
     motionOffsets.sumAccelY += motionData.accelY; // Accumulate accelerometer Y values.
     motionOffsets.sumAccelZ += motionData.accelZ; // Accumulate accelerometer Z values.
@@ -710,7 +716,7 @@ void calibrateMotionOffsets() {
     motionOffsets.sumGyroY += motionData.gyroY; // Accumulate gyroscope Y values.
     motionOffsets.sumGyroZ += motionData.gyroZ; // Accumulate gyroscope Z values.
 
-    // Calculate average offsets
+    // Calculate average offsets after each sample for real-time feedback.
     motionOffsets.accelX = motionOffsets.sumAccelX / motionOffsets.samples;
     motionOffsets.accelY = motionOffsets.sumAccelY / motionOffsets.samples;
     motionOffsets.accelZ = (motionOffsets.sumAccelZ / motionOffsets.samples) - 9.80665f; // Subtract gravity for Z axis (9.81 m/s^2)
@@ -719,6 +725,7 @@ void calibrateMotionOffsets() {
     motionOffsets.gyroZ = motionOffsets.sumGyroZ / motionOffsets.samples;
   }
   else {
+    debugln(F("Calibration completed, switching to telemetry mode."));
     SENSOR_READ_TARGET = TELEMETRY; // Set target to telemetry after calibration.
   }
 #endif
