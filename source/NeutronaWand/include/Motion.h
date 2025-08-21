@@ -38,8 +38,8 @@ bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
 const uint8_t i_sensor_samples = 50; // Sets count of samples to take for averaging offsets.
-const uint16_t i_sensor_read_delay = 40; // Delay between sensor reads in milliseconds (20ms = 50Hz).
-const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting (via console/web) in milliseconds.
+const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms = 50Hz).
+const uint16_t i_sensor_report_delay = 100; // Delay between telemetry reporting (via console/web) in milliseconds.
 Adafruit_Mahony filter; // Create a filter object for sensor fusion (AHRS); Mahony better suited for human motion.
 
 // Current state of the motion sensors and target for telemetry.
@@ -215,8 +215,7 @@ void resetMotionOffsets(MotionOffsets &data) {
  */
 void initializeMotionDevices() {
 #ifdef MOTION_SENSORS
-  //Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
-  Wire1.begin(IMU_SDA, IMU_SCL, 100000UL);
+  Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
 
   // Initialize the LIS3MDL magnetometer.
   if(magSensor.begin_I2C(LIS3MDL_I2CADDR_DEFAULT, &Wire1)) {

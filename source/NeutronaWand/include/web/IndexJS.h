@@ -222,9 +222,9 @@ function init3D(){
   var cubeMaterials = [
     new THREE.MeshBasicMaterial({color:0x009000}), // Right face  - darker green
     new THREE.MeshBasicMaterial({color:0x009000}), // Left face   - darker green
-    new THREE.MeshBasicMaterial({color:0x00C000}), // Top face    - lighter green
+    new THREE.MeshBasicMaterial({color:0x00E000}), // Top face    - lightest green
     new THREE.MeshBasicMaterial({color:0x007000}), // Bottom face - darkest green
-    new THREE.MeshBasicMaterial({color:0x00A000}), // Front face  - base green
+    new THREE.MeshBasicMaterial({color:0x00C000}), // Front face  - lighter green
     new THREE.MeshBasicMaterial({color:0x00A000}), // Back face   - base green
   ];
 
@@ -271,16 +271,21 @@ if (!!window.EventSource) {
     setHtml("accelX",  parseFloat(obj.accelX || 0).toFixed(2) + " m/s<sup>2</sup>");
     setHtml("accelY",  parseFloat(obj.accelY || 0).toFixed(2) + " m/s<sup>2</sup>");
     setHtml("accelZ",  parseFloat(obj.accelZ || 0).toFixed(2) + " m/s<sup>2</sup>");
-    setHtml("roll",    rollRads.toFixed(2) + " rads / " + parseFloat(obj.roll || 0).toFixed(2) + "&deg;");
-    setHtml("pitch",   pitchRads.toFixed(2) + " rads / " + parseFloat(obj.pitch || 0).toFixed(2) + "&deg;");
-    setHtml("yaw",     yawRads.toFixed(2) + " rads / " + parseFloat(obj.yaw || 0).toFixed(2) + "&deg;");
+    setHtml("roll",    parseFloat(obj.roll || 0).toFixed(2) + "&deg;");
+    setHtml("pitch",   parseFloat(obj.pitch || 0).toFixed(2) + "&deg;");
+    setHtml("yaw",     parseFloat(obj.yaw || 0).toFixed(2) + "&deg;");
 
-    // Change cube rotation after receiving the readings (values in radians, not degrees).
-    if (cube && obj.qw !== undefined) {
-      // Use quaternion from sensor data if available.
-      cube.quaternion.set(obj.qx, obj.qy, obj.qz, obj.qw);
-      renderer.render(scene, camera);
-    } else if (cube) {
+    // Change cube rotation after checking for the available data (quaternion preferred).
+    // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
+    // Map accordingly: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
+
+    // if (cube && obj.qw !== undefined) {
+    //   // Use quaternion (x,y,z,w) from sensor data if available.
+    //   cube.quaternion.set(obj.qy, obj.qz, obj.qx, obj.qw);
+    //   renderer.render(scene, camera);
+    // } else
+
+    if (cube) {
       // Fallback to Euler angles if quaternion not available.
       cube.rotation.x = pitchRads;
       cube.rotation.y = yawRads;

@@ -47,6 +47,19 @@
 #define PROGMEM_READU16(x) pgm_read_word_near(&(x))
 #define PROGMEM_READU8(x) pgm_read_byte_near(&(x))
 
+#ifdef ESP32
+  // Disables static receiver code like receive timer ISR handler and static IRReceiver and irparams data.
+  // Saves 450 bytes program memory and 269 bytes RAM if receiving functions are not required.
+  #define DISABLE_CODE_FOR_RECEIVER
+
+  // Disable carrier PWM generation in software and use (restricted) hardware PWM.
+  // This is the default for ESP32 and by defining here avoids a compiler warning.
+  #define SEND_PWM_BY_TIMER
+
+  // Do not use a feedback LED for the IR signal.
+  #define NO_LED_FEEDBACK_CODE
+#endif
+
 // 3rd-Party Libraries
 #include <CRC32.h>
 #include <digitalWriteFast.h>
@@ -59,6 +72,7 @@
 #include <Wire.h>
 #ifdef ESP32
   #include <HardwareSerial.h>
+  #include <IRremote.hpp>
 #endif
 
 // Forward declaration for use in all includes.
@@ -73,8 +87,6 @@ void sendDebug(String message);
 #include "Audio.h"
 #ifdef ESP32
   #include "Motion.h"
-  #include "IRSender.h"
-  IRSender irSend(IR_LED_PIN);
   #include "PreferencesESP.h"
 #else
   #include "PreferencesATMega.h"
@@ -225,7 +237,7 @@ void setup() {
 #ifdef ESP32
   pinModeFast(IR_LED_PIN, OUTPUT); // Set IR LED pin as output.
   digitalWriteFast(IR_LED_PIN, LOW); // Ensure IR LED is off at startup.
-  irSend.begin();
+  IrSender.begin(IR_LED_PIN); // Initialize the IR sender on the specified pin.
 #else
   pinMode(VENT_LED_PIN, OUTPUT); // Vent light could be either Digital or PWM based on user setting, so use default functions.
   pinMode(TOP_LED_PIN, OUTPUT); // Blinking top light could be either addressable or non-addressable based on user setting, so use default functions.
