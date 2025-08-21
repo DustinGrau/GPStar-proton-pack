@@ -50,8 +50,8 @@ bool b_mag_found = false;
 bool b_imu_found = false;
 millisDelay ms_sensor_read_delay, ms_sensor_report_delay;
 const uint8_t i_sensor_samples = 50; // Sets count of samples to take for averaging offsets.
-const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in milliseconds (20ms = 50Hz).
-const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting in milliseconds.
+const uint16_t i_sensor_read_delay = 40; // Delay between sensor reads in milliseconds (20ms = 50Hz, 40ms = 25Hz).
+const uint16_t i_sensor_report_delay = 200; // Delay between telemetry reporting (console/web) in milliseconds.
 Madgwick filter; // Create a global filter object for sensor fusion (AHRS for Roll/Pitch/Yaw).
 
 /**
@@ -218,7 +218,7 @@ void initializeMotionDevices() {
      * Purpose: Sets the LIS3MDL magnetometer's performance mode, balancing power consumption and measurement accuracy.
      * Options:
      *   - LIS3MDL_LOWPOWERMODE: Lowest power, lowest accuracy.
-     *   - LIS3MDL_MEDIUMMODE: Balanced power and accuracy (recommended for most uses).
+     *   - LIS3MDL_MEDIUMMODE: Balanced power and accuracy.
      *   - LIS3MDL_HIGHMODE: Higher accuracy, higher power consumption.
      *   - LIS3MDL_ULTRAHIGHMODE: Maximum accuracy, maximum power consumption.
      */
@@ -252,7 +252,7 @@ void initializeMotionDevices() {
      * Options:
      *   - LIS3MDL_RANGE_4_GAUSS: ±4 Gauss (highest sensitivity, lowest max field).
      *   - LIS3MDL_RANGE_8_GAUSS: ±8 Gauss (mid sensitivity, mid max field).
-     *   - LIS3MDL_RANGE_12_GAUSS: ±12 Gauss.
+     *   - LIS3MDL_RANGE_12_GAUSS: ±12 Gauss (low-mid sensitivity, high-mid max field).
      *   - LIS3MDL_RANGE_16_GAUSS: ±16 Gauss (lowest sensitivity, highest max field).
      */
     magSensor.setRange(LIS3MDL_RANGE_4_GAUSS);
