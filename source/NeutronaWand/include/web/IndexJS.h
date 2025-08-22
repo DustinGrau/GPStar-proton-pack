@@ -207,7 +207,7 @@ function init3D(){
   const width = parentWidth(container);
   const height = parentHeight(container);
   const aspect = width / height;
-  const cameraType = "Perspective"; // Options: "Orthographic" or "Perspective"
+  const cameraType = "orthographic"; // Options: "orthographic" or "perspective"
 
   // Create the scene with a transparent background.
   scene = new THREE.Scene();
@@ -250,43 +250,26 @@ function init3D(){
       mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
 
-      // Add a simple plane beneath the mesh for visual grounding
-      // Plane size is 4x the largest mesh dimension for coverage
-      const planeSize = Math.max(size.x, size.z) * 10;
-      const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
-      const planeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x002000,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.5   
-      });
-      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-
-      // Position the plane just below the mesh
-      plane.rotation.x = -Math.PI / 2; // Rotate to lie flat on XZ plane
-      plane.position.y = -size.y / 2; // Slightly below mesh based on its height
-      scene.add(plane);
-
-      if (cameraType === "Perspective") {
-        // Set up a perspective camera; mimic human eye field of view with vanishing point
+      if (cameraType === "perspective") {
+        // Set up a perspective camera; mimic human eye field of view with vanishing point.
         camera = new THREE.PerspectiveCamera(
-          75, // Field of view in degrees
+          75,               // Field of view in degrees
           (width / height), // Aspect ratio
-          0.1, // Near clipping plane
-          300 // Far clipping plane
+          0.1,              // Near clipping plane
+          300               // Far clipping plane
         );
         camera.position.set(0, 0, size.z * 0.8); // Adjust distance to view the entire mesh
       }
-      else if (cameraType === "Orthographic") {
-        // Set up prthographic camera; better for technical models without perspective distortion.=
-        const frustumSize = Math.max(size.x, size.y, size.z) * 0.9; // Scale to fit mesh comfortably
+      else if (cameraType === "orthographic") {
+        // Set up an orthographic camera; better for technical models without distortion.
+        const frustumSize = Math.max(size.x, size.y, size.z) * 0.8; // Scale to fit mesh comfortably
         camera = new THREE.OrthographicCamera(
-          (-frustumSize * aspect / 2), // left
-          (frustumSize * aspect / 2),  // right
-          (frustumSize / 2),           // top
-          (-frustumSize / 2),          // bottom
-          -300,                        // near
-          300                          // far
+          (-frustumSize * aspect / 2), // Left
+          (frustumSize * aspect / 2),  // Right
+          (frustumSize / 2),           // Top
+          (-frustumSize / 2),          // Bottom
+          0.1,                         // Near clipping plane
+          300                          // Far clipping plane
         );
 
         // Position camera and look at the center of the scene
@@ -331,6 +314,7 @@ if (!!window.EventSource) {
   }, false);
 
   source.addEventListener("telemetry", function(e) {
+    const coordinates = "quaternion"; // Options: "quaternion" or "euler"
     var obj = JSON.parse(e.data);
 
     // Convert roll, pitch, and yaw from degrees to radians for Three.js
@@ -354,17 +338,18 @@ if (!!window.EventSource) {
     // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
     // Map accordingly from device to view: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
 
-    // if (mesh && obj.qw !== undefined) {
-    //   // Use quaternion (x,y,z,w) from sensor data if available.
-    //   mesh.quaternion.set(obj.qy, obj.qz, obj.qx, obj.qw);
-    //   renderer.render(scene, camera);
-    // } else
-
     if (mesh) {
-      // Fallback to Euler angles if quaternion not available.
-      mesh.rotation.x = pitchRads;
-      mesh.rotation.y = -yawRads;
-      mesh.rotation.z = -rollRads;
+      if (coordinates == "quaternion" && obj.qw !== undefined) {
+        // Use quaternion (x,y,z,w) from sensor data when available.
+        mesh.quaternion.set(obj.qy, obj.qz, -obj.qx, obj.qw);
+        mesh.scale.z = -1; // Mirror mesh on Z axis to match heading.
+      } else if (coordinates == "euler") {
+        // Fallback to Euler angles if quaternion not available.
+        // WARNING: This may be prone to gimbal lock issues.
+        mesh.rotation.x = pitchRads;
+        mesh.rotation.y = yawRads;
+        mesh.rotation.z = -rollRads;
+      }
       renderer.render(scene, camera);
     }
   }, false);

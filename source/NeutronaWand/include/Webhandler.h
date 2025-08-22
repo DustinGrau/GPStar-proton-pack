@@ -383,8 +383,9 @@ void handleGeometry(AsyncWebServerRequest *request) {
 void handleThreeJS(AsyncWebServerRequest *request) {
   // Used for the root page (/three.js) from the web server.
   debug("Sending -> Three.js Library");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)THREEJS_page, strlen(THREEJS_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", THREEJS_page, sizeof(THREEJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
+  response->addHeader("Content-Encoding", "gzip");
   request->send(response); // Serve page content.
 }
 
