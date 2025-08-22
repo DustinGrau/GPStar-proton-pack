@@ -30,6 +30,7 @@
 #include "web/Style.h" // STYLE_page
 #include "web/Icon.h" // FAVICON_ico, FAVICON_svg
 #include "web/ThreeJS.h" // Three.js Library, THREEJS_page
+#include "web/Geometry.h" // STL as JSON, GEOMETRY_page
 
 // Forward function declarations.
 void setupRouting();
@@ -345,7 +346,7 @@ void handleWandSettings(AsyncWebServerRequest *request) {
 }
 
 void handleStylesheet(AsyncWebServerRequest *request) {
-  // Used for the root page (/) of the web server.
+  // Used for the common stylesheet of the web server.
   debug("Sending -> Main StyleSheet");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/css", (const uint8_t*)STYLE_page, strlen(STYLE_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
@@ -353,25 +354,33 @@ void handleStylesheet(AsyncWebServerRequest *request) {
 }
 
 void handleFavIco(AsyncWebServerRequest *request) {
-  // Used for the root page (/) of the web server.
+  // Used for the favicon of the web server.
   debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/x-icon", FAVICON_ico, sizeof(FAVICON_ico));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
-  request->send(response);
+  request->send(response); // Serve .ico file.
 }
 
 void handleFavSvg(AsyncWebServerRequest *request) {
-  // Used for the root page (/) of the web server.
+  // Used for the favicon of the web server.
   debug("Sending -> Favicon");
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", FAVICON_svg, sizeof(FAVICON_svg));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
-  request->send(response);
+  request->send(response); // Serve .svg file.
+}
+
+void handleGeometry(AsyncWebServerRequest *request) {
+  // Used for the model geometry (/geometry.json) from the web server.
+  debug("Sending -> STL Geometry");
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/json; charset=UTF-8", (const uint8_t*)GEOMETRY_page, strlen(GEOMETRY_page));
+  response->addHeader("Cache-Control", "no-cache, must-revalidate");
+  request->send(response); // Serve JSON content.
 }
 
 void handleThreeJS(AsyncWebServerRequest *request) {
-  // Used for the root page (/) from the web server.
+  // Used for the root page (/three.js) from the web server.
   debug("Sending -> Three.js Library");
   AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript; charset=UTF-8", (const uint8_t*)THREEJS_page, strlen(THREEJS_page));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
@@ -1024,6 +1033,7 @@ void setupRouting() {
   httpServer.on("/settings/device", HTTP_GET, handleDeviceSettings);
   httpServer.on("/settings/wand", HTTP_GET, handleWandSettings);
   httpServer.on("/style.css", HTTP_GET, handleStylesheet);
+  httpServer.on("/geometry.json", HTTP_GET, handleGeometry);
   httpServer.on("/three.js", HTTP_GET, handleThreeJS);
   httpServer.onNotFound(handleNotFound);
 
