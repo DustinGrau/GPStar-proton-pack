@@ -54,14 +54,14 @@ function doHeartbeat() {
 }
 
 function onOpen(event) {
-  console.log("Connection opened");
+  console.log("WebSocket connection opened");
 
   // Clear the automated status interval timer.
   clearInterval(statusInterval);
 }
 
 function onClose(event) {
-  console.log("Connection closed");
+  console.log("WebSocket connection closed");
   setTimeout(initWebSocket, 1000);
 
   // Fallback for when WebSocket is unavailable.
@@ -206,26 +206,27 @@ function init3D(){
   const container = document.getElementById("3Dobj");
   const width = parentWidth(container);
   const height = parentHeight(container);
+  const aspect = width / height;
+  const cameraType = "Orthographic"; // Change to "Perspective" for perspective view if desired.
 
   // Create the scene with a transparent background.
   scene = new THREE.Scene();
   scene.background = null;
 
-  // Set up camera (Perspective)
-  camera = new THREE.PerspectiveCamera(75, parentWidth(container) / parentHeight(container), 0.1, 1000);
-
   // Set up renderer with a transparent background
   renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-  renderer.setSize(parentWidth(container), parentHeight(container));
+  renderer.setSize(width, height);
   container.appendChild(renderer.domElement);
 
-  // Add lights
+  // Add lights to the scene for realistic shading and visibility.
+  // HemisphereLight simulates ambient light from the sky and ground, providing soft global illumination.
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-  hemiLight.position.set(0,200,0);
+  hemiLight.position.set(0,200,0); // Position above the scene (Y axis) for natural lighting effect
   scene.add(hemiLight);
 
+  // DirectionalLight simulates sunlight, casting parallel rays and creating shadows and highlights.
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(100,100,100);
+  dirLight.position.set(100,100,100); // Position at an angle for dynamic shading (3/4 view)
   scene.add(dirLight);
 
   // Load geometry from JSON (converted from STL)
@@ -235,28 +236,56 @@ function init3D(){
       const loader = new THREE.BufferGeometryLoader();
       const geometry = loader.parse(json);
 
-      // Compute bounding box to get size and center
+      // Center the geometry itself so the mesh rotates around its center
       geometry.computeBoundingBox();
       const box = geometry.boundingBox;
       const size = new THREE.Vector3();
       box.getSize(size); // Original size of the mesh in original units (assume: mm)
-      console.log("Size of the mesh:", size);
       const center = new THREE.Vector3();
-      box.getCenter(center); // geometric center
-      console.log("Center of the mesh:", center);
+      box.getCenter(center); // True center of the mesh itself
+      geometry.translate(-center.x, -center.y, -center.z);
 
-      // Material should be the same green as used on the display
+      // Select a material and color then create the mesh for the scene
       const material = new THREE.MeshPhongMaterial({color: 0x00A000});
-
-      // Create mesh and center the mesh at origin
       mesh = new THREE.Mesh(geometry, material);
-      mesh.position.sub(center);
       scene.add(mesh);
 
-      // Camera positioning using the center of the mesh as the focal point
-      camera.position.set(0, 0, size.z * 0.8); // Adjust distance to view the entire mesh
-      camera.lookAt(center); // Look at the center of the mesh so we rotate at the center
-      renderer.render(scene, camera); // Immediately render the scene using defaults
+      if (cameraType === "Perspective") {
+        // Set up a perspective camera; mimic human eye field of view with vanishing point
+        camera = new THREE.PerspectiveCamera(
+          75, // Field of view in degrees
+          (width / height), // Aspect ratio
+          0.1, // Near clipping plane
+          300 // Far clipping plane
+        );
+        camera.position.set(0, 0, size.z * 0.8); // Adjust distance to view the entire mesh
+      }
+      else if (cameraType === "Orthographic") {
+        // Set up prthographic camera; better for technical models without perspective distortion.=
+        const frustumSize = Math.max(size.x, size.y, size.z) * 0.9; // Scale to fit mesh comfortably
+        camera = new THREE.OrthographicCamera(
+          (-frustumSize * aspect / 2), // left
+          (frustumSize * aspect / 2),  // right
+          (frustumSize / 2),           // top
+          (-frustumSize / 2),          // bottom
+          -300,                        // near
+          300                          // far
+        );
+
+        // Position camera and look at the center of the scene
+        camera.position.set(0, 0, frustumSize);
+      } else {
+        console.error("Camera type not recognized:", cameraType);
+      }
+
+      if (camera) {
+        // Camera positioning using the center of the mesh as the focal point
+        camera.lookAt(new THREE.Vector3()); // Look at the center (0,0,0) so we rotate at the center
+        scene.add(camera);
+        renderer.render(scene, camera); // Immediately render the scene using defaults
+      } else {
+        console.error("Camera not available for scene, unable to render.");
+      }
     })
     .catch(err => console.error(err));
 }
@@ -275,12 +304,12 @@ if (!!window.EventSource) {
   var source = new EventSource("/events");
 
   source.addEventListener("open", function(e) {
-    console.log("Events Connected");
+    console.log("Server-Side Events connected");
   }, false);
 
   source.addEventListener("error", function(e) {
     if (e.target.readyState != EventSource.OPEN) {
-      console.log("Events Disconnected");
+      console.log("Server-Side Events disconnected");
     }
   }, false);
 
@@ -306,7 +335,7 @@ if (!!window.EventSource) {
 
     // Change cube rotation after checking for the available data (quaternion preferred).
     // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
-    // Map accordingly: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
+    // Map accordingly from device to view: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
 
     // if (mesh && obj.qw !== undefined) {
     //   // Use quaternion (x,y,z,w) from sensor data if available.

@@ -516,9 +516,8 @@ input:checked:not([disabled]) + .slider:before {
 }
 
 .viz-content {
-  width:98%;
+  width:100%;
   height:300px;
   margin:auto;
-  padding-top:2%;
 }
 )=====";
