@@ -192,7 +192,7 @@ function updateEquipment(jObj) {
 }
 
 // Define variables and functions for 3D rendering
-let scene, camera, rendered, cube;
+let scene, camera, rendered, mesh;
 
 function parentWidth(elem) {
   return elem.parentElement.clientWidth;
@@ -203,42 +203,79 @@ function parentHeight(elem) {
 }
 
 function init3D(){
+  const container = document.getElementById("3Dobj");
+  const width = parentWidth(container);
+  const height = parentHeight(container);
+
+  // Create the scene with a transparent background.
   scene = new THREE.Scene();
-  //scene.background = new THREE.Color(0xffffff);
-  scene.background = null; // Set background to transparent
+  scene.background = null;
 
-  camera = new THREE.PerspectiveCamera(75, parentWidth(document.getElementById("3Dcube")) / parentHeight(document.getElementById("3Dcube")), 0.1, 1000);
+  // Set up camera (Perspective)
+  camera = new THREE.PerspectiveCamera(75, parentWidth(container) / parentHeight(container), 0.1, 1000);
 
-  //renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // For transparent background
-  renderer.setSize(parentWidth(document.getElementById("3Dcube")), parentHeight(document.getElementById("3Dcube")));
+  // Set up renderer with a transparent background
+  renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+  renderer.setSize(parentWidth(container), parentHeight(container));
+  container.appendChild(renderer.domElement);
 
-  document.getElementById('3Dcube').appendChild(renderer.domElement);
+  // Add lights
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+  hemiLight.position.set(0,200,0);
+  scene.add(hemiLight);
 
-  // Create a geometry (order: width, height, depth)
-  const geometry = new THREE.BoxGeometry(2, 1, 5);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(100,100,100);
+  scene.add(dirLight);
 
-  // Materials for each cube face (order: right, left, top, bottom, front, back)
-  var cubeMaterials = [
-    new THREE.MeshBasicMaterial({color:0x009000}), // Right face  - darker green
-    new THREE.MeshBasicMaterial({color:0x009000}), // Left face   - darker green
-    new THREE.MeshBasicMaterial({color:0x00E000}), // Top face    - lightest green
-    new THREE.MeshBasicMaterial({color:0x007000}), // Bottom face - darkest green
-    new THREE.MeshBasicMaterial({color:0x00C000}), // Front face  - lighter green
-    new THREE.MeshBasicMaterial({color:0x00A000}), // Back face   - base green
-  ];
+  // Load geometry from JSON (converted from STL)
+  fetch("/geometry.json")
+    .then(res => res.json())
+    .then(json => {
+      const loader = new THREE.BufferGeometryLoader();
+      const geometry = loader.parse(json);
 
-  cube = new THREE.Mesh(geometry, cubeMaterials);
-  scene.add(cube);
-  camera.position.z = 5;
-  renderer.render(scene, camera);
+      // Compute bounding box to get size and center
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const size = new THREE.Vector3();
+      box.getSize(size); // size.x, size.y, size.z in mesh units (mm if original STL was mm)
+      const center = new THREE.Vector3();
+      box.getCenter(center); // geometric center
+
+      // Material: slightly darker green
+      const material = new THREE.MeshPhongMaterial({color: 0x00A000});
+
+      // Create mesh and center the mesh at origin
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.position.sub(center);
+
+      // Scale mesh to desired size in mm
+      // desiredSize = largest dimension in mm that you want to display in the scene
+      // If your mesh is 200mm wide, setting desiredSize = 200 will show it actual size
+      // const maxDim = Math.max(size.x, size.y, size.z);
+      // const desiredSize = 200; // in mm
+      // const scale = desiredSize / maxDim; // scale factor
+      // mesh.scale.set(scale, scale, scale);
+      // console.log("Applied scale:", scale, "to largest dimension");
+      scene.add(mesh);
+
+      // Camera positioning
+      // Adjust distance as desired; using 2x largest dimension as default
+      //const distance = desiredSize * 1;
+      camera.position.set(0, 0, 5);
+      camera.lookAt(new THREE.Vector3(0,0,0));
+    })
+    .catch(err => console.error(err));
 }
 
 // Resize the 3D object when the browser window changes size
 function onWindowResize(){
-  camera.aspect = parentWidth(document.getElementById("3Dcube")) / parentHeight(document.getElementById("3Dcube"));
+  const w = parentWidth(container);
+  const h = parentHeight(container);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(parentWidth(document.getElementById("3Dcube")), parentHeight(document.getElementById("3Dcube")));
+  renderer.setSize(w, h);
 }
 
 if (!!window.EventSource) {
@@ -279,17 +316,17 @@ if (!!window.EventSource) {
     // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
     // Map accordingly: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
 
-    // if (cube && obj.qw !== undefined) {
+    // if (mesh && obj.qw !== undefined) {
     //   // Use quaternion (x,y,z,w) from sensor data if available.
-    //   cube.quaternion.set(obj.qy, obj.qz, obj.qx, obj.qw);
+    //   mesh.quaternion.set(obj.qy, obj.qz, obj.qx, obj.qw);
     //   renderer.render(scene, camera);
     // } else
 
-    if (cube) {
+    if (mesh) {
       // Fallback to Euler angles if quaternion not available.
-      cube.rotation.x = pitchRads;
-      cube.rotation.y = yawRads;
-      cube.rotation.z = -rollRads;
+      mesh.rotation.x = pitchRads;
+      mesh.rotation.y = yawRads;
+      mesh.rotation.z = -rollRads;
       renderer.render(scene, camera);
     }
   }, false);

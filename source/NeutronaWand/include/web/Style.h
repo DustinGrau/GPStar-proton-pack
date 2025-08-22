@@ -515,7 +515,7 @@ input:checked:not([disabled]) + .slider:before {
   padding:5px 10px !important;
 }
 
-.cube-content {
+.viz-content {
   width:98%;
   height:300px;
   margin:auto;
