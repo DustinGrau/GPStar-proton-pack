@@ -239,32 +239,24 @@ function init3D(){
       geometry.computeBoundingBox();
       const box = geometry.boundingBox;
       const size = new THREE.Vector3();
-      box.getSize(size); // size.x, size.y, size.z in mesh units (mm if original STL was mm)
+      box.getSize(size); // Original size of the mesh in original units (assume: mm)
+      console.log("Size of the mesh:", size);
       const center = new THREE.Vector3();
       box.getCenter(center); // geometric center
+      console.log("Center of the mesh:", center);
 
-      // Material: slightly darker green
+      // Material should be the same green as used on the display
       const material = new THREE.MeshPhongMaterial({color: 0x00A000});
 
       // Create mesh and center the mesh at origin
       mesh = new THREE.Mesh(geometry, material);
       mesh.position.sub(center);
-
-      // Scale mesh to desired size in mm
-      // desiredSize = largest dimension in mm that you want to display in the scene
-      // If your mesh is 200mm wide, setting desiredSize = 200 will show it actual size
-      // const maxDim = Math.max(size.x, size.y, size.z);
-      // const desiredSize = 200; // in mm
-      // const scale = desiredSize / maxDim; // scale factor
-      // mesh.scale.set(scale, scale, scale);
-      // console.log("Applied scale:", scale, "to largest dimension");
       scene.add(mesh);
 
-      // Camera positioning
-      // Adjust distance as desired; using 2x largest dimension as default
-      //const distance = desiredSize * 1;
-      camera.position.set(0, 0, 5);
-      camera.lookAt(new THREE.Vector3(0,0,0));
+      // Camera positioning using the center of the mesh as the focal point
+      camera.position.set(0, 0, size.z * 0.8); // Adjust distance to view the entire mesh
+      camera.lookAt(center); // Look at the center of the mesh so we rotate at the center
+      renderer.render(scene, camera); // Immediately render the scene using defaults
     })
     .catch(err => console.error(err));
 }
