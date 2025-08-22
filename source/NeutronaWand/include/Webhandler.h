@@ -29,8 +29,8 @@
 #include "web/WandSettings.h" // WAND_SETTINGS_page
 #include "web/Style.h" // STYLE_page
 #include "web/Icon.h" // FAVICON_ico, FAVICON_svg
-#include "web/ThreeJS.h" // Three.js Library, THREEJS_page
-#include "web/Geometry.h" // STL as JSON, GEOMETRY_page
+#include "web/Geometry.h" // GEOMETRY_json
+#include "web/ThreeJS.h" // THREEJS_page
 
 // Forward function declarations.
 void setupRouting();
@@ -359,7 +359,7 @@ void handleFavIco(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200, "image/x-icon", FAVICON_ico, sizeof(FAVICON_ico));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
-  request->send(response); // Serve .ico file.
+  request->send(response); // Serve gzipped .ico file.
 }
 
 void handleFavSvg(AsyncWebServerRequest *request) {
@@ -368,15 +368,16 @@ void handleFavSvg(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200, "image/svg+xml", FAVICON_svg, sizeof(FAVICON_svg));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
   response->addHeader("Content-Encoding", "gzip");
-  request->send(response); // Serve .svg file.
+  request->send(response); // Serve gzipped .svg file.
 }
 
 void handleGeometry(AsyncWebServerRequest *request) {
   // Used for the model geometry (/geometry.json) from the web server.
   debug("Sending -> STL Geometry");
-  AsyncWebServerResponse *response = request->beginResponse(200, "application/json; charset=UTF-8", (const uint8_t*)GEOMETRY_page, strlen(GEOMETRY_page));
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/json; charset=UTF-8", GEOMETRY_json, sizeof(GEOMETRY_json));
   response->addHeader("Cache-Control", "no-cache, must-revalidate");
-  request->send(response); // Serve JSON content.
+  response->addHeader("Content-Encoding", "gzip");
+  request->send(response); // Serve gzipped JSON content.
 }
 
 void handleThreeJS(AsyncWebServerRequest *request) {

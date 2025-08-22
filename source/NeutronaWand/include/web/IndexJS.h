@@ -207,7 +207,7 @@ function init3D(){
   const width = parentWidth(container);
   const height = parentHeight(container);
   const aspect = width / height;
-  const cameraType = "Orthographic"; // Change to "Perspective" for perspective view if desired.
+  const cameraType = "Perspective"; // Options: "Orthographic" or "Perspective"
 
   // Create the scene with a transparent background.
   scene = new THREE.Scene();
@@ -246,9 +246,26 @@ function init3D(){
       geometry.translate(-center.x, -center.y, -center.z);
 
       // Select a material and color then create the mesh for the scene
-      const material = new THREE.MeshPhongMaterial({color: 0x00A000});
+      const material = new THREE.MeshLambertMaterial({color: 0x00A000});
       mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
+
+      // Add a simple plane beneath the mesh for visual grounding
+      // Plane size is 4x the largest mesh dimension for coverage
+      const planeSize = Math.max(size.x, size.z) * 10;
+      const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+      const planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x002000,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5   
+      });
+      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+      // Position the plane just below the mesh
+      plane.rotation.x = -Math.PI / 2; // Rotate to lie flat on XZ plane
+      plane.position.y = -size.y / 2; // Slightly below mesh based on its height
+      scene.add(plane);
 
       if (cameraType === "Perspective") {
         // Set up a perspective camera; mimic human eye field of view with vanishing point
@@ -273,7 +290,7 @@ function init3D(){
         );
 
         // Position camera and look at the center of the scene
-        camera.position.set(0, 0, frustumSize);
+        camera.position.set(0, size.y, frustumSize);
       } else {
         console.error("Camera type not recognized:", cameraType);
       }
@@ -346,7 +363,7 @@ if (!!window.EventSource) {
     if (mesh) {
       // Fallback to Euler angles if quaternion not available.
       mesh.rotation.x = pitchRads;
-      mesh.rotation.y = yawRads;
+      mesh.rotation.y = -yawRads;
       mesh.rotation.z = -rollRads;
       renderer.render(scene, camera);
     }
