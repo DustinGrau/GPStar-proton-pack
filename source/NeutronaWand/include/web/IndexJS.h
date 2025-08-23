@@ -334,11 +334,12 @@ if (!!window.EventSource) {
     setHtml("pitch",   parseFloat(obj.pitch || 0).toFixed(2) + "&deg;");
     setHtml("yaw",     parseFloat(obj.yaw || 0).toFixed(2) + "&deg;");
 
-    // Change cube rotation after checking for the available data (quaternion preferred).
-    // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
-    // Map accordingly from device to view: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
+    // Proceed with updating the rendered scene if all objects are present.
+    if (scene && camera && mesh) {
+      // Change cube rotation after checking for the available data (quaternion preferred).
+      // This uses a right-handed coordinate system with X (right), Y (up), and Z (towards viewer).
+      // Map accordingly from device to view: Pitch (Y) -> X, Yaw (Z) -> Y, Roll (X) -> Z.
 
-    if (mesh) {
       if (coordinates == "quaternion" && obj.qw !== undefined) {
         // Use quaternion (x,y,z,w) from sensor data when available.
         mesh.quaternion.set(obj.qy, obj.qz, -obj.qx, obj.qw);
@@ -346,9 +347,17 @@ if (!!window.EventSource) {
         // Fallback to Euler angles if quaternion not available.
         // WARNING: This may be prone to gimbal lock issues.
         mesh.rotation.x = pitchRads;
-        mesh.rotation.y = yawRads;
+        //mesh.rotation.y = yawRads; // Don't rotate the object, we'll rotate the camera!
         mesh.rotation.z = -rollRads;
       }
+
+      // Move camera behind the object based on yaw
+      const radius = 200; // Distance from object, adjust as needed
+      const camX = radius * Math.sin(yawRads);
+      const camZ = radius * Math.cos(yawRads);
+      camera.position.set(camX, 50, camZ); // Keep Y fixed at slightly above the Z plane for a downward angle
+      camera.lookAt(0, 0, 0); // Keep looking at the center of the object
+
       renderer.render(scene, camera);
     }
   }, false);
