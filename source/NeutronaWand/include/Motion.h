@@ -111,7 +111,7 @@ enum INSTALL_ORIENTATIONS INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_TOP; // Defa
  *   - Increase FILTER_ALPHA if you want the sensor data to react faster to changes.
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
-const float FILTER_ALPHA = 0.5f;
+const float FILTER_ALPHA = 0.6f;
 
 /**
  * Struct: MotionData
@@ -558,31 +558,31 @@ void updateFilteredMotionData() {
 
 /**
  * Function: updateOrientation
- * Purpose: Updates the orientation using sensor fusion (Madgwick filter).
+ * Purpose: Updates the orientation using sensor fusion (AHRS).
  * Inputs: None (uses filteredMotionData)
  * Outputs: None (updates global orientation variables)
  */
 void updateOrientation() {
 #ifdef MOTION_SENSORS
   /**
-   * Madgwick expects gyroscope in deg/s, accelerometer in g, magnetometer in uT.
-   * It also assumes gravity-positive z-axis and right-handed coordinate system.
+   * Fusion expects gyroscope in deg/s, accelerometer in g, magnetometer in uT.
+   * It also assumes gravity-positive z-axis and NED aerospace framing.
    * It will use all 9 DoF values to calculate roll (X), pitch (Y), and yaw (Z).
    */
 
   // Convert gyroscope from rad/s to deg/s by multiplying with (180.0f / PI).
-  float gx = filteredMotionData.gyroX * (180.0f / PI);
-  float gy = filteredMotionData.gyroY * (180.0f / PI);
-  float gz = filteredMotionData.gyroZ * (180.0f / PI);
+  float gx = motionData.gyroX * (180.0f / PI);
+  float gy = motionData.gyroY * (180.0f / PI);
+  float gz = motionData.gyroZ * (180.0f / PI);
 
   // Convert accelerometer from m/s^2 to g.
-  float ax = filteredMotionData.accelX / 9.80665f;
-  float ay = filteredMotionData.accelY / 9.80665f;
-  float az = filteredMotionData.accelZ / 9.80665f;
+  float ax = motionData.accelX / 9.80665f;
+  float ay = motionData.accelY / 9.80665f;
+  float az = motionData.accelZ / 9.80665f;
 
   // Update the filter, using the calculated sample frequency in Hz.
   // Magnetometer is already in micro-Teslas so we just use as-is.
-  filter.update(gx, gy, gz, ax, ay, az, filteredMotionData.magX, filteredMotionData.magY, filteredMotionData.magZ);
+  filter.update(gx, gy, gz, ax, ay, az, motionData.magX, motionData.magY, motionData.magZ);
 
   // Get position in Euler angles (degrees) for orientation in NED space.
   spatialData.roll = filter.getRoll();
@@ -776,6 +776,9 @@ void processMotionData() {
     motionData.gyroY -= motionOffsets.gyroY;
     motionData.gyroZ -= motionOffsets.gyroZ;
 
+    // Update the orientation via sensor fusion.
+    updateOrientation();
+
     // Apply exponential moving average (EMA) smoothing filter to sensor data.
     updateFilteredMotionData();
 
@@ -784,9 +787,6 @@ void processMotionData() {
 
     // Calculate the magnitude of the filtered acceleration vector (g-force).
     filteredMotionData.gForce = calculateGForce(filteredMotionData);
-
-    // Update the orientation via sensor fusion by using the filtered data.
-    updateOrientation();
   }
 #endif
 }
