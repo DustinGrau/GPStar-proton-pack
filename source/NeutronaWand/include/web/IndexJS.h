@@ -228,9 +228,9 @@ function init3D(){
   dirLight.position.set(100,100,100); // Position at an angle for dynamic shading (3/4 view)
   scene.add(dirLight);
 
-  // Add XYZ axes for visual aid (X: red, Y: green, Z: blue) as 200 unit lines.
-  const axesHelper = new THREE.AxesHelper(200);
-  scene.add(axesHelper);
+  // Add lines for the XYZ axes as visual aid (X: red, Y: green, Z: blue) with 200 unit length.
+  // const axesHelper = new THREE.AxesHelper(200);
+  // scene.add(axesHelper);
 
   // Load geometry from JSON (converted from STL)
   fetch("/geometry.json")
@@ -336,7 +336,7 @@ if (!!window.EventSource) {
       const camX = radius * Math.sin(yawRads);
       const camZ = radius * Math.cos(yawRads);
       if (size) {
-        camera.position.set(camX, size.y, camZ); // Keep Y fixed just above the Z plane for a slight downward angle
+        camera.position.set(camX, size.y * 2, camZ); // Keep Y fixed just above the Z plane for a slight downward angle
       } else {
         camera.position.set(camX, 0, camZ); // Keep Y fixed at 0 if size is not available
       }
