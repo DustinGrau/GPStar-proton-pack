@@ -245,9 +245,8 @@ function init3D(){
       size = new THREE.Vector3()
       box.getSize(size); // Original size of the mesh in original units (assume: mm)
       const center = new THREE.Vector3();
-      box.getCenter(center); // True center of the mesh itself
+      box.getCenter(center); // True center of the mesh itself using the bounding box
       geometry.translate(-center.x, -center.y, -center.z); // Center the object on the origin
-      geometry.rotateY(Math.PI); // Rotate 180 degrees around Y axis to give a correct view
 
       // Select a material and color then create the mesh for the scene
       const material = new THREE.MeshLambertMaterial({color: 0x00A000});
