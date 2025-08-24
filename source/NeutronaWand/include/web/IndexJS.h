@@ -242,7 +242,7 @@ function init3D(){
       // Center the geometry itself so the mesh rotates around its center
       geometry.computeBoundingBox();
       const box = geometry.boundingBox;
-      size = new THREE.Vector3()
+      size = new THREE.Vector3();
       box.getSize(size); // Original size of the mesh in original units (assume: mm)
       const center = new THREE.Vector3();
       box.getCenter(center); // True center of the mesh itself using the bounding box
@@ -312,12 +312,12 @@ if (!!window.EventSource) {
 
     // Update the HTML elements with the telemetry data
     setHtml("heading", parseFloat(obj.heading || 0).toFixed(2) + "&deg;");
-    setHtml("gyroX",   parseFloat(obj.gyroX || 0).toFixed(2) + " rads/s");
-    setHtml("gyroY",   parseFloat(obj.gyroY || 0).toFixed(2) + " rads/s");
-    setHtml("gyroZ",   parseFloat(obj.gyroZ || 0).toFixed(2) + " rads/s");
-    setHtml("accelX",  parseFloat(obj.accelX || 0).toFixed(2) + " m/s<sup>2</sup>");
-    setHtml("accelY",  parseFloat(obj.accelY || 0).toFixed(2) + " m/s<sup>2</sup>");
-    setHtml("accelZ",  parseFloat(obj.accelZ || 0).toFixed(2) + " m/s<sup>2</sup>");
+    setHtml("gyroX",   parseFloat(obj.gyroX || 0).toFixed(2) + "&deg;/s");
+    setHtml("gyroY",   parseFloat(obj.gyroY || 0).toFixed(2) + "&deg;/s");
+    setHtml("gyroZ",   parseFloat(obj.gyroZ || 0).toFixed(2) + "&deg;/s");
+    setHtml("accelX",  parseFloat(obj.accelX || 0).toFixed(2) + "m/s<sup>2</sup>");
+    setHtml("accelY",  parseFloat(obj.accelY || 0).toFixed(2) + "m/s<sup>2</sup>");
+    setHtml("accelZ",  parseFloat(obj.accelZ || 0).toFixed(2) + "m/s<sup>2</sup>");
     setHtml("roll",    parseFloat(obj.roll || 0).toFixed(2) + "&deg;");
     setHtml("pitch",   parseFloat(obj.pitch || 0).toFixed(2) + "&deg;");
     setHtml("yaw",     parseFloat(obj.yaw || 0).toFixed(2) + "&deg;");
@@ -351,7 +351,7 @@ function resetPosition() {
   sendCommand("/sensors/recenter");
 }
 
-function triggerIfrared() {
+function triggerInfrared() {
   sendCommand("/infrared/signal?type=ghostintrap");
 }
 )=====";
