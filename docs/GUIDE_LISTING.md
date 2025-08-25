@@ -32,7 +32,7 @@ We must acknowledge and celebrate our community members who have created enterta
 1. [Installs by Jonogunn](INSTALL_VIDEOS_JONOGUNN.md)
 
 1. [Installs by Nor-Cal Ghostbusters](INSTALL_VIDEOS_NORCALGB.md)
- 
+
 ## Maintenance
 
 These guides will help you update the software and audio files as new releases become available.
