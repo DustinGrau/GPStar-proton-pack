@@ -58,7 +58,10 @@
  * That will take care of producing the roll (X), pitch (Y), and yaw (Z) as necessary for 3D representation later.
  */
 
-#include <Adafruit_Sensor_Calibration.h>
+/**
+ * 3rd-Party Libraries
+ * Utilizes the unified sensor libraries for Adafruit which work together for reading and sensor fusion.
+ */
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_LSM6DS3TRC.h>
 #include <Adafruit_AHRS.h>
@@ -79,7 +82,8 @@ const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in millis
 const uint16_t i_sensor_report_delay = 50; // Delay between telemetry reporting (via console/web) in milliseconds.
 Adafruit_Mahony ahrs_filter; // Create a filter object for sensor fusion (AHRS); Mahony better suited for human motion.
 
-// Magnetometer calibration variables.
+// Magnetometer calibration variables obtained through using MotionCal and USB console output.
+// See: https://www.pjrc.com/store/prop_shield.html for MotionCal usage.
 float mag_hardiron[3] = {-32.05, 21.13, -3.21};
 float mag_softiron[9] = {1.011, 0.051, -0.012, 0.051, 0.988, -0.005, -0.012, -0.005, 1.004};
 float mag_field = 41.75;
@@ -188,12 +192,13 @@ MotionOffsets motionOffsets;
  * Purpose: Holds fused sensor readings for magnetometer, accelerometer, gyroscope, and calculated heading.
  * Attributes:
  *   - roll, pitch, yaw: Euler angles in degrees representing the orientation of the device.
+ *   - quaternion: Quaternion representation for orientation (w, x, y, z).
  */
 struct SpatialData {
   float roll = 0.0f;
   float pitch = 0.0f;
   float yaw = 0.0f;
-  float quaternion[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // Quaternion representation for orientation.
+  float quaternion[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 };
 
 // Global object to hold the fused sensor readings.
@@ -815,6 +820,10 @@ void checkMotionSensors() {
 void processMotionData() {
 #ifdef MOTION_SENSORS
   switch(SENSOR_READ_TARGET) {
+    case NOT_INITIALIZED:
+      // Can't do anything until the sensors have been initialized and configured.
+    break;
+
     case CALIBRATION:
       reportCalibrationData(); // Send raw data to console (USB) output for external capture.
     break;
@@ -902,7 +911,7 @@ void reportCalibrationData() {
   magnetometer->getEvent(&mag_event);
   gyroscope->getEvent(&gyro_event);
   accelerometer->getEvent(&accel_event);
-  
+
   // 'Raw' values to match expectation of MotionCal
   Serial.print("Raw:");
   Serial.print(int(accel_event.acceleration.x*8192/9.8)); Serial.print(",");
