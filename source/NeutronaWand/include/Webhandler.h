@@ -406,6 +406,19 @@ String getDeviceConfig() {
   jsonBody["wifiNameExt"] = wifi_ssid;
   jsonBody["extAddr"] = wifi_address;
   jsonBody["extMask"] = wifi_subnet;
+  jsonBody["hardIronX"] = magCalData.mag_hardiron[0];
+  jsonBody["hardIronY"] = magCalData.mag_hardiron[1];
+  jsonBody["hardIronZ"] = magCalData.mag_hardiron[2];
+  jsonBody["softIron1"] = magCalData.mag_softiron[0];
+  jsonBody["softIron2"] = magCalData.mag_softiron[1];
+  jsonBody["softIron3"] = magCalData.mag_softiron[2];
+  jsonBody["softIron4"] = magCalData.mag_softiron[3];
+  jsonBody["softIron5"] = magCalData.mag_softiron[4];
+  jsonBody["softIron6"] = magCalData.mag_softiron[5];
+  jsonBody["softIron7"] = magCalData.mag_softiron[6];
+  jsonBody["softIron8"] = magCalData.mag_softiron[7];
+  jsonBody["softIron9"] = magCalData.mag_softiron[8];
+  jsonBody["magField"] = magCalData.mag_field;
 
   // Serialize JSON object to string.
   serializeJson(jsonBody, equipSettings);
@@ -760,6 +773,24 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
         request->send(200, "application/json", result);
       }
     }
+
+    // Set the current magnetic calibration values.
+    magCalData.mag_hardiron[0] = jsonBody["hardIronX"].as<float>();
+    magCalData.mag_hardiron[1] = jsonBody["hardIronY"].as<float>();
+    magCalData.mag_hardiron[2] = jsonBody["hardIronZ"].as<float>();
+    magCalData.mag_softiron[0] = jsonBody["softIron1"].as<float>();
+    magCalData.mag_softiron[1] = jsonBody["softIron2"].as<float>();
+    magCalData.mag_softiron[2] = jsonBody["softIron3"].as<float>();
+    magCalData.mag_softiron[3] = jsonBody["softIron4"].as<float>();
+    magCalData.mag_softiron[4] = jsonBody["softIron5"].as<float>();
+    magCalData.mag_softiron[5] = jsonBody["softIron6"].as<float>();
+    magCalData.mag_softiron[6] = jsonBody["softIron7"].as<float>();
+    magCalData.mag_softiron[7] = jsonBody["softIron8"].as<float>();
+    magCalData.mag_softiron[8] = jsonBody["softIron9"].as<float>();
+    magCalData.mag_field = jsonBody["magField"].as<float>();
+
+    // Store the struct (object) to preferences.
+    preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
 
     // Get the track listing from the text field.
     String songList = jsonBody["songList"].as<String>();

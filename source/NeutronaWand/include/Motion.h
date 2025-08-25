@@ -82,12 +82,6 @@ const uint16_t i_sensor_read_delay = 20; // Delay between sensor reads in millis
 const uint16_t i_sensor_report_delay = 50; // Delay between telemetry reporting (via console/web) in milliseconds.
 Adafruit_Mahony ahrs_filter; // Create a filter object for sensor fusion (AHRS); Mahony better suited for human motion.
 
-// Magnetometer calibration variables obtained through using MotionCal and USB console output.
-// See: https://www.pjrc.com/store/prop_shield.html for MotionCal usage.
-float mag_hardiron[3] = {-32.05, 21.13, -3.21};
-float mag_softiron[9] = {1.011, 0.051, -0.012, 0.051, 0.988, -0.005, -0.012, -0.005, 1.004};
-float mag_field = 41.75;
-
 // Current state of the motion sensors and target for telemetry.
 enum SENSOR_READ_TARGETS { NOT_INITIALIZED, CALIBRATION, OFFSETS, TELEMETRY };
 enum SENSOR_READ_TARGETS SENSOR_READ_TARGET = NOT_INITIALIZED;
@@ -129,6 +123,17 @@ enum INSTALL_ORIENTATIONS INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT; // De
  *   - Decrease FILTER_ALPHA if you want to suppress noise and jitter more.
  */
 const float FILTER_ALPHA = 0.4f;
+
+// Magnetometer calibration variables obtained through using MotionCal and USB console output.
+// See: https://www.pjrc.com/store/prop_shield.html for MotionCal usage.
+struct CalibrationData {
+  float mag_hardiron[3] = {-32.05, 21.13, -3.21};
+  float mag_softiron[9] = {1.011, 0.051, -0.012, 0.051, 0.988, -0.005, -0.012, -0.005, 1.004};
+  float mag_field = 41.75;
+};
+
+// Global objects to hold the latest raw or filtered sensor readings.
+CalibrationData magCalData;
 
 /**
  * Struct: MotionData
@@ -517,17 +522,14 @@ void readRawSensorData() {
     accelerometer->getEvent(&accel_event);
 
     // Hard iron corrections.
-    float mx = mag_event.magnetic.x - mag_hardiron[0];
-    float my = mag_event.magnetic.y - mag_hardiron[1];
-    float mz = mag_event.magnetic.z - mag_hardiron[2];
+    float mx = mag_event.magnetic.x - magCalData.mag_hardiron[0];
+    float my = mag_event.magnetic.y - magCalData.mag_hardiron[1];
+    float mz = mag_event.magnetic.z - magCalData.mag_hardiron[2];
 
     // Soft iron corrections.
-    mag_event.magnetic.x =
-        mx * mag_softiron[0] + my * mag_softiron[1] + mz * mag_softiron[2];
-    mag_event.magnetic.y =
-        mx * mag_softiron[3] + my * mag_softiron[4] + mz * mag_softiron[5];
-    mag_event .magnetic.z =
-        mx * mag_softiron[6] + my * mag_softiron[7] + mz * mag_softiron[8];
+    mag_event.magnetic.x = mx * magCalData.mag_softiron[0] + my * magCalData.mag_softiron[1] + mz * magCalData.mag_softiron[2];
+    mag_event.magnetic.y = mx * magCalData.mag_softiron[3] + my * magCalData.mag_softiron[4] + mz * magCalData.mag_softiron[5];
+    mag_event.magnetic.z = mx * magCalData.mag_softiron[6] + my * magCalData.mag_softiron[7] + mz * magCalData.mag_softiron[8];
 
     switch(INSTALL_ORIENTATION) {
       case COMPONENTS_UP_USB_FRONT:
