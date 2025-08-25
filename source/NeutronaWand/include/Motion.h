@@ -124,8 +124,13 @@ enum INSTALL_ORIENTATIONS INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT; // De
  */
 const float FILTER_ALPHA = 0.4f;
 
-// Magnetometer calibration variables obtained through using MotionCal and USB console output.
-// See: https://www.pjrc.com/store/prop_shield.html for MotionCal usage.
+/**
+ * Magnetometer calibration variables obtained through using MotionCal and USB console output.
+ * This should be performed near the end of an installation of the Neutrona Wand when the PCB
+ * is fully assembled and in its final orientation with any speakers and their magnets nearby.
+ * Default values come from a typical calibration session where the PCB is not yet installed.
+ * See: https://www.pjrc.com/store/prop_shield.html for MotionCal usage.
+ */ 
 struct CalibrationData {
   float mag_hardiron[3] = {-32.05, 21.13, -3.21};
   float mag_softiron[9] = {1.011, 0.051, -0.012, 0.051, 0.988, -0.005, -0.012, -0.005, 1.004};
@@ -169,6 +174,8 @@ MotionData motionData, filteredMotionData;
 /**
  * Struct: MotionOffsets
  * Purpose: Holds baseline offsets for accelerometer and gyroscope to correct sensor drift.
+ * This data is calculated on every reset of telemetry data and acts as a point of reference
+ * for future movement. Effectively, this resets the center of the sensor's coordinate system.
  * Members:
  *   - accelX, accelY, accelZ: Accelerometer offsets (m/s^2)
  *   - gyroX, gyroY, gyroZ: Gyroscope offsets (deg/s)
