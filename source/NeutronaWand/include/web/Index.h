@@ -59,9 +59,11 @@ const char INDEX_page[] PROGMEM = R"=====(
         <div id="3Dobj"></div>
       </div>
     </div>
-
     <button type="button" class="orange" onclick="resetPosition()">Re-center</button>
     <button type="button" class="red" onclick="triggerInfrared()">Infrared</button>
+    <br/>
+    <button type="button" class="blue" onclick="enableCalibration()">Calibrate-On</button>
+    <button type="button" class="green" onclick="disableCalibration()">Calibrate-Off</button>
   </div>
 
   <div id="tab2" class="tab">

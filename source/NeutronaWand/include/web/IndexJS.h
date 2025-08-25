@@ -354,4 +354,12 @@ function resetPosition() {
 function triggerInfrared() {
   sendCommand("/infrared/signal?type=ghostintrap");
 }
+
+function enableCalibration() {
+  sendCommand("/sensors/calibrate/enable");
+}
+
+function disableCalibration() {
+  sendCommand("/sensors/calibrate/disable");
+}
 )=====";

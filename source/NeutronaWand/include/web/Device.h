@@ -52,13 +52,13 @@ const char DEVICE_page[] PROGMEM = R"=====(
        title="Only letters, numbers, hyphens, and underscores are allowed, up to 32 characters."/>
     </div>
     <div class="setting">
-      <b>Magnetic Offsets (from MotionCal output):</b><br/>
-      <input type="text" id="hardIronX" width="8" maxlength="8" placeholder="X Axis"/>
-      <input type="text" id="hardIronY" width="8" maxlength="8" placeholder="Y Axis"/>
-      <input type="text" id="hardIronZ" width="8" maxlength="8" placeholder="Z Axis"/>
+      <b>MotionCal - Magnetic Offsets:</b><br/>
+      <input type="text" id="hardIron1" width="8" maxlength="8" placeholder="X Axis"/><br/>
+      <input type="text" id="hardIron2" width="8" maxlength="8" placeholder="Y Axis"/><br/>
+      <input type="text" id="hardIron3" width="8" maxlength="8" placeholder="Z Axis"/><br/>
     </div>
     <div class="setting">
-      <b>Magnetic Mapping (from MotionCal output):</b><br/>
+      <b>MotionCal - Magnetic Mapping:</b><br/>
       <input type="text" id="softIron1" width="8" maxlength="8" placeholder="Value 1"/>
       <input type="text" id="softIron2" width="8" maxlength="8" placeholder="Value 2"/>
       <input type="text" id="softIron3" width="8" maxlength="8" placeholder="Value 3"/>
@@ -72,7 +72,7 @@ const char DEVICE_page[] PROGMEM = R"=====(
       <input type="text" id="softIron9" width="8" maxlength="8" placeholder="Value 9"/>
     </div>
     <div class="setting">
-      <b>Magnetic Field (from MotionCal output):</b><br/>
+      <b>MotionCal - Magnetic Field:</b><br/>
       <input type="text" id="magField" width="8" maxlength="8" placeholder="0"/>
     </div>
     <div class="setting">
@@ -117,9 +117,9 @@ const char DEVICE_page[] PROGMEM = R"=====(
           if (settings) {
             // Update fields with the current values, or supply an expected default as necessary.
             setValue("wifiName", settings.wifiName || "");
-            setValue("hardIronX", settings.hardIronX ?? 0);
-            setValue("hardIronY", settings.hardIronY ?? 0);
-            setValue("hardIronZ", settings.hardIronZ ?? 0);
+            setValue("hardIron1", settings.hardIron1 ?? 0);
+            setValue("hardIron2", settings.hardIron2 ?? 0);
+            setValue("hardIron3", settings.hardIron3 ?? 0);
             setValue("softIron1", settings.softIron1 ?? 0);
             setValue("softIron2", settings.softIron2 ?? 0);
             setValue("softIron3", settings.softIron3 ?? 0);
@@ -164,27 +164,12 @@ const char DEVICE_page[] PROGMEM = R"=====(
         return;
       }
 
-      // Save all magnetic calibration values.
-      settings.hardIronX = getFloat("hardIronX");
-      settings.hardIronY = getFloat("hardIronY");
-      settings.hardIronZ = getFloat("hardIronZ");
-      settings.softIron1 = getFloat("softIron1");
-      settings.softIron2 = getFloat("softIron2");
-      settings.softIron3 = getFloat("softIron3");
-      settings.softIron4 = getFloat("softIron4");
-      settings.softIron5 = getFloat("softIron5");
-      settings.softIron6 = getFloat("softIron6");
-      settings.softIron7 = getFloat("softIron7");
-      settings.softIron8 = getFloat("softIron8");
-      settings.softIron9 = getFloat("softIron9");
-      settings.magField = getFloat("magField");
-
       // Saves current settings to attenuator, updating runtime variables and making changes immediately effective.
       var settings = {
         wifiName: wifiName,
-        hardIronX: getFloat("hardIronX"),
-        hardIronY: getFloat("hardIronY"),
-        hardIronZ: getFloat("hardIronZ"),
+        hardIron1: getFloat("hardIron1"),
+        hardIron2: getFloat("hardIron2"),
+        hardIron3: getFloat("hardIron3"),
         softIron1: getFloat("softIron1"),
         softIron2: getFloat("softIron2"),
         softIron3: getFloat("softIron3"),

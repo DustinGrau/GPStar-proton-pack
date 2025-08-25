@@ -406,9 +406,9 @@ String getDeviceConfig() {
   jsonBody["wifiNameExt"] = wifi_ssid;
   jsonBody["extAddr"] = wifi_address;
   jsonBody["extMask"] = wifi_subnet;
-  jsonBody["hardIronX"] = magCalData.mag_hardiron[0];
-  jsonBody["hardIronY"] = magCalData.mag_hardiron[1];
-  jsonBody["hardIronZ"] = magCalData.mag_hardiron[2];
+  jsonBody["hardIron1"] = magCalData.mag_hardiron[0];
+  jsonBody["hardIron2"] = magCalData.mag_hardiron[1];
+  jsonBody["hardIron3"] = magCalData.mag_hardiron[2];
   jsonBody["softIron1"] = magCalData.mag_softiron[0];
   jsonBody["softIron2"] = magCalData.mag_softiron[1];
   jsonBody["softIron3"] = magCalData.mag_softiron[2];
@@ -612,6 +612,19 @@ void handleResetSensors(AsyncWebServerRequest *request) {
   request->send(200, "application/json", status);
 }
 
+void handleCalibrateSensorsEnabled(AsyncWebServerRequest *request) {
+  // Turn on calibration mode for the motion sensors.
+  SENSOR_READ_TARGET = CALIBRATION;
+  request->send(200, "application/json", status);
+}
+
+void handleCalibrateSensorsDisabled(AsyncWebServerRequest *request) {
+  // Turn off calibration mode for the motion sensors.
+  SENSOR_READ_TARGET = OFFSETS;
+  resetAllMotionData();
+  request->send(200, "application/json", status);
+}
+
 void handleInfraredSignal(AsyncWebServerRequest *request) {
   String c_signal_type = "";
 
@@ -775,9 +788,9 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
     }
 
     // Set the current magnetic calibration values.
-    magCalData.mag_hardiron[0] = jsonBody["hardIronX"].as<float>();
-    magCalData.mag_hardiron[1] = jsonBody["hardIronY"].as<float>();
-    magCalData.mag_hardiron[2] = jsonBody["hardIronZ"].as<float>();
+    magCalData.mag_hardiron[0] = jsonBody["hardIron1"].as<float>();
+    magCalData.mag_hardiron[1] = jsonBody["hardIron2"].as<float>();
+    magCalData.mag_hardiron[2] = jsonBody["hardIron3"].as<float>();
     magCalData.mag_softiron[0] = jsonBody["softIron1"].as<float>();
     magCalData.mag_softiron[1] = jsonBody["softIron2"].as<float>();
     magCalData.mag_softiron[2] = jsonBody["softIron3"].as<float>();
@@ -1090,6 +1103,8 @@ void setupRouting() {
   httpServer.on("/music/loop", HTTP_PUT, handleLoopMusicTrack);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
   httpServer.on("/sensors/recenter", HTTP_PUT, handleResetSensors);
+  httpServer.on("/sensors/calibrate/enable", HTTP_PUT, handleCalibrateSensorsEnabled);
+  httpServer.on("/sensors/calibrate/disable", HTTP_PUT, handleCalibrateSensorsDisabled);
   httpServer.on("/infrared/signal", HTTP_PUT, handleInfraredSignal);
 
   // Body Handlers
