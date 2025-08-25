@@ -802,15 +802,16 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
     magCalData.mag_softiron[8] = jsonBody["softIron9"].as<float>();
     magCalData.mag_field = jsonBody["magField"].as<float>();
 
-    // Store the struct (object) to preferences.
-    preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
-
     // Get the track listing from the text field.
     String songList = jsonBody["songList"].as<String>();
     bool b_list_err = false;
 
     // Accesses namespace in read/write mode.
     if(preferences.begin("device", false)) {
+      // Store the magnetic calibration struct (object) to preferences.
+      preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
+
+      // Store the song list to preferences.
       if(songList.length() <= 2000) {
         if(songList == "null") {
           songList = "";
