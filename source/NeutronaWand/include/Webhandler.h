@@ -36,9 +36,10 @@
 void setupRouting();
 void getSpecialPreferences();
 
-// Rounds a float to 2 decimal places.
+// Rounds a float to 3 decimal places.
 float roundFloat(float value) {
-  return roundf(value * 100.0f) / 100.0f;
+  // Shifts the decimal point, rounds, then shifts back.
+  return roundf(value * 1000.0f) / 1000.0f;
 }
 
 /*
@@ -352,9 +353,6 @@ void handleDeviceSettings(AsyncWebServerRequest *request) {
 }
 
 void handleWandSettings(AsyncWebServerRequest *request) {
-  // Tell the pack that we'll need the latest wand EEPROM values.
-  //executeCommand(A_REQUEST_PREFERENCES_WAND);
-
   // Used for the settings page from the web server.
   debug("Sending -> Wand Settings HTML");
   AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (const uint8_t*)WAND_SETTINGS_page, strlen(WAND_SETTINGS_page));
@@ -407,7 +405,7 @@ void handleThreeJS(AsyncWebServerRequest *request) {
 }
 
 String getDeviceConfig() {
-  // Prepare a JSON object with information we have gleamed from the system.
+  // Prepare a JSON object with information we have gleaned from the system.
   String equipSettings;
   jsonBody.clear();
 
@@ -443,7 +441,7 @@ String getDeviceConfig() {
 }
 
 String getWandConfig() {
-  // Prepare a JSON object with information we have gleamed from the system.
+  // Prepare a JSON object with information we have gleaned from the system.
   String equipSettings;
   jsonBody.clear();
 
@@ -485,7 +483,7 @@ String getWandConfig() {
 }
 
 String getEquipmentStatus() {
-  // Prepare a JSON object with information we have gleamed from the system.
+  // Prepare a JSON object with information we have gleaned from the system.
   String equipStatus;
   jsonBody.clear();
 
@@ -588,9 +586,9 @@ String getTelemetry() {
   jsonTelemetry["gyroY"] = roundFloat(filteredMotionData.gyroY);
   jsonTelemetry["gyroZ"] = roundFloat(filteredMotionData.gyroZ);
   // Spatial data in Euler angles (degrees).
+  jsonTelemetry["roll"] = roundFloat(spatialData.roll);
   jsonTelemetry["pitch"] = roundFloat(spatialData.pitch);
   jsonTelemetry["yaw"] = roundFloat(spatialData.yaw);
-  jsonTelemetry["roll"] = roundFloat(spatialData.roll);
   // Spatial data in quaternion (w, x, y, z).
   jsonTelemetry["qw"] = roundFloat(spatialData.quaternion[0]);
   jsonTelemetry["qx"] = roundFloat(spatialData.quaternion[1]);

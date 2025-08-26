@@ -27,7 +27,7 @@ void notifyWSClients(); // From Webhandler.h
  * Centralized handler for commands, allowing the Pack and Wand to both perform the same action.
  * This approach is applying the Command Pattern to decouple the sender from the receiver.
  * In order for this to work, the command value must come from a unique source: PACK_MESSAGE
- * 
+ *
  * Inputs:
  *   - i_command: Command identifier (PACK_MESSAGE enum)
  *   - i_value: Optional value for the command (default 0)

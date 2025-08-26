@@ -284,7 +284,11 @@ void getWandPrefsObject() {
 bool isExcludedCommand(uint8_t i_command) {
   return i_command == W_HANDSHAKE ||
          i_command == W_SYNC_NOW ||
-         i_command == W_COM_SOUND_NUMBER ||
+         i_command == W_SYNCHRONIZED ||
+         i_command == W_SAVE_CONFIG_EEPROM_SETTINGS ||
+         i_command == W_CLEAR_CONFIG_EEPROM_SETTINGS ||
+         i_command == W_SAVE_LED_EEPROM_SETTINGS ||
+         i_command == W_CLEAR_LED_EEPROM_SETTINGS ||
          i_command == W_SEND_PREFERENCES_WAND ||
          i_command == W_SEND_PREFERENCES_SMOKE;
 }
@@ -296,7 +300,7 @@ void wandSerialSend(uint8_t i_command, uint16_t i_value) {
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
   // We make a special case for a disconnected pack, or one in benchtest mode, so that the WebSocket gets updates.
-  if (WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST || !isExcludedCommand(i_command)) {
+  if ((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_command)) {
     notifyWSClients();
   }
 #endif
@@ -330,6 +334,14 @@ void wandSerialSend(uint8_t i_command) {
 // Outgoing payloads to the pack.
 void wandSerialSendData(uint8_t i_message) {
   uint16_t i_send_size = 0;
+
+#ifdef ESP32
+  // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
+  // We make a special case for a disconnected pack, or one in benchtest mode, so that the WebSocket gets updates.
+  if ((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_message)) {
+    notifyWSClients();
+  }
+#endif
 
   // Leave when a pack is not intended to be connected.
   if(b_gpstar_benchtest) {
