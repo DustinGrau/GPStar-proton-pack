@@ -292,6 +292,10 @@ void toggleYearModes() {
   }
 }
 
+/*
+ * Serial API Helper Functions
+ */
+
 // Common helper function to populate the packConfig object with global variables.
 void getPackPrefsObject() {
   sendDebug(F("Getting Pack Preferences"));
@@ -426,10 +430,6 @@ void getSmokePrefsObject() {
   }
 }
 
-/*
- * Serial API Communication Handlers
- */
-
 // Helper function to check if a command is excluded from WebSocket notifications.
 bool isExcludedCommand(uint8_t i_command) {
   return i_command == A_HANDSHAKE ||
@@ -448,6 +448,10 @@ bool isExcludedCommand(uint8_t i_command) {
          i_command == A_SAVE_PREFERENCES_WAND ||
          i_command == A_SAVE_PREFERENCES_SMOKE;
 }
+
+/*
+ * Serial API Communication Handlers
+ */
 
 // Outgoing commands to the Attenuator
 void attenuatorSerialSend(uint8_t i_command, uint16_t i_value) {

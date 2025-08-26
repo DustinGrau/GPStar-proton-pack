@@ -95,13 +95,6 @@ const char WAND_SETTINGS_page[] PROGMEM = R"=====(
       </label>
     </div>
     <div class="setting">
-      <b class="labelSwitch">Lights Off During Overheat:</b>
-      <label class="switch">
-        <input id="overheatLightsOff" name="overheatLightsOff" type="checkbox">
-        <span class="slider round"></span>
-      </label>
-    </div>
-    <div class="setting">
       <b class="labelSwitch">Spectral Modes Enabled:</b>
       <label class="switch">
         <input id="spectralModesEnabled" name="spectralModesEnabled" type="checkbox">
@@ -259,8 +252,8 @@ const char WAND_SETTINGS_page[] PROGMEM = R"=====(
               return;
             }
 
-            if (settings.packPowered || settings.wandPowered) {
-              alert("Pack and/or Wand are currently running. Changes to settings will not be allowed. Turn off devices via toggle switches and reload the page to obtain the latest settings.");
+            if (settings.wandPowered) {
+              alert("Wand is currently running. Changes to settings will not be allowed. Turn off devices via toggle switches and reload the page to obtain the latest settings.");
               return;
             }
 

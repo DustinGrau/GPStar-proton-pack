@@ -9,6 +9,9 @@
 
   Written by PJRC, adapted by Limor Fried for Adafruit Industries.
   https://github.com/adafruit/Adafruit_AHRS/tree/master/examples/calibration
+
+  Uses external program to gather the calibration values. Download from:
+  https://www.pjrc.com/store/prop_shield.html
  ***************************************************************************/
 
 #define IMU_SCL 47
@@ -49,7 +52,7 @@ void loop() {
   magnetometer->getEvent(&mag_event);
   gyroscope->getEvent(&gyro_event);
   accelerometer->getEvent(&accel_event);
-  
+
   // 'Raw' values to match expectation of MotionCal
   Serial.print("Raw:");
   Serial.print(int(accel_event.acceleration.x*8192/9.8)); Serial.print(",");
@@ -75,5 +78,5 @@ void loop() {
   Serial.print(mag_event.magnetic.z); Serial.println("");
   loopcount++;
 
-  delay(10); 
+  delay(10);
 }
