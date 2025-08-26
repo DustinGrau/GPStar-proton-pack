@@ -609,6 +609,7 @@ void handleGetDeviceConfig(AsyncWebServerRequest *request) {
 
 void handleGetWandConfig(AsyncWebServerRequest *request) {
   // Return current wand settings as a stringified JSON object.
+  getWandPrefsObject(); // Call common function (also used by Pack/Attenuator)
   request->send(200, "application/json", getWandConfig());
 }
 
