@@ -559,6 +559,10 @@ void handleWandPrefsUpdate() {
     break;
   }
 
+  // Offer some feedback to the user
+  stopEffect(S_BEEPS);
+  playEffect(S_BEEPS);
+
   // Update and reset wand components.
   bargraphYearModeUpdate();
   resetOverheatLevels();
