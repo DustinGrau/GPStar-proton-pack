@@ -448,9 +448,6 @@ String getWandConfig() {
   // Provide a flag to indicate prefs are directly available.
   jsonBody["prefsAvailable"] = true;
 
-  // Whether the wand is considered in "benchtest" mode.
-  jsonBody["benchtest"] = (b_gpstar_benchtest ? true : false);
-
   // Return current powered state for pack and wand.
   jsonBody["wandPowered"] = (WAND_STATUS == MODE_ON);
   jsonBody["wandConnected"] = (WAND_CONN_STATE == PACK_CONNECTED);
@@ -497,11 +494,7 @@ String getEquipmentStatus() {
     i_music_track_max = i_music_track_start + i_music_track_count - 1; // 500 + N - 1 to be inclusive of the offset value.
   }
 
-#ifdef ESP32
-  jsonBody["pcb"] = "ESP32";
-#else
-  jsonBody["pcb"] = "ATMega";
-#endif
+  jsonBody["benchtest"] = (b_gpstar_benchtest ? true : false);
   jsonBody["mode"] = getMode();
   jsonBody["modeID"] = (SYSTEM_MODE == MODE_SUPER_HERO) ? 1 : 0;
   jsonBody["theme"] = getTheme();
