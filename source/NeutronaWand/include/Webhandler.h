@@ -448,8 +448,10 @@ String getWandConfig() {
   // Provide a flag to indicate prefs are directly available.
   jsonBody["prefsAvailable"] = true;
 
+  // Whether the wand is considered in "benchtest" mode.
+  jsonBody["benchtest"] = (b_gpstar_benchtest ? true : false);
+
   // Return current powered state for pack and wand.
-  jsonBody["packPowered"] = (b_pack_on ? true : false);
   jsonBody["wandPowered"] = (WAND_STATUS == MODE_ON);
   jsonBody["wandConnected"] = (WAND_CONN_STATE == PACK_CONNECTED);
 
@@ -667,74 +669,104 @@ void handleRestart(AsyncWebServerRequest *request) {
 
 void handleToggleMute(AsyncWebServerRequest *request) {
   debug("Web: Toggle Mute");
-  //executeCommand(A_TOGGLE_MUTE);
+  if(i_volume_master == i_volume_abs_min) {
+    i_volume_master = i_volume_revert;
+  }
+  else {
+    i_volume_revert = i_volume_master;
+
+    // Set the master volume to minimum.
+    i_volume_master = i_volume_abs_min;
+  }
+  // Update the master volume.
+  updateMasterVolume();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMasterVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Master Volume Up");
-  //executeCommand(A_VOLUME_INCREASE);
+  increaseVolume();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMasterVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Master Volume Down");
-  //executeCommand(A_VOLUME_DECREASE);
+  decreaseVolume();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleEffectsVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Effects Volume Up");
-  executeCommand(P_VOLUME_SOUND_EFFECTS_INCREASE);
+  increaseVolumeEffects();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleEffectsVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Effects Volume Down");
-  executeCommand(P_VOLUME_SOUND_EFFECTS_DECREASE);
+  decreaseVolumeEffects();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMusicVolumeUp(AsyncWebServerRequest *request) {
   debug("Web: Music Volume Up");
-  //executeCommand(A_VOLUME_MUSIC_INCREASE);
+  increaseVolumeMusic();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMusicVolumeDown(AsyncWebServerRequest *request) {
   debug("Web: Music Volume Down");
-  //executeCommand(A_VOLUME_MUSIC_DECREASE);
+  decreaseVolumeMusic();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMusicStartStop(AsyncWebServerRequest *request) {
   debug("Web: Music Start/Stop");
-  //executeCommand(A_MUSIC_START_STOP);
+  if(!b_playing_music && !b_music_paused) {
+    playMusic();
+  } else {
+    stopMusic();
+  }
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleMusicPauseResume(AsyncWebServerRequest *request) {
   debug("Web: Music Pause/Resume");
-  //executeCommand(A_MUSIC_PAUSE_RESUME);
+  if(b_playing_music && !b_music_paused) {
+    pauseMusic();
+  } else {
+    resumeMusic();
+  }
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleNextMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Next Music Track");
-  //executeCommand(A_MUSIC_NEXT_TRACK);
+  musicNextTrack();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handlePrevMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Prev Music Track");
-  //executeCommand(A_MUSIC_PREV_TRACK);
+  musicPrevTrack();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleLoopMusicTrack(AsyncWebServerRequest *request) {
   debug("Web: Toggle Music Track Loop");
-  //executeCommand(A_MUSIC_TRACK_LOOP_TOGGLE);
+  toggleMusicLoop();
   request->send(200, "application/json", status);
+  notifyWSClients();
 }
 
 void handleSelectMusicTrack(AsyncWebServerRequest *request) {
@@ -748,7 +780,7 @@ void handleSelectMusicTrack(AsyncWebServerRequest *request) {
   if(c_music_track.toInt() != 0 && c_music_track.toInt() >= i_music_track_start) {
     uint16_t i_music_track = c_music_track.toInt();
     debug("Web: Selected Music Track: " + String(i_music_track));
-    //executeCommand(A_MUSIC_PLAY_TRACK, i_music_track); // Inform the pack of the new track.
+    playMusic(); // Start playing music.
     request->send(200, "application/json", status);
   }
   else {
@@ -759,6 +791,8 @@ void handleSelectMusicTrack(AsyncWebServerRequest *request) {
     serializeJson(jsonBody, result); // Serialize to string.
     request->send(200, "application/json", result);
   }
+
+  notifyWSClients();
 }
 
 void handleSaveWandEEPROM(AsyncWebServerRequest *request) {
@@ -1111,6 +1145,7 @@ void setupRouting() {
   httpServer.on("/eeprom/wand", HTTP_PUT, handleSaveWandEEPROM);
   httpServer.on("/status", HTTP_GET, handleGetStatus);
   httpServer.on("/restart", HTTP_DELETE, handleRestart);
+  httpServer.on("/volume/toggle", HTTP_PUT, handleToggleMute);
   httpServer.on("/volume/master/up", HTTP_PUT, handleMasterVolumeUp);
   httpServer.on("/volume/master/down", HTTP_PUT, handleMasterVolumeDown);
   httpServer.on("/volume/effects/up", HTTP_PUT, handleEffectsVolumeUp);

@@ -22,7 +22,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250826072209";
+String build_date = "V6_20250827134444";
 
 /*
  * Preferred WiFi Network Defaults (only for ESP32)
@@ -257,4 +257,4 @@ const bool b_eeprom = true;
  * When set to true, the Neutrona Wand will function without a Proton Pack connected.
  * This prevents the Neutrona Wand from sending and reading serial data. Set to false return communication back to the Proton Pack.
  */
-bool b_gpstar_benchtest = false;
+bool b_gpstar_benchtest = true;
