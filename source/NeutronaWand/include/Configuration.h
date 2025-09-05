@@ -19,10 +19,11 @@
 
 #pragma once
 
+#ifdef ESP32
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250902204745";
+String build_date = "V6_20250905065213";
 
 /*
  * Preferred WiFi Network Defaults (only for ESP32)
@@ -63,6 +64,7 @@ String user_wifi_pass = ""; // Preferred network password for external WiFi
  * Only available on the ESP32 builds.
  */
 #define MOTION_OFFSETS
+#endif
 
 /*
  * -------------****** CUSTOM USER CONFIGURABLE SETTINGS ******-------------
