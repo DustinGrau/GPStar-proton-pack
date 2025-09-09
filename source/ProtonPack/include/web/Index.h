@@ -114,10 +114,24 @@ const char INDEX_page[] PROGMEM = R"=====(
           <button type="button" onclick="volMusicDown()">&minus;</button>
         </div>
       </div>
-      <button type="button" class="orange" onclick="toggleMute()">Mute/Unmute</button>
-      <!--
-      <button type="button" class="orange" onclick="musicLoop()">Loop Track</button>
-      -->
+      <div style="display: inline-block">
+        <h3>Master Mute</h3>
+        <label class="toggle-switchy">
+          <input id="toggleMute" name="toggleMute" type="checkbox" onchange="toggleMute()">
+          <span class="toggle">
+            <span class="switch"></span>
+          </span>
+        </label>
+      </div>
+      <div style="display: inline-block">
+        <h3>Music Repeat</h3>
+        <label class="toggle-switchy" data-text="repeat">
+          <input id="toggleLoop" name="toggleLoop" type="checkbox" onchange="musicLoop()">
+          <span class="toggle">
+            <span class="switch"></span>
+          </span>
+        </label>
+      </div>
     </div>
     <div class="card">
       <h3 class="centered">Music Navigation</h3>
@@ -158,14 +172,6 @@ const char INDEX_page[] PROGMEM = R"=====(
       <br/>
       <br/>
       <br/>
-      <!--
-      <button type="button" class="orange" onclick="packLOStart()" id="btnLOStart">Lockout</button>
-      &nbsp;&nbsp;
-      <button type="button" class="blue" onclick="packLOCancel()" id="btnLOCancel">Resume</button>
-      <br/>
-      <br/>
-      <br/>
-      -->
     </div>
   </div>
 

@@ -370,7 +370,6 @@ void handleWandSettings(AsyncWebServerRequest *request) {
 
 void handleSmokeSettings(AsyncWebServerRequest *request) {
   // Tell the pack that we'll need the latest smoke EEPROM values.
-  b_received_prefs_smoke = false;
   executeCommand(A_REQUEST_PREFERENCES_SMOKE);
 
   // Used for the settings page from the web server.
@@ -544,7 +543,7 @@ String getSmokeConfig() {
   jsonBody.clear();
 
   // Provide a flag to indicate prefs were received via serial coms.
-  jsonBody["prefsAvailable"] = b_received_prefs_smoke;
+  jsonBody["prefsAvailable"] = true;
 
   // Return current powered state for pack and wand.
   jsonBody["packPowered"] = (b_pack_on ? true : false);
@@ -629,6 +628,7 @@ String getEquipmentStatus() {
   jsonBody["musicCurrent"] = i_current_music_track;
   jsonBody["musicStart"] = i_music_track_min;
   jsonBody["musicEnd"] = i_music_track_max;
+  jsonBody["volMuted"] = (i_volume_master == i_volume_abs_min);
   jsonBody["volMaster"] = i_volume_master_percentage;
   jsonBody["volEffects"] = i_volume_effects_percentage;
   jsonBody["volMusic"] = i_volume_music_percentage;
@@ -760,18 +760,6 @@ void handleAttenuatePack(AsyncWebServerRequest *request) {
 void handleManualVent(AsyncWebServerRequest *request) {
   debugln("Web: Manual Vent Triggered");
   executeCommand(A_MANUAL_OVERHEAT);
-  request->send(200, "application/json", status);
-}
-
-void handleManualLockout(AsyncWebServerRequest *request) {
-  debugln("Web: Manual Lockout Triggered");
-  executeCommand(A_SYSTEM_LOCKOUT);
-  request->send(200, "application/json", status);
-}
-
-void handleCancelLockout(AsyncWebServerRequest *request) {
-  debugln("Web: Cancel Lockout Triggered");
-  executeCommand(A_CANCEL_LOCKOUT);
   request->send(200, "application/json", status);
 }
 
@@ -1455,8 +1443,6 @@ void setupRouting() {
   httpServer.on("/pack/off", HTTP_PUT, handlePackOff);
   httpServer.on("/pack/attenuate", HTTP_PUT, handleAttenuatePack);
   httpServer.on("/pack/vent", HTTP_PUT, handleManualVent);
-  httpServer.on("/pack/lockout/start", HTTP_PUT, handleManualLockout);
-  httpServer.on("/pack/lockout/cancel", HTTP_PUT, handleCancelLockout);
   httpServer.on("/pack/theme/1984", HTTP_PUT, handleThemeChange);
   httpServer.on("/pack/theme/1989", HTTP_PUT, handleThemeChange);
   httpServer.on("/pack/theme/2021", HTTP_PUT, handleThemeChange);
