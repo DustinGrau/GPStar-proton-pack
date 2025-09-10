@@ -1000,6 +1000,7 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
     if(preferences.begin("device", false)) {
       preferences.putShort("display_type", DISPLAY_TYPE);
 
+      // Store the song list to preferences.
       if(songList.length() <= 2000) {
         if(songList == "null") {
           songList = "";

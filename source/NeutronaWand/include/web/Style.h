@@ -417,6 +417,13 @@ input[type=text] {
   width:320px;
 }
 
+#audio-toggles {
+  background:#fff;
+  margin:0px auto;
+  min-height:100px;
+  text-align:center;
+}
+
 .tab {
   display:none;
 }

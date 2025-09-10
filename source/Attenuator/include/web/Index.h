@@ -120,7 +120,7 @@ const char INDEX_page[] PROGMEM = R"=====(
       <div style="display: inline-block">
         <h3>Master Mute</h3>
         <label class="toggle-switchy">
-          <input id="toggleMute" name="toggleMute" type="checkbox" onchange="toggleMute()">
+          <input id="toggleMute" name="toggleMute" type="checkbox" onchange="toggleMute(this)">
           <span class="toggle">
             <span class="switch"></span>
           </span>
@@ -129,7 +129,7 @@ const char INDEX_page[] PROGMEM = R"=====(
       <div style="display: inline-block">
         <h3>Music Repeat</h3>
         <label class="toggle-switchy" data-text="repeat">
-          <input id="toggleLoop" name="toggleLoop" type="checkbox" onchange="musicLoop()">
+          <input id="toggleLoop" name="toggleLoop" type="checkbox" onchange="musicLoop(this)">
           <span class="toggle">
             <span class="switch"></span>
           </span>

@@ -29,6 +29,10 @@ function getInt(id){
   return parseInt(getValue(id) || 0, 10);
 }
 
+function getFloat(id){
+  return parseFloat(getValue(id) || 0);
+}
+
 function getText(id){
   return (getValue(id) || "").trim();
 }
@@ -146,10 +150,6 @@ function packVent() {
   sendCommand("/pack/vent");
 }
 
-function toggleMute() {
-  sendCommand("/volume/toggle");
-}
-
 function volSysUp() {
   sendCommand("/volume/master/up");
 }
@@ -182,6 +182,22 @@ function musicPauseResume() {
   sendCommand("/music/pauseresume");
 }
 
+function toggleMute(el) {
+  if (el._lockout) return;
+  el._lockout = true;
+
+  // Change state only when a CSS transition is completed.
+  function onTransitionEnd(e) {
+    if (e.propertyName === "right") {
+      sendCommand("/volume/toggle");
+      el._lockout = false;
+      el.removeEventListener('transitionend', onTransitionEnd);
+    }
+  }
+
+  el.addEventListener('transitionend', onTransitionEnd);
+}
+
 function musicSelect(caller) {
   // Change the music track by selected option: /music/select?track=<#>
   sendCommand("/music/select?track=" + caller.value);
@@ -195,8 +211,20 @@ function musicNext() {
   sendCommand("/music/next");
 }
 
-function musicLoop() {
-  sendCommand("/music/loop");
+function musicLoop(el) {
+  if (el._lockout) return;
+  el._lockout = true;
+
+  // Change state only when a CSS transition is completed.
+  function onTransitionEnd(e) {
+    if (e.propertyName === "right") {
+      sendCommand("/music/loop");
+      el._lockout = false;
+      el.removeEventListener('transitionend', onTransitionEnd);
+    }
+  }
+
+  el.addEventListener('transitionend', onTransitionEnd);
 }
 
 function themeSelect(caller) {
