@@ -615,6 +615,7 @@ String getEquipmentStatus() {
     jsonBody["themeID"] = SYSTEM_YEAR;
     jsonBody["switch"] = getRedSwitch();
     jsonBody["pack"] = (b_pack_on ? "Powered" : "Idle");
+    jsonBody["ramping"] = b_ramping;
     jsonBody["power"] = getPower();
     jsonBody["safety"] = getSafety();
     jsonBody["wand"] = (b_wand_connected ? "Connected" : "Not Connected");
@@ -627,9 +628,11 @@ String getEquipmentStatus() {
     jsonBody["temperature"] = (b_overheating ? "Venting" : "Normal");
     jsonBody["musicPlaying"] = b_playing_music;
     jsonBody["musicPaused"] = b_music_paused;
+    jsonBody["musicLooping"] = b_repeat_track;
     jsonBody["musicCurrent"] = i_current_music_track;
     jsonBody["musicStart"] = i_music_track_min;
     jsonBody["musicEnd"] = i_music_track_max;
+    jsonBody["volMuted"] = b_master_muted;
     jsonBody["volMaster"] = i_volume_master_percentage;
     jsonBody["volEffects"] = i_volume_effects_percentage;
     jsonBody["volMusic"] = i_volume_music_percentage;

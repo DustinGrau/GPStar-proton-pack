@@ -213,7 +213,7 @@ function disableActionButtons() {
   getEl("btnAttenuate").disabled = true;
 }
 
-function setButtonStates(mode, pack, wand, cyclotron, ionswitch, firing, themeid) {
+function setButtonStates(mode, pack, wand, cyclotron, ionswitch, firing, ramping, themeid) {
   // Assume all direct user actions are not possible, then override as necessary.
   disableActionButtons();
 
@@ -244,7 +244,7 @@ function setButtonStates(mode, pack, wand, cyclotron, ionswitch, firing, themeid
     break;
   }
 
-  if (pack == "Powered" || wand == "Powered") {
+  if (pack == "Powered" || wand == "Powered" || ramping) {
     // If either the pack or wand is powered, we cannot change themes.
     getEl("themes").disabled = true;
   } else {
@@ -541,6 +541,7 @@ function updateEquipment(jObj) {
     if ((jObj.volMusic || 0) == 0) {
       setHtml("musicVolume", "Min");
     }
+    setToggle("toggleMute", jObj.volMuted);
 
     // Music Playback Status
     if (jObj.musicPlaying && !jObj.musicPaused) {
@@ -553,9 +554,10 @@ function updateEquipment(jObj) {
       // If no music is playing or paused, show a default message.
       setHtml("playbackStatus", "No Music Playing");
     }
+    setToggle("toggleLoop", jObj.musicLooping);
 
     // Update special UI elements based on the latest data values.
-    setButtonStates(jObj.mode, jObj.pack, jObj.wandPower, jObj.cyclotron, jObj.switch, jObj.firing, jObj.themeID);
+    setButtonStates(jObj.mode, jObj.pack, jObj.wandPower, jObj.cyclotron, jObj.switch, jObj.firing, jObj.ramping, jObj.themeID);
 
     // Update the current track info.
     musicTrackStart = jObj.musicStart || 0;
