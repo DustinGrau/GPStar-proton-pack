@@ -1142,7 +1142,8 @@ void setupRouting() {
   httpServer.on("/eeprom/wand", HTTP_PUT, handleSaveWandEEPROM);
   httpServer.on("/status", HTTP_GET, handleGetStatus);
   httpServer.on("/restart", HTTP_DELETE, handleRestart);
-  httpServer.on("/volume/toggle", HTTP_PUT, handleToggleMute);
+  httpServer.on("/volume/mute", HTTP_PUT, handleToggleMute);
+  httpServer.on("/volume/unmute", HTTP_PUT, handleToggleMute);
   httpServer.on("/volume/master/up", HTTP_PUT, handleMasterVolumeUp);
   httpServer.on("/volume/master/down", HTTP_PUT, handleMasterVolumeDown);
   httpServer.on("/volume/effects/up", HTTP_PUT, handleEffectsVolumeUp);
@@ -1154,7 +1155,8 @@ void setupRouting() {
   httpServer.on("/music/next", HTTP_PUT, handleNextMusicTrack);
   httpServer.on("/music/select", HTTP_PUT, handleSelectMusicTrack);
   httpServer.on("/music/prev", HTTP_PUT, handlePrevMusicTrack);
-  httpServer.on("/music/loop", HTTP_PUT, handleLoopMusicTrack);
+  httpServer.on("/music/loop/all", HTTP_PUT, handleLoopMusicTrack);
+  httpServer.on("/music/loop/single", HTTP_PUT, handleLoopMusicTrack);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
   httpServer.on("/sensors/recenter", HTTP_PUT, handleResetSensors);
   httpServer.on("/sensors/calibrate/enable", HTTP_PUT, handleCalibrateSensorsEnabled);

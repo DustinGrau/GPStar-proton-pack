@@ -189,7 +189,11 @@ function toggleMute(el) {
   // Change state only when a CSS transition is completed.
   function onTransitionEnd(e) {
     if (e.propertyName === "right") {
-      sendCommand("/volume/toggle");
+      if (el.checked) {
+        sendCommand("/volume/mute");
+      } else {
+        sendCommand("/volume/unmute");
+      }
       el._lockout = false;
       el.removeEventListener('transitionend', onTransitionEnd);
     }
@@ -218,7 +222,71 @@ function musicLoop(el) {
   // Change state only when a CSS transition is completed.
   function onTransitionEnd(e) {
     if (e.propertyName === "right") {
-      sendCommand("/music/loop");
+      if (el.checked) {
+        sendCommand("/music/loop/single");
+      } else {
+        sendCommand("/music/loop/all");
+      }
+      el._lockout = false;
+      el.removeEventListener('transitionend', onTransitionEnd);
+    }
+  }
+
+  el.addEventListener('transitionend', onTransitionEnd);
+}
+
+function toggleSmoke() {
+  if (el._lockout) return;
+  el._lockout = true;
+
+  // Change state only when a CSS transition is completed.
+  function onTransitionEnd(e) {
+    if (e.propertyName === "right") {
+      if (el.checked) {
+        sendCommand("/pack/smoke/on");
+      } else {
+        sendCommand("/pack/smoke/off");
+      }
+      el._lockout = false;
+      el.removeEventListener('transitionend', onTransitionEnd);
+    }
+  }
+
+  el.addEventListener('transitionend', onTransitionEnd);
+}
+
+function toggleVibration() {
+  if (el._lockout) return;
+  el._lockout = true;
+
+  // Change state only when a CSS transition is completed.
+  function onTransitionEnd(e) {
+    if (e.propertyName === "right") {
+      if (el.checked) {
+        sendCommand("/pack/vibration/on");
+      } else {
+        sendCommand("/pack/vibration/off");
+      }
+      el._lockout = false;
+      el.removeEventListener('transitionend', onTransitionEnd);
+    }
+  }
+
+  el.addEventListener('transitionend', onTransitionEnd);
+}
+
+function cyclotronDirection() {
+  if (el._lockout) return;
+  el._lockout = true;
+
+  // Change state only when a CSS transition is completed.
+  function onTransitionEnd(e) {
+    if (e.propertyName === "right") {
+      if (el.checked) {
+        sendCommand("/pack/cyclotron/clockwise");
+      } else {
+        sendCommand("/pack/cyclotron/counterclockwise");
+      }
       el._lockout = false;
       el.removeEventListener('transitionend', onTransitionEnd);
     }

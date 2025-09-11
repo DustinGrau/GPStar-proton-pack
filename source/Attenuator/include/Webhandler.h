@@ -453,8 +453,8 @@ String getPackConfig() {
     jsonBody["prefsAvailable"] = b_received_prefs_pack;
 
     // Return current powered state for pack and wand.
-    jsonBody["packPowered"] = (b_pack_on ? true : false);
-    jsonBody["wandPowered"] = (b_wand_on ? true : false);
+    jsonBody["packPowered"] = (b_pack_on || b_pack_shutting_down);
+    jsonBody["wandPowered"] = b_wand_on;
 
     // Proton Pack Runtime Options
     jsonBody["defaultSystemModePack"] = packConfig.defaultSystemModePack; // [0=SH,1=MO]
@@ -511,9 +511,9 @@ String getWandConfig() {
     jsonBody["prefsAvailable"] = b_received_prefs_wand;
 
     // Return current powered state for pack and wand.
-    jsonBody["packPowered"] = (b_pack_on ? true : false);
-    jsonBody["wandPowered"] = (b_wand_on ? true : false);
-    jsonBody["wandConnected"] = (b_wand_connected ? true : false);
+    jsonBody["packPowered"] = (b_pack_on || b_pack_shutting_down);
+    jsonBody["wandPowered"] = b_wand_on;
+    jsonBody["wandConnected"] = b_wand_connected;
 
     // Neutrona Wand LED Options
     jsonBody["ledWandCount"] = wandConfig.ledWandCount; // [0=5 (Stock), 1=48 (Frutto), 2=50 (GPStar), 3=2 (Tip)]
@@ -555,9 +555,9 @@ String getSmokeConfig() {
     jsonBody["prefsAvailable"] = b_received_prefs_smoke;
 
     // Return current powered state for pack and wand.
-    jsonBody["packPowered"] = (b_pack_on ? true : false);
-    jsonBody["wandPowered"] = (b_wand_on ? true : false);
-    jsonBody["wandConnected"] = (b_wand_connected ? true : false);
+    jsonBody["packPowered"] = (b_pack_on || b_pack_shutting_down);
+    jsonBody["wandPowered"] = b_wand_on;
+    jsonBody["wandConnected"] = b_wand_connected;
 
     // Proton Pack
     jsonBody["smokeEnabled"] = (smokeConfig.smokeEnabled == 1); // true|false
@@ -613,9 +613,12 @@ String getEquipmentStatus() {
     jsonBody["modeID"] = (SYSTEM_MODE == MODE_SUPER_HERO) ? 1 : 0;
     jsonBody["theme"] = getTheme();
     jsonBody["themeID"] = SYSTEM_YEAR;
+    jsonBody["smoke"] = b_smoke_enabled;
+    jsonBody["vibration"] = b_vibration_switch_on;
+    jsonBody["direction"] = b_clockwise;
     jsonBody["switch"] = getRedSwitch();
     jsonBody["pack"] = (b_pack_on ? "Powered" : "Idle");
-    jsonBody["ramping"] = b_ramping;
+    jsonBody["ramping"] = b_pack_shutting_down;
     jsonBody["power"] = getPower();
     jsonBody["safety"] = getSafety();
     jsonBody["wand"] = (b_wand_connected ? "Connected" : "Not Connected");
@@ -765,6 +768,24 @@ void handleManualVent(AsyncWebServerRequest *request) {
   request->send(200, "application/json", status);
 }
 
+void handleToggleSmoke(AsyncWebServerRequest *request) {
+  debugln("Web: Smoke Toggle Triggered");
+  attenuatorSerialSend(A_TOGGLE_SMOKE);
+  request->send(200, "application/json", status);
+}
+
+void handleToggleVibration(AsyncWebServerRequest *request) {
+  debugln("Web: Vibration Toggle Triggered");
+  attenuatorSerialSend(A_TOGGLE_VIBRATION);
+  request->send(200, "application/json", status);
+}
+
+void handleCyclotronDirection(AsyncWebServerRequest *request) {
+  debugln("Web: Cyclotron Direction Toggle Triggered");
+  attenuatorSerialSend(A_CYCLOTRON_DIRECTION_TOGGLE);
+  request->send(200, "application/json", status);
+}
+
 uint16_t getYearFromPath(const String s_path) {
   // Check that the path value is not empty.
   if (s_path.length() > 0) {
@@ -786,7 +807,7 @@ void handleThemeChange(AsyncWebServerRequest *request) {
   debugln("Web: Theme Change Triggered");
 
   // Pre-check: Prevent theme change if pack or wand is running.
-  if (b_pack_on || b_wand_on) {
+  if (b_pack_on || b_wand_on || b_pack_shutting_down) {
     String result;
     jsonBody.clear();
     jsonBody["status"] = "Theme change not allowed while pack or wand is running.";
@@ -1049,6 +1070,7 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
       preferences.putShort("radiation_idle", RAD_LENS_IDLE);
       preferences.putShort("display_type", DISPLAY_TYPE);
 
+      // Store the song list to preferences.
       if(songList.length() <= 2000) {
         if(songList == "null") {
           songList = "";
@@ -1516,11 +1538,18 @@ void setupRouting() {
   httpServer.on("/pack/off", HTTP_PUT, handlePackOff);
   httpServer.on("/pack/attenuate", HTTP_PUT, handleAttenuatePack);
   httpServer.on("/pack/vent", HTTP_PUT, handleManualVent);
+  httpServer.on("/pack/cyclotron/clockwise", HTTP_PUT, handleCyclotronDirection);
+  httpServer.on("/pack/cyclotron/counterclockwise", HTTP_PUT, handleCyclotronDirection);
   httpServer.on("/pack/theme/1984", HTTP_PUT, handleThemeChange);
   httpServer.on("/pack/theme/1989", HTTP_PUT, handleThemeChange);
   httpServer.on("/pack/theme/2021", HTTP_PUT, handleThemeChange);
   httpServer.on("/pack/theme/2024", HTTP_PUT, handleThemeChange);
-  httpServer.on("/volume/toggle", HTTP_PUT, handleToggleMute);
+  httpServer.on("/pack/smoke/on", HTTP_PUT, handleToggleSmoke);
+  httpServer.on("/pack/smoke/off", HTTP_PUT, handleToggleSmoke);
+  httpServer.on("/pack/vibration/on", HTTP_PUT, handleToggleVibration);
+  httpServer.on("/pack/vibration/off", HTTP_PUT, handleToggleVibration);
+  httpServer.on("/volume/mute", HTTP_PUT, handleToggleMute);
+  httpServer.on("/volume/unmute", HTTP_PUT, handleToggleMute);
   httpServer.on("/volume/master/up", HTTP_PUT, handleMasterVolumeUp);
   httpServer.on("/volume/master/down", HTTP_PUT, handleMasterVolumeDown);
   httpServer.on("/volume/effects/up", HTTP_PUT, handleEffectsVolumeUp);
@@ -1532,7 +1561,8 @@ void setupRouting() {
   httpServer.on("/music/next", HTTP_PUT, handleNextMusicTrack);
   httpServer.on("/music/select", HTTP_PUT, handleSelectMusicTrack);
   httpServer.on("/music/prev", HTTP_PUT, handlePrevMusicTrack);
-  httpServer.on("/music/loop", HTTP_PUT, handleLoopMusicTrack);
+  httpServer.on("/music/loop/all", HTTP_PUT, handleLoopMusicTrack);
+  httpServer.on("/music/loop/single", HTTP_PUT, handleLoopMusicTrack);
   httpServer.on("/wifi/settings", HTTP_GET, handleGetWifi);
 
   // Body Handlers

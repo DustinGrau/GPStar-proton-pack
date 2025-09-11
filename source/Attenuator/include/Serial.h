@@ -530,6 +530,7 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
 
       // Pack is on (directly).
       b_pack_on = true;
+      b_pack_shutting_down = false;
       b_state_changed = true;
 
       BARGRAPH_PATTERN = BG_POWER_RAMP;
@@ -550,6 +551,7 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
 
       // Pack is off (directly or via the wand).
       b_pack_on = false;
+      b_pack_shutting_down = (i_value == 1);
       b_state_changed = true;
 
       if(BARGRAPH_STATE != BG_OFF) {
@@ -571,6 +573,21 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
         bargraphFull();
       }
       BARGRAPH_PATTERN = BG_RAMP_DOWN;
+    break;
+
+    case A_TOGGLE_SMOKE:
+      debug("Received smoke value: " + String(i_value));
+      b_smoke_enabled = i_value == 2;
+    break;
+
+    case A_TOGGLE_VIBRATION:
+      debug("Received vibration value: " + String(i_value));
+      b_vibration_switch_on = i_value == 2;
+    break;
+
+    case A_CYCLOTRON_DIRECTION_TOGGLE:
+      debug("Received cyclotron direction value: " + String(i_value));
+      b_clockwise = i_value == 2;
     break;
 
     case A_TOGGLE_MUTE:

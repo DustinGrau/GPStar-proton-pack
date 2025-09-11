@@ -131,9 +131,6 @@ uint8_t i_cyclotron_multiplier = 1;
 // Denotes whether the cyclotron lid is currently on (covered) or off (exposed).
 bool b_cyclotron_lid_on = true;
 
-// Indicates whether the cyclotron is ramping up or down.
-bool b_ramping = false;
-
 /*
  * Barmeter 28 segment bargraph mapping: allows accessing elements sequentially (0-27)
  * If the pattern appears inverted from what is expected, flip by using the following:
@@ -238,11 +235,15 @@ String s_track_listing = "";
  * Some pack flags which get transmitted to the attenuator depending on the pack status.
  */
 bool b_pack_on = false;
+bool b_pack_shutting_down = false;
 bool b_wand_connected = false;
 bool b_wand_on = false;
 bool b_pack_alarm = false;
 bool b_wand_firing = false;
 bool b_overheating = false;
+bool b_smoke_enabled = false;
+bool b_vibration_switch_on = false;
+bool b_clockwise = false;
 
 // Flags relating to the synchronization process.
 millisDelay ms_packsync;

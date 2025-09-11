@@ -189,7 +189,11 @@ function toggleMute(el) {
   // Change state only when a CSS transition is completed.
   function onTransitionEnd(e) {
     if (e.propertyName === "right") {
-      sendCommand("/volume/toggle");
+      if (el.checked) {
+        sendCommand("/volume/mute");
+      } else {
+        sendCommand("/volume/unmute");
+      }
       el._lockout = false;
       el.removeEventListener('transitionend', onTransitionEnd);
     }
@@ -218,7 +222,11 @@ function musicLoop(el) {
   // Change state only when a CSS transition is completed.
   function onTransitionEnd(e) {
     if (e.propertyName === "right") {
-      sendCommand("/music/loop");
+      if (el.checked) {
+        sendCommand("/music/loop/single");
+      } else {
+        sendCommand("/music/loop/all");
+      }
       el._lockout = false;
       el.removeEventListener('transitionend', onTransitionEnd);
     }
