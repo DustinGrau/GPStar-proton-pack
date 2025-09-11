@@ -182,26 +182,6 @@ function musicPauseResume() {
   sendCommand("/music/pauseresume");
 }
 
-function toggleMute(el) {
-  if (el._lockout) return;
-  el._lockout = true;
-
-  // Change state only when a CSS transition is completed.
-  function onTransitionEnd(e) {
-    if (e.propertyName === "right") {
-      if (el.checked) {
-        sendCommand("/volume/mute");
-      } else {
-        sendCommand("/volume/unmute");
-      }
-      el._lockout = false;
-      el.removeEventListener('transitionend', onTransitionEnd);
-    }
-  }
-
-  el.addEventListener('transitionend', onTransitionEnd);
-}
-
 function musicSelect(caller) {
   // Change the music track by selected option: /music/select?track=<#>
   sendCommand("/music/select?track=" + caller.value);
@@ -215,24 +195,29 @@ function musicNext() {
   sendCommand("/music/next");
 }
 
-function musicLoop(el) {
+function handleToggle(el, apiOn, apiOff) {
   if (el._lockout) return;
   el._lockout = true;
 
-  // Change state only when a CSS transition is completed.
+  const switchEl = el.parentElement.querySelector(".switch");
+
   function onTransitionEnd(e) {
     if (e.propertyName === "right") {
-      if (el.checked) {
-        sendCommand("/music/loop/single");
-      } else {
-        sendCommand("/music/loop/all");
-      }
+      sendCommand(el.checked ? apiOn : apiOff);
       el._lockout = false;
-      el.removeEventListener('transitionend', onTransitionEnd);
+      switchEl.removeEventListener("transitionend", onTransitionEnd);
     }
   }
 
-  el.addEventListener('transitionend', onTransitionEnd);
+  switchEl.addEventListener("transitionend", onTransitionEnd);
+}
+
+function toggleMute(el) {
+  handleToggleWithTransition(el, "/volume/mute", "/volume/unmute");
+}
+
+function musicLoop(el) {
+  handleToggleWithTransition(el, "/music/loop/single", "/music/loop/all");
 }
 
 function themeSelect(caller) {
