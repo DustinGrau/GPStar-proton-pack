@@ -31,6 +31,8 @@
 
 // Forward function declarations.
 void setupRouting();
+void notifyWSClients();
+void ledsOff();
 
 /**
  * WebSocketData - Holds all relevant fields received from the WebSocket JSON payload.
@@ -98,6 +100,7 @@ void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *clien
         debugf("WebSocket[%s][%lu] Connect\n", server->url(), client->id());
       #endif
       i_ws_client_count++;
+      notifyWSClients();
     break;
 
     case WS_EVT_DISCONNECT:
@@ -106,6 +109,7 @@ void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *clien
       #endif
       if(i_ws_client_count > 0) {
         i_ws_client_count--;
+        notifyWSClients();
       }
     break;
 
@@ -394,18 +398,23 @@ void handleRestartWiFi(AsyncWebServerRequest *request) {
 
 void handleEnableSelfTest(AsyncWebServerRequest *request) {
   debugln("Web: Self Test Enabled");
-  STREAM_MODE_PREV = STREAM_MODE; // Save current mode.
-  STREAM_MODE = SELFTEST; // Switch to self-test mode.
+  if (STREAM_MODE != SELFTEST) {
+    STREAM_MODE_PREV = STREAM_MODE; // Save current mode.
+    STREAM_MODE = SELFTEST; // Switch to self-test mode.
+  }
   updateStreamPalette(); // Update stream colors.
-  b_testing = true;
+  b_testing = true; // Enable testing flag.
   request->send(200, "application/json", status);
 }
 
 void handleDisableSelfTest(AsyncWebServerRequest *request) {
   debugln("Web: Self Test Disabled");
-  STREAM_MODE = STREAM_MODE_PREV; // Restore previous mode.
+  if (STREAM_MODE == SELFTEST) {
+    STREAM_MODE = STREAM_MODE_PREV; // Restore previous mode.
+  }
   updateStreamPalette(); // Update stream colors.
-  b_testing = false;
+  b_testing = false; // Disable testing flag.
+  ledsOff(); // Turn off all LEDs.
   request->send(200, "application/json", status);
 }
 
@@ -759,7 +768,8 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
           STREAM_MODE = SPECTRAL_CUSTOM; // Custom Stream
         }
 
-        updateStreamPalette();
+        updateStreamPalette(); // Set stream color palette
+        notifyWSClients(); // Update local WebSocket clients
       }
     break;
   }

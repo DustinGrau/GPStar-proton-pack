@@ -68,8 +68,7 @@ const char INDEX_page[] PROGMEM = R"=====(
   <div id="tab2" class="tab">
     <div class="card" style="text-align:center;">
       <br/>
-      <br/>
-      Lighting Self-Test:
+      <h2>Lighting Self-Test</h2>
       <br/>
       <br/>
       <button type="button" class="green" onclick="testOn()" id="btnTestOn">Test On</button>

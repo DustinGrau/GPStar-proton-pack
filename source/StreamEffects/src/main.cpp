@@ -25,7 +25,7 @@
 #define FASTLED_INTERNAL
 
 // Set to 1 to enable built-in debug messages via Serial device output.
-#define DEBUG 0
+#define DEBUG 1
 
 // Debug macros
 #if DEBUG == 1
@@ -230,6 +230,7 @@ void WiFiManagementTask(void *parameter) {
       // Try to start the external WiFi.
       if(!b_ext_wifi_started && !b_ext_wifi_paused) {
         b_ext_wifi_started = startExternalWifi();
+        notifyWSClients(); // Update local WebSocket clients.
       }
     }
 

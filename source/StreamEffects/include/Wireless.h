@@ -211,8 +211,6 @@ bool startAccesPoint() {
   // Additionally, sets radio to channel 1, don't hide SSID, and max 4 connections.
   // Note that the WiFi protocols available for use are 802.11 b/g/n over 2.4GHz.
   bool b_success = false;
-
-  // Otherwise, set the password as desired by the user (or the default).
   b_success = WiFi.softAP(ap_ssid.c_str(), ap_pass.c_str(), 1, false, 4);
 
   #if defined(DEBUG_WIRELESS_SETUP)
@@ -301,11 +299,71 @@ bool startExternalWifi() {
       debugln(wifi_ssid);
       debug(F("Stored External PASS: "));
       debugln(wifi_pass);
+      debug(F("Current WiFi Mode: "));
+      switch(WiFi.getMode()) {
+        case WIFI_MODE_NULL:
+          debugln(F("WIFI_MODE_NULL"));
+        break;
+        case WIFI_MODE_STA:
+          debugln(F("WIFI_MODE_STA"));
+        break;
+        case WIFI_MODE_AP:
+          debugln(F("WIFI_MODE_AP"));
+        break;
+        case WIFI_MODE_APSTA:
+          debugln(F("WIFI_MODE_APSTA"));
+        break;
+        default:
+          debugln(F("UNKNOWN"));
+        break;
+      }
     #endif
+
+    // Report current WiFi status to console.
+    debug(F("Current WiFi Status: "));
+    switch(WiFi.status()) {
+      case WL_NO_SHIELD:
+        debugln(F("WL_NO_SHIELD"));
+      break;
+      case WL_IDLE_STATUS:
+        debugln(F("WL_IDLE_STATUS"));
+      break;
+      case WL_NO_SSID_AVAIL:
+        debugln(F("WL_NO_SSID_AVAIL"));
+      break;
+      case WL_SCAN_COMPLETED:
+        debugln(F("WL_SCAN_COMPLETED"));
+      break;
+      case WL_CONNECTED:
+        debugln(F("WL_CONNECTED"));
+      break;
+      case WL_CONNECT_FAILED:
+        debugln(F("WL_CONNECT_FAILED"));
+      break;
+      case WL_CONNECTION_LOST:
+        debugln(F("WL_CONNECTION_LOST"));
+      break;
+      case WL_DISCONNECTED:
+        debugln(F("WL_DISCONNECTED"));
+      break;
+      default:
+        debugln(F("UNKNOWN"));
+      break;
+    }
+
+    // Only disconnect if already connected or connecting.
+    if (WiFi.status() == WL_CONNECTED || WiFi.status() == WL_CONNECT_FAILED || WiFi.status() == WL_NO_SSID_AVAIL) {
+      WiFi.disconnect(true); // Ensure disconnection and erase old config.
+      delay(200);
+    }
 
     // Provide adequate attempts to connect to the external WiFi network.
     while (i_curr_attempt < i_max_attempts) {
       WiFi.persistent(false); // Don't write SSID/Password to flash memory.
+      if (WiFi.getMode() != WIFI_MODE_APSTA) {
+        WiFi.mode(WIFI_MODE_APSTA); // Ensure correct mode for simultaneous AP+STA.
+        delay(200);
+      }
 
       // Attempt to connect to a specified WiFi network.
       WiFi.begin(wifi_ssid.c_str(), wifi_pass.c_str());

@@ -118,23 +118,39 @@ function updateBars(iPower, cMode) {
 
 function updateEquipment(jObj) {
   // Update display if we have the expected data (containing mode and theme at a minimum).
-  if (jObj && jObj.mode && jObj.theme) {
-    // Current Pack Status
-    setHtml("mode", jObj.mode || "...");
-    setHtml("theme", jObj.theme || "...");
-    setHtml("pack", jObj.pack || "...");
-    setHtml("switch", jObj.switch || "...");
-    setHtml("cable", jObj.cable || "...");
-    setHtml("cyclotron", jObj.cyclotron || "...");
-    setHtml("temperature", jObj.temperature || "...");
+  if (jObj) {
+    if (jObj.mode && jObj.theme) {
+      // Current Pack Status
+      setHtml("mode", jObj.mode || "...");
+      setHtml("theme", jObj.theme || "...");
+      setHtml("pack", jObj.pack || "...");
+      setHtml("switch", jObj.switch || "...");
+      setHtml("cable", jObj.cable || "...");
+      setHtml("cyclotron", jObj.cyclotron || "...");
+      setHtml("temperature", jObj.temperature || "...");
 
-    // Current Wand Status
-    setHtml("wandPower", jObj.wandPower || "...");
-    setHtml("wandMode", jObj.wandMode || "...");
-    setHtml("safety", jObj.safety || "...");
-    setHtml("power", jObj.power || "...");
-    setHtml("firing", jObj.firing || "...");
-    updateBars(jObj.power || 0, jObj.wandMode || "");
+      // Current Wand Status
+      setHtml("wandPower", jObj.wandPower || "...");
+      setHtml("wandMode", jObj.wandMode || "...");
+      setHtml("safety", jObj.safety || "...");
+      setHtml("power", jObj.power || "...");
+      setHtml("firing", jObj.firing || "...");
+      updateBars(parseInt(jObj.power, 10) || 0, jObj.wandMode || "");
+    } else {
+      // If no data, clear everything.
+      setHtml("mode", "...");
+      setHtml("theme", "...");
+      setHtml("pack", "...");
+      setHtml("switch", "...");
+      setHtml("cable", "...");
+      setHtml("cyclotron", "...");
+      setHtml("temperature", "...");
+      setHtml("wandPower", "...");
+      setHtml("wandMode", "...");
+      setHtml("safety", "...");
+      setHtml("power", "...");
+      updateBars(0, "");
+    }
 
     // Connected Wifi Clients - Private AP vs. WebSocket
     setHtml("clientInfo", "AP Clients: " + (jObj.apClients || 0) + " / WebSocket Clients: " + (jObj.wsClients || 0));
