@@ -19,6 +19,21 @@
 
 #pragma once
 
+// Clear any prior information from the WebSocket client.
+void resetWebSocketData() {
+  wsData.mode = "";
+  wsData.theme = "";
+  wsData.switchState = "";
+  wsData.pack = "";
+  wsData.safety = "";
+  wsData.wandPower = 5; // Default to max power.
+  wsData.wandMode = "";
+  wsData.firing = "";
+  wsData.cable = "";
+  wsData.cyclotron = "";
+  wsData.temperature = "";
+}
+
 // Obtain a list of partitions for this device.
 void printPartitions() {
   const esp_partition_t *partition;
@@ -69,18 +84,4 @@ void animateLights() {
     paletteIndex += (i_animation_step / 2) * wsData.wandPower; // Adjust this step size for smoother or faster transitions
     wavePosition += i_animation_step * wsData.wandPower; // Adjust this step size to control wave speed
   }
-}
-
-void resetWebSocketData() {
-  wsData.mode = "";
-  wsData.theme = "";
-  wsData.switchState = "";
-  wsData.pack = "";
-  wsData.safety = "";
-  wsData.wandPower = 5; // Default to max power.
-  wsData.wandMode = "";
-  wsData.firing = "";
-  wsData.cable = "";
-  wsData.cyclotron = "";
-  wsData.temperature = "";
 }

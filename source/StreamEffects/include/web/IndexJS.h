@@ -184,7 +184,6 @@ function updateEquipment(jObj) {
     }
 
     // External WiFi Status
-    setHtml("extWifi", jObj.extWifiEnabled || "");
     if (jObj.extWifiEnabled) {
       setHtml("wifiStatus", jObj.extWifiStarted ? "Connected" : (jObj.extWifiPaused ? "Paused" : "Connecting..."));
     } else {

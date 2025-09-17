@@ -362,6 +362,7 @@ void handleRestartWiFi(AsyncWebServerRequest *request) {
   // Disconnect from the WiFi network and re-apply any changes.
   WiFi.disconnect();
   b_ext_wifi_started = false;
+  notifyWSClients();
 
   delay(100); // Delay needed.
 
@@ -580,6 +581,7 @@ AsyncCallbackJsonWebHandler *wifiChangeHandler = new AsyncCallbackJsonWebHandler
       // Disconnect from the WiFi network and re-apply any changes.
       WiFi.disconnect();
       b_ext_wifi_started = false;
+      notifyWSClients();
 
       delay(100); // Delay needed.
 
@@ -665,15 +667,17 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       debugln("Client WebSocket Disconnected!");
-      WiFi.disconnect();
-      b_ext_wifi_started = false;
-      delay(100); // Delay needed.
+      b_socket_ready = false;
+      wsClient.disconnect();
+      delay(200); // Short delay before reconnecting.
+      wsClient.begin(WS_HOST, WS_PORT, WS_URI);
+      wsClient.setReconnectInterval(i_websocket_retry_wait);
     break;
 
     case WStype_CONNECTED:
       Serial.printf("WebSocket Connected to url: %s\n", payload);
       b_socket_ready = true;
-      wsClient.sendTXT("Hello from Belt Gizmo");
+      wsClient.sendTXT("Hello from Stream Effects");
     break;
     case WStype_ERROR:
       Serial.printf("WebSocket Error: %s\n", payload);
