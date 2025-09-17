@@ -67,6 +67,26 @@ String wifi_address; // Static IP for external WiFi network
 String wifi_subnet;  // Subnet for external WiFi network
 String wifi_gateway; // Gateway IP for external WiFi network
 
+/**
+ * Define a WebSocket client connection and related variables.
+ * This should be a standard GPStar Proton Pack wireless device at 192.168.1.2,
+ * which means our local network needs to differ and so this device will be
+ * available at 192.168.2.2
+ */
+WebSocketsClient wsClient;
+const char WS_HOST[] = "192.168.1.2";  // WebSocket server IP
+const uint16_t WS_PORT = 80;           // WebSocket server port
+const char WS_URI[] = "/ws";           // WebSocket URI
+bool b_socket_ready = false;           // WS client socket ready
+uint16_t i_websocket_retry_wait = 500; // Delay for WS retry
+
+
+// Define an asynchronous web server at TCP port 80.
+AsyncWebServer httpServer(WS_PORT);
+
+// Define a websocket endpoint for the async web server.
+AsyncWebSocket ws(WS_URI);
+
 // Track the number of connected WiFi (AP) clients.
 uint8_t i_ap_client_count = 0;
 
@@ -84,28 +104,9 @@ const uint16_t i_websocketCleanup = 5000;
 millisDelay ms_apclient;
 const uint16_t i_apClientCount = 200;
 
-/**
- * Define a WebSocket client connection and related variables.
- * This should be a standard GPStar Proton Pack wireless device at 192.168.1.2,
- * which means our local network needs to differ and so this device will be
- * available at 192.168.2.2
- */
-WebSocketsClient wsClient;
-const char WS_HOST[] = "192.168.1.2";  // WebSocket server IP
-const uint16_t WS_PORT = 80;           // WebSocket server port
-const char WS_URI[] = "/ws";           // WebSocket URI
-bool b_socket_ready = false;           // WS client socket ready
-uint16_t i_websocket_retry_wait = 500; // Delay for WS retry
-
 // Create timer for OTA updates.
 millisDelay ms_otacheck;
 const uint16_t i_otaCheck = 100;
-
-// Define an asynchronous web server at TCP port 80.
-AsyncWebServer httpServer(WS_PORT);
-
-// Define a websocket endpoint for the async web server.
-AsyncWebSocket ws(WS_URI);
 
 // Convert an IP address string to an IPAddress object.
 IPAddress convertToIP(const String ipAddressString) {
@@ -158,9 +159,9 @@ String sanitizeSSID(const String input) {
 bool startAccesPoint() {
   // Report some diagnostic data which will be necessary for this portion of setup.
   #if defined(DEBUG_WIRELESS_SETUP)
-    Serial.println();
-    Serial.print(F("Device WiFi MAC Address: "));
-    Serial.println(WiFi.macAddress());
+    debugln();
+    debug(F("Device WiFi MAC Address: "));
+    debugln(WiFi.macAddress());
   #endif
 
   // Create an AP name unique to this device, to avoid stepping on similar hardware.
@@ -198,12 +199,12 @@ bool startAccesPoint() {
   }
 
   #if defined(DEBUG_WIRELESS_SETUP)
-    Serial.println();
-    Serial.println(F("Starting Private WiFi Configuration"));
-    Serial.print(F("Stored Private SSID: "));
-    Serial.println(ap_ssid);
-    Serial.print(F("Stored Private PASS: "));
-    Serial.println(ap_pass);
+    debugln();
+    debugln(F("Starting Private WiFi Configuration"));
+    debug(F("Stored Private SSID: "));
+    debugln(ap_ssid);
+    debug(F("Stored Private PASS: "));
+    debugln(ap_pass);
   #endif
 
   // Start the WiFi radio as an Access Point using the SSID and password (as WPA2).
@@ -215,7 +216,7 @@ bool startAccesPoint() {
   b_success = WiFi.softAP(ap_ssid.c_str(), ap_pass.c_str(), 1, false, 4);
 
   #if defined(DEBUG_WIRELESS_SETUP)
-    Serial.println(b_success ? "AP Ready" : "AP Failed");
+    debugln(b_success ? "AP Ready" : "AP Failed");
   #endif
 
   if(b_success) {
@@ -233,24 +234,24 @@ bool startAccesPoint() {
     WiFi.softAPbandwidth(WIFI_BW_HT20); // Use 20MHz for range/compatibility.
     WiFi.softAPenableIPv6(false); // Just here to ensure IPv6 is not enabled.
     #if defined(DEBUG_WIRELESS_SETUP)
-      Serial.print(F("AP Name (SSID): "));
-      Serial.println(WiFi.softAPSSID());
-      Serial.print(F("AP     Channel: "));
-      Serial.println(WiFi.channel());
-      Serial.print(F("AP IP Addr/Sub: "));
-      Serial.print(WiFi.softAPIP());
-      Serial.print(F(" / "));
-      Serial.println(WiFi.softAPSubnetCIDR());
-      Serial.print(F("AP     Network: "));
-      Serial.println(WiFi.softAPNetworkID());
-      Serial.print(F("AP   Broadcast: "));
-      Serial.println(WiFi.softAPBroadcastIP());
-      Serial.print(F("AP    Hostname: "));
-      Serial.println(WiFi.softAPgetHostname());
-      Serial.print(F("AP Mac Address: "));
-      Serial.println(WiFi.softAPmacAddress());
-      Serial.print(F("AP  Gateway IP: "));
-      Serial.println(WiFi.gatewayIP());
+      debug(F("AP Name (SSID): "));
+      debugln(WiFi.softAPSSID());
+      debug(F("AP     Channel: "));
+      debugln(WiFi.channel());
+      debug(F("AP IP Addr/Sub: "));
+      debug(WiFi.softAPIP());
+      debug(F(" / "));
+      debugln(WiFi.softAPSubnetCIDR());
+      debug(F("AP     Network: "));
+      debugln(WiFi.softAPNetworkID());
+      debug(F("AP   Broadcast: "));
+      debugln(WiFi.softAPBroadcastIP());
+      debug(F("AP    Hostname: "));
+      debugln(WiFi.softAPgetHostname());
+      debug(F("AP Mac Address: "));
+      debugln(WiFi.softAPmacAddress());
+      debug(F("AP  Gateway IP: "));
+      debugln(WiFi.gatewayIP());
     #endif
   }
 
@@ -294,12 +295,12 @@ bool startExternalWifi() {
     uint8_t i_curr_attempt = 0;
 
     #if defined(DEBUG_WIRELESS_SETUP)
-      Serial.println();
-      Serial.println(F("Attempting External WiFi Configuration"));
-      Serial.print(F("Stored External SSID: "));
-      Serial.println(wifi_ssid);
-      Serial.print(F("Stored External PASS: "));
-      Serial.println(wifi_pass);
+      debugln();
+      debugln(F("Attempting External WiFi Configuration"));
+      debug(F("Stored External SSID: "));
+      debugln(wifi_ssid);
+      debug(F("Stored External PASS: "));
+      debugln(wifi_pass);
     #endif
 
     // Provide adequate attempts to connect to the external WiFi network.
@@ -314,8 +315,8 @@ bool startExternalWifi() {
       while (attempt < i_max_attempts && WiFi.status() != WL_CONNECTED) {
         delay(500);
         #if defined(DEBUG_WIRELESS_SETUP)
-          Serial.print(F("Connecting to external WiFi network, attempt #"));
-          Serial.println(attempt);
+          debug(F("Connecting to external WiFi network, attempt #"));
+          debugln(attempt);
         #endif
         attempt++;
       }
@@ -324,10 +325,10 @@ bool startExternalWifi() {
         // Configure static IP values for tis device on the preferred network.
         if(wifi_address.length() >= 7 && wifi_subnet.length() >= 7 && wifi_gateway.length() >= 7) {
           #if defined(DEBUG_WIRELESS_SETUP)
-            Serial.print(F("Using Stored IP: "));
-            Serial.print(wifi_address);
-            Serial.print(F(" / "));
-            Serial.println(wifi_subnet);
+            debug(F("Using Stored IP: "));
+            debug(wifi_address);
+            debug(F(" / "));
+            debugln(wifi_subnet);
           #endif
 
           if(wifi_gateway.length() < 7) {
@@ -351,10 +352,10 @@ bool startExternalWifi() {
         wifi_gateway = gatewayIP.toString();
 
         #if defined(DEBUG_WIRELESS_SETUP)
-          Serial.print(F("WiFi IP Address: "));
-          Serial.print(localIP);
-          Serial.print(F(" / "));
-          Serial.println(subnetMask);
+          debug(F("WiFi IP Address: "));
+          debug(localIP);
+          debug(F(" / "));
+          debugln(subnetMask);
         #endif
 
         WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
@@ -362,7 +363,7 @@ bool startExternalWifi() {
         return true; // Exit the loop if connected successfully.
       } else {
         #if defined(DEBUG_WIRELESS_SETUP)
-          Serial.println(F("Failed to connect to WiFi. Retrying..."));
+          debugln(F("Failed to connect to WiFi. Retrying..."));
         #endif
         i_curr_attempt++;
       }
@@ -370,8 +371,8 @@ bool startExternalWifi() {
 
     if (i_curr_attempt == i_max_attempts) {
       #if defined(DEBUG_WIRELESS_SETUP)
-        Serial.println(F("Max connection attempts reached."));
-        Serial.println(F("Cannot connect to external WiFi."));
+        debugln(F("Max connection attempts reached."));
+        debugln(F("Cannot connect to external WiFi."));
       #endif
       b_ext_wifi_paused = true; // Pause retries after exhausting attempts.
     }
@@ -383,8 +384,8 @@ bool startExternalWifi() {
 bool startWiFi() {
   // Begin some diagnostic information to console.
   #if defined(DEBUG_WIRELESS_SETUP)
-    Serial.println();
-    Serial.println(F("Begin WiFi Configuration"));
+    debugln();
+    debugln(F("Begin WiFi Configuration"));
   #endif
 
   // Disable WiFi power save mode (via the esp_wifi_set_ps function).
@@ -405,11 +406,11 @@ bool startWiFi() {
   bool b_mdns_started = MDNS.begin(ap_ssid.c_str());
   #if defined(DEBUG_WIRELESS_SETUP)
     if (b_mdns_started) {
-      Serial.print(F("mDNS Responder Started: "));
-      Serial.println(ap_ssid + ".local");
+      debug(F("mDNS Responder Started: "));
+      debugln(ap_ssid + ".local");
     }
     else {
-      Serial.println(F("Error Starting mDNS Responder!"));
+      debugln(F("Error Starting mDNS Responder!"));
     }
   #else
     // Suppress unused variable warning.
@@ -418,28 +419,6 @@ bool startWiFi() {
   delay(200);
 
   return b_ap_started; // At least return whether the soft AP started successfully.
-}
-
-void onOTAStart() {
-  // Log when OTA has started
-  debug(F("OTA update started"));
-}
-
-void onOTAProgress(size_t current, size_t final) {
-  // Log every 1 second
-  if (millis() - i_progress_millis > 1000) {
-    i_progress_millis = millis();
-    Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
-  }
-}
-
-void onOTAEnd(bool success) {
-  // Log when OTA has finished
-  if (success) {
-    debug(F("OTA update finished successfully!"));
-  } else {
-    debug(F("There was an error during OTA update!"));
-  }
 }
 
 // Provide all handler functions for the API layer.

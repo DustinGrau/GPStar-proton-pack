@@ -48,7 +48,8 @@
     "files.associations": {
       "string": "cpp",
       "cstdint": "cpp",
-      "cmath": "cpp"
+      "cmath": "cpp",
+      "system_error": "cpp"
     },
     "workbench.editor.enablePreview": false
   }

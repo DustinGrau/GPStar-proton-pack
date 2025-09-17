@@ -67,10 +67,13 @@ uint8_t i_max_brightness = 255; // Maximum brightness
  */
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
 enum POWER_LEVELS POWER_LEVEL;
-enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
+enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS, SELFTEST };
 enum STREAM_MODES STREAM_MODE;
 bool b_firing = false;
 uint8_t i_power = 1;
 
-// Forward declarations.
-void debug(const String message);
+/*
+ * Special Flags
+ */
+enum STREAM_MODES STREAM_MODE_PREV;
+bool b_testing = false;

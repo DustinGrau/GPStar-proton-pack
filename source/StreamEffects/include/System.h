@@ -19,16 +19,6 @@
 
 #pragma once
 
-void debug(const String message) {
-  // Writes a debug message to the serial console.
-  #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.println(message); // Print to serial console.
-  #endif
-  #if defined(DEBUG_SEND_TO_WEBSOCKET)
-    ws.textAll(message); // Send a copy to the WebSocket.
-  #endif
-}
-
 // Obtain a list of partitions for this device.
 void printPartitions() {
   const esp_partition_t *partition;
