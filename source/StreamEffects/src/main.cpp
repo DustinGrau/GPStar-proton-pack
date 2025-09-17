@@ -231,7 +231,6 @@ void WiFiManagementTask(void *parameter) {
       if(!b_ext_wifi_started && !b_ext_wifi_paused) {
         resetWebSocketData(); // Clear previous information sent from the pack.
         b_ext_wifi_started = startExternalWifi();
-        notifyWSClients(); // Update local WebSocket clients.
       }
     }
 

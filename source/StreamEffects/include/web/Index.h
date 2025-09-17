@@ -61,6 +61,8 @@ const char INDEX_page[] PROGMEM = R"=====(
       </div>
       <p><span class="infoLabel">Firing State:</span> <span class="infoState" id="firing">&mdash;</span></p>
       <br/>
+      <p><span class="infoLabel">Ext. WiFi Status:</span> <span class="infoState" id="wifiStatus">&mdash;</span></p>
+      <br/>
     </div>
   </div>
 

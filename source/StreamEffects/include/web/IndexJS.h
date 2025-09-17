@@ -130,7 +130,6 @@ function updateEquipment(jObj) {
       setHtml("temperature", jObj.temperature || "...");
 
       // Current Wand Status
-      setHtml("wandPower", jObj.power || "...");
       setHtml("wandMode", jObj.wandMode || "...");
       setHtml("safety", jObj.safety || "...");
       setHtml("power", jObj.power || "...");
@@ -145,12 +144,19 @@ function updateEquipment(jObj) {
       setHtml("cable", "...");
       setHtml("cyclotron", "...");
       setHtml("temperature", "...");
-      setHtml("wandPower", "...");
       setHtml("wandMode", "...");
       setHtml("safety", "...");
       setHtml("power", "...");
       setHtml("firing", "...");
       updateBars(0, "");
+    }
+
+    // External WiFi Status
+    setHtml("extWifi", jObj.extWifiEnabled || "");
+    if (jObj.extWifiEnabled) {
+      setHtml("wifiStatus", jObj.extWifiStarted ? "Connected" : (jObj.extWifiPaused ? "Paused" : "Connecting..."));
+    } else {
+      setHtml("wifiStatus", "Disabled");
     }
 
     // Connected Wifi Clients - Private AP vs. WebSocket

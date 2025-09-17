@@ -373,6 +373,8 @@ bool startExternalWifi() {
 
     // Provide adequate attempts to connect to the external WiFi network.
     while (i_curr_attempt < i_max_attempts) {
+      notifyWSClients(); // Update local WebSocket clients on each attempt.
+
       if (WiFi.getMode() != WIFI_MODE_APSTA) {
         WiFi.mode(WIFI_MODE_APSTA); // Ensure correct mode for simultaneous AP+STA.
         delay(200);
@@ -432,7 +434,7 @@ bool startExternalWifi() {
           debugln(subnetMask);
         #endif
 
-        //WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
+        WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
 
         return true; // Exit the loop if connected successfully.
       } else {
