@@ -405,7 +405,7 @@ void setup() {
   vTaskDelay(100 / portTICK_PERIOD_MS); // Delay for 100ms to avoid competition.
 
   // Create a single-run setup task with the highest priority for WiFi/WebServer startup.
-  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 4096, NULL, 3, &WiFiSetupTaskHandle, 1);
+  xTaskCreatePinnedToCore(WiFiSetupTask, "WiFiSetupTask", 8192, NULL, 3, &WiFiSetupTaskHandle, 1);
 
   // Delay all lower priority tasks until WiFi and WebServer setup is done.
   vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200ms to avoid competition.

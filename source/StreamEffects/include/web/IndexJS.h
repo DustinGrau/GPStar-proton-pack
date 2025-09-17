@@ -130,12 +130,12 @@ function updateEquipment(jObj) {
       setHtml("temperature", jObj.temperature || "...");
 
       // Current Wand Status
-      setHtml("wandPower", jObj.wandPower || "...");
+      setHtml("wandPower", jObj.power || "...");
       setHtml("wandMode", jObj.wandMode || "...");
       setHtml("safety", jObj.safety || "...");
       setHtml("power", jObj.power || "...");
       setHtml("firing", jObj.firing || "...");
-      updateBars(parseInt(jObj.power, 10) || 0, jObj.wandMode || "");
+      updateBars(jObj.power || 0, jObj.wandMode || "");
     } else {
       // If no data, clear everything.
       setHtml("mode", "...");

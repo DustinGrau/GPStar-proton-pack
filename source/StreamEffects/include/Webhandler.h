@@ -34,24 +34,6 @@ void setupRouting();
 void notifyWSClients();
 void ledsOff();
 
-/**
- * WebSocketData - Holds all relevant fields received from the WebSocket JSON payload.
- */
-struct WebSocketData {
-  String mode;
-  String theme;
-  String switchState;
-  String pack;
-  String safety;
-  String wandPower;
-  String wandMode;
-  String firing;
-  String cable;
-  String cyclotron;
-  String temperature;
-};
-WebSocketData wsData; // Instance of WebSocketData struct.
-
 /*
  * Helper Functions
  */
@@ -289,17 +271,17 @@ String getEquipmentStatus() {
   jsonBody["switch"] = wsData.switchState;
   jsonBody["pack"] = wsData.pack;
   jsonBody["safety"] = wsData.safety;
-  jsonBody["wandPower"] = wsData.wandPower;
+  jsonBody["power"] = wsData.wandPower;
   jsonBody["wandMode"] = wsData.wandMode;
   jsonBody["firing"] = wsData.firing;
   jsonBody["cable"] = wsData.cable;
   jsonBody["cyclotron"] = wsData.cyclotron;
   jsonBody["temperature"] = wsData.temperature;
+  jsonBody["apClients"] = i_ap_client_count;
+  jsonBody["wsClients"] = i_ws_client_count;
   jsonBody["extWifiEnabled"] = b_wifi_enabled;
   jsonBody["extWifiPaused"] = b_ext_wifi_paused;
   jsonBody["extWifiStarted"] = b_ext_wifi_started;
-  jsonBody["apClients"] = i_ap_client_count;
-  jsonBody["wsClients"] = i_ws_client_count;
 
   // Serialize JSON object to string.
   serializeJson(jsonBody, equipStatus);
@@ -712,18 +694,15 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         wsData.switchState = jsonBody["switch"].as<String>();
         wsData.pack = jsonBody["pack"].as<String>();
         wsData.safety = jsonBody["safety"].as<String>();
-        wsData.wandPower = jsonBody["wandPower"].as<String>();
+        wsData.wandPower = jsonBody["power"].as<unsigned short>();
         wsData.wandMode = jsonBody["wandMode"].as<String>();
         wsData.firing = jsonBody["firing"].as<String>();
         wsData.cable = jsonBody["cable"].as<String>();
         wsData.cyclotron = jsonBody["cyclotron"].as<String>();
         wsData.temperature = jsonBody["temperature"].as<String>();
 
-        // Convert power (1-5) to an integer.
-        i_power = (int)jsonBody["power"];
-
         // Output some data to the serial console when needed.
-        String dataMessage = wsData.wandMode + " is " + wsData.firing + " at level " + i_power;
+        String dataMessage = wsData.wandMode + " is " + wsData.firing + " at level " + String(wsData.wandPower);
         debugln(dataMessage);
 
         // Change LED for testing

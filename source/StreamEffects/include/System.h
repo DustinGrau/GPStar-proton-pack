@@ -66,7 +66,7 @@ void animateLights() {
     }
 
     // Increment the palette index and wave position for the next frame
-    paletteIndex += (i_animation_step / 2) * i_power; // Adjust this step size for smoother or faster transitions
-    wavePosition += i_animation_step * i_power; // Adjust this step size to control wave speed
+    paletteIndex += (i_animation_step / 2) * wsData.wandPower; // Adjust this step size for smoother or faster transitions
+    wavePosition += i_animation_step * wsData.wandPower; // Adjust this step size to control wave speed
   }
 }

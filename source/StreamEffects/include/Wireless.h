@@ -80,7 +80,6 @@ const char WS_URI[] = "/ws";           // WebSocket URI
 bool b_socket_ready = false;           // WS client socket ready
 uint16_t i_websocket_retry_wait = 500; // Delay for WS retry
 
-
 // Define an asynchronous web server at TCP port 80.
 AsyncWebServer httpServer(WS_PORT);
 
@@ -150,6 +149,40 @@ String sanitizeSSID(const String input) {
     }
 
     return result;
+}
+
+// Report the current WiFi status to the console.
+void reportWiFiStatus() {
+  debug(F("Current WiFi Status: "));
+  switch(WiFi.status()) {
+    case WL_NO_SHIELD:
+      debugln(F("WL_NO_SHIELD"));
+    break;
+    case WL_IDLE_STATUS:
+      debugln(F("WL_IDLE_STATUS"));
+    break;
+    case WL_NO_SSID_AVAIL:
+      debugln(F("WL_NO_SSID_AVAIL"));
+    break;
+    case WL_SCAN_COMPLETED:
+      debugln(F("WL_SCAN_COMPLETED"));
+    break;
+    case WL_CONNECTED:
+      debugln(F("WL_CONNECTED"));
+    break;
+    case WL_CONNECT_FAILED:
+      debugln(F("WL_CONNECT_FAILED"));
+    break;
+    case WL_CONNECTION_LOST:
+      debugln(F("WL_CONNECTION_LOST"));
+    break;
+    case WL_DISCONNECTED:
+      debugln(F("WL_DISCONNECTED"));
+    break;
+    default:
+      debugln(F("UNKNOWN"));
+    break;
+  }
 }
 
 /*
@@ -317,39 +350,20 @@ bool startExternalWifi() {
           debugln(F("UNKNOWN"));
         break;
       }
-    #endif
+      reportWiFiStatus();
 
-    // Report current WiFi status to console.
-    debug(F("Current WiFi Status: "));
-    switch(WiFi.status()) {
-      case WL_NO_SHIELD:
-        debugln(F("WL_NO_SHIELD"));
-      break;
-      case WL_IDLE_STATUS:
-        debugln(F("WL_IDLE_STATUS"));
-      break;
-      case WL_NO_SSID_AVAIL:
-        debugln(F("WL_NO_SSID_AVAIL"));
-      break;
-      case WL_SCAN_COMPLETED:
-        debugln(F("WL_SCAN_COMPLETED"));
-      break;
-      case WL_CONNECTED:
-        debugln(F("WL_CONNECTED"));
-      break;
-      case WL_CONNECT_FAILED:
-        debugln(F("WL_CONNECT_FAILED"));
-      break;
-      case WL_CONNECTION_LOST:
-        debugln(F("WL_CONNECTION_LOST"));
-      break;
-      case WL_DISCONNECTED:
-        debugln(F("WL_DISCONNECTED"));
-      break;
-      default:
-        debugln(F("UNKNOWN"));
-      break;
-    }
+      // Perform a scan of available networks.
+      int n = WiFi.scanNetworks();
+      debugln("Scan complete. Networks found:");
+      for (int i = 0; i < n; ++i) {
+        debug(WiFi.SSID(i));
+        if (WiFi.SSID(i) == wifi_ssid) {
+          debug(" (*)");
+        }
+        debugln(" [" + String(WiFi.RSSI(i)) + " dBm]");
+      }
+      delay(200);
+    #endif
 
     // Only disconnect if already connected or connecting.
     if (WiFi.status() == WL_CONNECTED || WiFi.status() == WL_CONNECT_FAILED || WiFi.status() == WL_NO_SSID_AVAIL) {
@@ -359,13 +373,14 @@ bool startExternalWifi() {
 
     // Provide adequate attempts to connect to the external WiFi network.
     while (i_curr_attempt < i_max_attempts) {
-      WiFi.persistent(false); // Don't write SSID/Password to flash memory.
       if (WiFi.getMode() != WIFI_MODE_APSTA) {
         WiFi.mode(WIFI_MODE_APSTA); // Ensure correct mode for simultaneous AP+STA.
         delay(200);
       }
 
-      // Attempt to connect to a specified WiFi network.
+      WiFi.persistent(false); // Don't write SSID/Password to flash memory.
+
+      // Attempt to connect to a specified WiFi network (eg. Attenuator or Proton Pack).
       WiFi.begin(wifi_ssid.c_str(), wifi_pass.c_str());
 
       // Wait for the connection to be established.
@@ -375,6 +390,7 @@ bool startExternalWifi() {
         #if defined(DEBUG_WIRELESS_SETUP)
           debug(F("Connecting to external WiFi network, attempt #"));
           debugln(attempt);
+          reportWiFiStatus();
         #endif
         attempt++;
       }
@@ -416,12 +432,12 @@ bool startExternalWifi() {
           debugln(subnetMask);
         #endif
 
-        WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
+        //WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
 
         return true; // Exit the loop if connected successfully.
       } else {
         #if defined(DEBUG_WIRELESS_SETUP)
-          debugln(F("Failed to connect to WiFi. Retrying..."));
+          debugln(F("Failed to connect to external WiFi. Retrying..."));
         #endif
         i_curr_attempt++;
       }
