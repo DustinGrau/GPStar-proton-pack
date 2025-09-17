@@ -50,7 +50,7 @@
 Preferences preferences;
 
 // Set up values for the SSID and password for the built-in WiFi access point (AP).
-const uint8_t i_max_attempts = 3; // Max attempts to establish a external WiFi connection.
+const uint8_t i_max_attempts = 5; // Max attempts to establish a external WiFi connection.
 const char AP_SSID_PREFIX[] = "StreamEffects"; // This will be the base of the SSID name.
 String ap_default_passwd = "555-2368"; // This will be the default password for the AP.
 String ap_ssid; // Reserved for holding the full, private AP name for this device.

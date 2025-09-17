@@ -694,7 +694,7 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         wsData.switchState = jsonBody["switch"].as<String>();
         wsData.pack = jsonBody["pack"].as<String>();
         wsData.safety = jsonBody["safety"].as<String>();
-        wsData.wandPower = jsonBody["power"].as<unsigned short>();
+        wsData.wandPower = jsonBody["power"].as<unsigned short>(); // Only integer value.
         wsData.wandMode = jsonBody["wandMode"].as<String>();
         wsData.firing = jsonBody["firing"].as<String>();
         wsData.cable = jsonBody["cable"].as<String>();
@@ -702,8 +702,7 @@ void webSocketClientEvent(WStype_t type, uint8_t * payload, size_t length) {
         wsData.temperature = jsonBody["temperature"].as<String>();
 
         // Output some data to the serial console when needed.
-        String dataMessage = wsData.wandMode + " is " + wsData.firing + " at level " + String(wsData.wandPower);
-        debugln(dataMessage);
+        debugln(wsData.wandMode + " is " + wsData.firing + " at level " + String(wsData.wandPower));
 
         // Change LED for testing
         if(wsData.firing == "Firing") {

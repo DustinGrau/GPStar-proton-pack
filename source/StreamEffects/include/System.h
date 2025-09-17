@@ -70,3 +70,17 @@ void animateLights() {
     wavePosition += i_animation_step * wsData.wandPower; // Adjust this step size to control wave speed
   }
 }
+
+void resetWebSocketData() {
+  wsData.mode = "";
+  wsData.theme = "";
+  wsData.switchState = "";
+  wsData.pack = "";
+  wsData.safety = "";
+  wsData.wandPower = 5; // Default to max power.
+  wsData.wandMode = "";
+  wsData.firing = "";
+  wsData.cable = "";
+  wsData.cyclotron = "";
+  wsData.temperature = "";
+}
