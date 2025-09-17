@@ -401,9 +401,9 @@ void handleEnableSelfTest(AsyncWebServerRequest *request) {
   if (STREAM_MODE != SELFTEST) {
     STREAM_MODE_PREV = STREAM_MODE; // Save current mode.
     STREAM_MODE = SELFTEST; // Switch to self-test mode.
+    updateStreamPalette(); // Update stream colors.
+    b_testing = true; // Enable testing flag.
   }
-  updateStreamPalette(); // Update stream colors.
-  b_testing = true; // Enable testing flag.
   request->send(200, "application/json", status);
 }
 
@@ -411,10 +411,10 @@ void handleDisableSelfTest(AsyncWebServerRequest *request) {
   debugln("Web: Self Test Disabled");
   if (STREAM_MODE == SELFTEST) {
     STREAM_MODE = STREAM_MODE_PREV; // Restore previous mode.
+    updateStreamPalette(); // Update stream colors.
+    b_testing = false; // Disable testing flag.
+    ledsOff(); // Turn off all LEDs.
   }
-  updateStreamPalette(); // Update stream colors.
-  b_testing = false; // Disable testing flag.
-  ledsOff(); // Turn off all LEDs.
   request->send(200, "application/json", status);
 }
 

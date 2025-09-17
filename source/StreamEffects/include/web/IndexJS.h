@@ -149,6 +149,7 @@ function updateEquipment(jObj) {
       setHtml("wandMode", "...");
       setHtml("safety", "...");
       setHtml("power", "...");
+      setHtml("firing", "...");
       updateBars(0, "");
     }
 
