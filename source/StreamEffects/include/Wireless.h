@@ -46,6 +46,9 @@
 #include <ElegantOTA.h>
 #include <WebSocketsClient.h>
 
+// Forward function declarations.
+void notifyWSClients();
+
 // Preferences for SSID and AP password, which will use a "credentials" namespace.
 Preferences preferences;
 

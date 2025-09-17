@@ -98,6 +98,38 @@ function getDevicePrefs() {
   xhttp.send();
 }
 
+function getStreamColor(cMode) {
+  var color = [0, 0, 0];
+
+  switch(cMode){
+    case "Plasm System":
+      // Dark Green
+      color[1] = 80;
+    break;
+    case "Dark Matter Gen.":
+      // Light Blue
+      color[1] = 60;
+      color[2] = 255;
+    break;
+    case "Particle System":
+      // Orange
+      color[0] = 255;
+      color[1] = 140;
+    break;
+    case "Settings":
+      // Gray
+      color[0] = 40;
+      color[1] = 40;
+      color[2] = 40;
+    break;
+    default:
+      // Proton Stream(s) as Red
+      color[0] = 180;
+    break;
+  }
+
+  return color;
+}
 
 function updateBars(iPower, cMode) {
   var color = getStreamColor(cMode);
