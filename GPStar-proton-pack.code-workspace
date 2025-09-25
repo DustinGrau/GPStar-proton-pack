@@ -12,10 +12,6 @@
       "path": "source/BeltGizmo"
     },
     {
-      "name": "CalibrateIMU",
-      "path": "source/CalibrateIMU"
-    },
-    {
       "name": "GhostTrapBase",
       "path": "source/GhostTrapBase"
     },
@@ -47,8 +43,7 @@
     "editor.tabSize": 2,
     "files.associations": {
       "string": "cpp",
-      "cstdint": "cpp",
-      "cmath": "cpp"
+      "cstdint": "cpp"
     },
     "workbench.editor.enablePreview": false
   }
