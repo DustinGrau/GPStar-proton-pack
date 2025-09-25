@@ -72,6 +72,7 @@ struct MessagePacket sendData;
 struct MessagePacket recvData;
 
 struct __attribute__((packed)) WandPrefs {
+  uint8_t isESP32;
   uint8_t ledWandCount;
   uint8_t ledWandHue;
   uint8_t ledWandSat;
@@ -142,6 +143,13 @@ struct __attribute__((packed)) WandSyncData {
 // Common helper function to populate the wandConfig object with global variables.
 void getWandPrefsObject() {
   sendDebug(F("Getting Wand Preferences"));
+
+  // Return an indication of whether the device is an ESP32 or not.
+#ifdef ESP32
+  wandConfig.isESP32 = 1;
+#else
+  wandConfig.isESP32 = 0;
+#endif
 
   // Boolean types will simply translate as 1/0, ENUMs should be converted.
   switch(WAND_BARREL_LED_COUNT) {
@@ -300,7 +308,7 @@ void wandSerialSend(uint8_t i_command, uint16_t i_value) {
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
   // We make a special case for a disconnected pack, or one in benchtest mode, so that the WebSocket gets updates.
-  if ((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_command)) {
+  if((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_command)) {
     notifyWSClients();
   }
 #endif
@@ -338,7 +346,7 @@ void wandSerialSendData(uint8_t i_message) {
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
   // We make a special case for a disconnected pack, or one in benchtest mode, so that the WebSocket gets updates.
-  if ((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_message)) {
+  if((WAND_CONN_STATE == PACK_DISCONNECTED || WAND_CONN_STATE == NC_BENCHTEST) && !isExcludedCommand(i_message)) {
     notifyWSClients();
   }
 #endif
@@ -611,6 +619,11 @@ void checkPack() {
 
               // Indicate that a pack is now connected.
               WAND_CONN_STATE = PACK_CONNECTED;
+
+              // Disable the built-in wifi as the pack now handles it.
+              #ifdef ESP32
+              WIFI_MODE = WIFI_DISABLED;
+              #endif
             }
           }
           else if(recvCmd.s == W_COM_START && recvCmd.c == W_SYNC_NOW && recvCmd.d1 == 0 && recvCmd.e == W_COM_END) {
@@ -782,6 +795,26 @@ void checkPack() {
           i_power_level = wandSyncData.powerLevel;
           i_power_level_prev = i_power_level;
 
+          // Set the appropriate flags for power level.
+          switch(i_power_level) {
+            case 1:
+              POWER_LEVEL = LEVEL_1;
+            break;
+            case 2:
+              POWER_LEVEL = LEVEL_2;
+            break;
+            case 3:
+              POWER_LEVEL = LEVEL_3;
+            break;
+            case 4:
+              POWER_LEVEL = LEVEL_4;
+            break;
+            case 5:
+            default:
+              POWER_LEVEL = LEVEL_5;
+            break;
+          }
+
           // Set our firing mode.
           switch(wandSyncData.streamMode) {
             case 1:
@@ -923,10 +956,18 @@ bool handlePackCommand(uint8_t i_command, uint16_t i_value) {
       // Acknowledgement that the wand is now synchronized.
       wandSerialSend(W_SYNCHRONIZED);
 
-      // Tell the pack the status of the Neutrona Wand barrel. We only need to tell if its extended.
-      // Otherwise the switchBarrel() will tell it if it's retracted during bootup.
-      if(switchBarrel()) {
-        wandSerialSend(W_BARREL_EXTENDED);
+      // Tell the pack the status of the Neutrona Wand barrel.
+      if(BARREL_STATE != BARREL_UNKNOWN) {
+        if(switchBarrel()) {
+          wandSerialSend(W_BARREL_EXTENDED);
+        }
+        else {
+          wandSerialSend(W_BARREL_RETRACTED);
+        }
+      }
+      else {
+        // If the barrel state is unknown, this function will automatically report upstream.
+        switchBarrel();
       }
 
       return true;

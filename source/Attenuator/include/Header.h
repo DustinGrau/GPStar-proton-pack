@@ -162,8 +162,8 @@ enum SYSTEM_YEARS SYSTEM_YEAR;
 enum BARREL_STATES { BARREL_RETRACTED, BARREL_EXTENDED };
 enum BARREL_STATES BARREL_STATE;
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
-enum POWER_LEVELS POWER_LEVEL;
-enum POWER_LEVELS POWER_LEVEL_PREV;
+enum POWER_LEVELS POWER_LEVEL = LEVEL_5;
+enum POWER_LEVELS POWER_LEVEL_PREV = LEVEL_5;
 enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
 enum STREAM_MODES STREAM_MODE;
 
@@ -234,6 +234,7 @@ String s_track_listing = "";
 /*
  * Some pack flags which get transmitted to the attenuator depending on the pack status.
  */
+bool b_esp32_pack = false; // Used by the A_SYNC_START for immediate identification.
 bool b_pack_on = false;
 bool b_pack_shutting_down = false;
 bool b_wand_connected = false;

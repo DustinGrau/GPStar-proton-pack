@@ -38,6 +38,7 @@
 // ESP32 allows defining custom objects, so create ones for UART0 and UART1.
 HardwareSerial WandSerial(0); // Associate WandSerial with UART0
 HardwareSerial AttenuatorSerial(1); // Associate AttenuatorSerial with UART1
+void resetWifiPassword(); // Forward function declaration.
 #else
 // ATMEGA 2560 has hardcoded serial UART objects, so use aliases instead.
 #define AttenuatorSerial Serial1
@@ -84,6 +85,7 @@ struct MessagePacket sendDataS;
 struct MessagePacket recvDataS;
 
 struct __attribute__((packed)) PackPrefs {
+  uint8_t isESP32;
   uint8_t defaultSystemModePack;
   uint8_t defaultYearThemePack;
   uint8_t currentYearThemePack;
@@ -122,6 +124,7 @@ struct __attribute__((packed)) PackPrefs {
 } packConfig;
 
 struct __attribute__((packed)) WandPrefs {
+  uint8_t isESP32;
   uint8_t ledWandCount;
   uint8_t ledWandHue;
   uint8_t ledWandSat;
@@ -303,6 +306,13 @@ void getPackPrefsObject() {
 
   uint8_t i_eeprom_volume_master_percentage = 100 * ((MINIMUM_VOLUME + i_volume_min_adj) - i_volume_master_eeprom) / (MINIMUM_VOLUME + i_volume_min_adj);
 
+  // Return an indication of whether the device is an ESP32 or not.
+#ifdef ESP32
+  packConfig.isESP32 = 1;
+#else
+  packConfig.isESP32 = 0;
+#endif
+
   // General Settings
   packConfig.defaultSystemModePack = SYSTEM_MODE;
   packConfig.defaultYearThemePack = SYSTEM_EEPROM_YEAR;
@@ -348,14 +358,14 @@ void getPackPrefsObject() {
   // Inner Cyclotron
   packConfig.ledCycPanLum = i_cyclotron_panel_brightness;
   switch(INNER_CYC_PANEL_MODE) {
-    case PANEL_INDIVIDUAL:
-    default:
+    case PANEL_DISABLED:
       packConfig.ledCycInnerPanel = 1;
     break;
     case PANEL_RGB_STATIC:
       packConfig.ledCycInnerPanel = 2;
     break;
     case PANEL_RGB_DYNAMIC:
+    default:
       packConfig.ledCycInnerPanel = 3;
     break;
   }
@@ -471,7 +481,7 @@ void attenuatorSerialSend(uint8_t i_command, uint16_t i_value) {
 
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
-  if (!isExcludedCommand(i_command)) {
+  if(!isExcludedCommand(i_command)) {
     notifyWSClients();
   }
 #endif
@@ -497,7 +507,7 @@ void attenuatorSendData(uint8_t i_message) {
 
 #ifdef ESP32
   // Send latest status to the WebSocket (ESP32 only), skipping this action on certain commands.
-  if (!isExcludedCommand(i_message)) {
+  if(!isExcludedCommand(i_message)) {
     notifyWSClients();
   }
 #endif
@@ -786,11 +796,7 @@ void handlePackPrefsUpdate() {
   i_cyclotron_panel_brightness = packConfig.ledCycPanLum;
   switch(packConfig.ledCycInnerPanel) {
     case 1:
-    #ifdef ESP32
-      INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
-    #else
-      INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
-    #endif
+      INNER_CYC_PANEL_MODE = PANEL_DISABLED;
     break;
     case 2:
       INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
@@ -986,11 +992,19 @@ void doAttenuatorSync() {
   }
 
   sendDebug(F("Attenuator Sync Start"));
-  attenuatorSerialSend(A_SYNC_START);
+
+  // Report the hardware type immediately upon sync for identification purposes.
+  #ifdef ESP32
+    // Notify upstream we are a GPStar Pack II.
+    attenuatorSerialSend(A_SYNC_START, 1);
+  #else
+    // Notify upstream we are a GPStar Pack I.
+    attenuatorSerialSend(A_SYNC_START);
+  #endif
 
   // Tell the Attenuator about the wand status.
   attenuatorSyncData.wandPresent = b_wand_connected ? 1 : 0;
-  attenuatorSyncData.barrelExtended = b_neutrona_wand_barrel_extended ? 1 : 0;
+  attenuatorSyncData.barrelExtended = (BARREL_STATE == BARREL_EXTENDED) ? 1 : 0;
   attenuatorSyncData.wandFiring = b_wand_firing ? 1 : 0;
 
   switch(SYSTEM_YEAR) {
@@ -1130,6 +1144,13 @@ void checkWand() {
 
           wandComs.rxObj(wandConfig);
           sendDebug(F("Recv. Wand Config Prefs"));
+
+          // Update the flag for our local wifi if applicable.
+          #ifdef ESP32
+          if(WIFI_MODE == WIFI_ENABLED) {
+            b_received_prefs_wand = true;
+          }
+          #endif
 
           // Send the EEPROM preferences just returned by the wand.
           attenuatorSendData(A_SEND_PREFERENCES_WAND);
@@ -1384,7 +1405,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_BARREL_EXTENDED:
       // Remember the last state sent from the wand (for re-sync with the Attenuator).
-      b_neutrona_wand_barrel_extended = true;
+      BARREL_STATE = BARREL_EXTENDED;
 
       // Tell the Attenuator that the Neutrona Wand barrel is extended.
       attenuatorSerialSend(A_BARREL_EXTENDED);
@@ -1392,7 +1413,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
 
     case W_BARREL_RETRACTED:
       // Remember the last state sent from the wand (for re-sync with the Attenuator).
-      b_neutrona_wand_barrel_extended = false;
+      BARREL_STATE = BARREL_RETRACTED;
 
       // Tell the Attenuator that the Neutrona Wand barrel is retracted.
       attenuatorSerialSend(A_BARREL_RETRACTED);
@@ -2138,11 +2159,55 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
       attenuatorSerialSend(A_SETTINGS_MODE);
     break;
 
+    case W_TOGGLE_PACK_WIFI:
+    #ifdef ESP32
+      // Toggle the Proton Pack WiFi.
+      if(WIFI_MODE == WIFI_DEFAULT || WIFI_MODE == WIFI_ENABLED) {
+        WIFI_MODE = WIFI_DISABLED;
+        stopEffect(S_VOICE_PACK_WIFI_DISABLED);
+        stopEffect(S_VOICE_PACK_WIFI_ENABLED);
+        playEffect(S_VOICE_PACK_WIFI_DISABLED);
+      }
+      else {
+        WIFI_MODE = WIFI_ENABLED;
+        stopEffect(S_VOICE_PACK_WIFI_DISABLED);
+        stopEffect(S_VOICE_PACK_WIFI_ENABLED);
+        playEffect(S_VOICE_PACK_WIFI_ENABLED);
+      }
+    #endif
+    break;
+
+    case W_RESET_WIFI_PASSWORD:
+    #ifdef ESP32
+      // Reset the WiFi password to default.
+      resetWifiPassword();
+
+      // Turn off the WiFi until the user decides to manually enable and reconnect.
+      WIFI_MODE = WIFI_DISABLED;
+
+      // Give some audio feedback as to what just happened.
+      stopEffect(S_VOICE_PACK_WIFI_RESET);
+      stopEffect(S_VOICE_WAND_WIFI_RESET);
+      playEffect(S_VOICE_PACK_WIFI_RESET);
+    #endif
+    break;
+
+    case W_WAND_WIFI_DISABLED:
+      stopEffect(S_VOICE_WAND_WIFI_DISABLED);
+      stopEffect(S_VOICE_WAND_WIFI_ENABLED);
+      playEffect(S_VOICE_WAND_WIFI_DISABLED);
+    break;
+
+    case W_WAND_WIFI_ENABLED:
+      stopEffect(S_VOICE_WAND_WIFI_DISABLED);
+      stopEffect(S_VOICE_WAND_WIFI_ENABLED);
+      playEffect(S_VOICE_WAND_WIFI_ENABLED);
+    break;
+
     case W_TOGGLE_INNER_CYCLOTRON_PANEL:
       // Toggle the optional inner cyclotron LED panel board.
       switch(INNER_CYC_PANEL_MODE) {
-        case PANEL_INDIVIDUAL:
-        default:
+        case PANEL_DISABLED:
           INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
 
           stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
@@ -2163,17 +2228,8 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           packSerialSend(P_INNER_CYCLOTRON_PANEL_DYNAMIC);
         break;
         case PANEL_RGB_DYNAMIC:
-        #ifdef ESP32
-          INNER_CYC_PANEL_MODE = PANEL_RGB_STATIC;
-
-          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
-          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
-          stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
-          playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
-
-          packSerialSend(P_INNER_CYCLOTRON_PANEL_STATIC);
-        #else
-          INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
+        default:
+          INNER_CYC_PANEL_MODE = PANEL_DISABLED;
 
           stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_STATIC_COLORS);
           stopEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DYNAMIC_COLORS);
@@ -2181,7 +2237,6 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
           playEffect(S_VOICE_INNER_CYCLOTRON_LED_PANEL_DISABLED);
 
           packSerialSend(P_INNER_CYCLOTRON_PANEL_DISABLED);
-        #endif
         break;
       }
 
@@ -2268,6 +2323,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
 
+      POWER_LEVEL = LEVEL_1;
       attenuatorSerialSend(A_POWER_LEVEL_1);
     break;
 
@@ -2286,6 +2342,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
 
+      POWER_LEVEL = LEVEL_2;
       attenuatorSerialSend(A_POWER_LEVEL_2);
     break;
 
@@ -2304,6 +2361,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
 
+      POWER_LEVEL = LEVEL_3;
       attenuatorSerialSend(A_POWER_LEVEL_3);
     break;
 
@@ -2322,6 +2380,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
 
+      POWER_LEVEL = LEVEL_4;
       attenuatorSerialSend(A_POWER_LEVEL_4);
     break;
 
@@ -2341,6 +2400,7 @@ void handleWandCommand(uint8_t i_command, uint16_t i_value) {
         }
       }
 
+      POWER_LEVEL = LEVEL_5;
       attenuatorSerialSend(A_POWER_LEVEL_5);
     break;
 

@@ -62,6 +62,7 @@ struct MessagePacket sendData;
 struct MessagePacket recvData;
 
 struct __attribute__((packed)) PackPrefs {
+  uint8_t isESP32;
   uint8_t defaultSystemModePack;
   uint8_t defaultYearThemePack;
   uint8_t currentYearThemePack;
@@ -100,6 +101,7 @@ struct __attribute__((packed)) PackPrefs {
 } packConfig;
 
 struct __attribute__((packed)) WandPrefs {
+  uint8_t isESP32;
   uint8_t ledWandCount;
   uint8_t ledWandHue;
   uint8_t ledWandSat;
@@ -499,6 +501,9 @@ bool handleCommand(uint8_t i_command, uint16_t i_value) {
 
     case A_SYNC_START:
       debug("Sync Start");
+
+      // Indicates whether we are talking to a GPStar Pack II.
+      b_esp32_pack = (i_value == 1);
     break;
 
     case A_SYNC_END:

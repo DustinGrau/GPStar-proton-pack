@@ -168,10 +168,8 @@ String getPower() {
       return "4";
     break;
     case LEVEL_5:
-      return "5";
-    break;
     default:
-      return "-";
+      return "5";
     break;
   }
 }
@@ -199,6 +197,7 @@ String getSensorState() {
 JsonDocument jsonBody; // Used for processing JSON body/payload data.
 JsonDocument jsonSuccess; // Used for sending JSON status as success.
 JsonDocument jsonTelemetry; // Used for sending JSON telemetry data.
+JsonDocument jsonCalibration; // Used for sending JSON calibration data.
 String status; // Holder for simple "status: success" response.
 
 void onWebSocketEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -246,7 +245,7 @@ void onOTAStart() {
 
 void onOTAProgress(size_t current, size_t final) {
   // Log every 1 second
-  if (millis() - i_progress_millis > 1000) {
+  if(millis() - i_progress_millis > 1000) {
     i_progress_millis = millis();
     debugf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
   }
@@ -254,9 +253,10 @@ void onOTAProgress(size_t current, size_t final) {
 
 void onOTAEnd(bool success) {
   // Log when OTA has finished
-  if (success) {
+  if(success) {
     debug(F("OTA update finished successfully!"));
-  } else {
+  }
+  else {
     debug(F("There was an error during OTA update!"));
   }
 }
@@ -436,6 +436,34 @@ String getDeviceConfig() {
   jsonBody["softIron9"] = magCalData.mag_softiron[8];
   jsonBody["magField"] = magCalData.mag_field;
 
+  switch(INSTALL_ORIENTATION) {
+    case COMPONENTS_UP_USB_FRONT:
+      jsonBody["orientation"] = 1;
+    break;
+    case COMPONENTS_UP_USB_REAR:
+      jsonBody["orientation"] = 2;
+    break;
+    case COMPONENTS_DOWN_USB_FRONT:
+    default:
+      jsonBody["orientation"] = 3;
+    break;
+    case COMPONENTS_DOWN_USB_REAR:
+      jsonBody["orientation"] = 4;
+    break;
+    case COMPONENTS_LEFT_USB_FRONT:
+      jsonBody["orientation"] = 5;
+    break;
+    case COMPONENTS_LEFT_USB_REAR:
+      jsonBody["orientation"] = 6;
+    break;
+    case COMPONENTS_RIGHT_USB_FRONT:
+      jsonBody["orientation"] = 7;
+    break;
+    case COMPONENTS_RIGHT_USB_REAR:
+      jsonBody["orientation"] = 8;
+    break;
+  }
+
   // Serialize JSON object to string.
   serializeJson(jsonBody, equipSettings);
   return equipSettings;
@@ -447,7 +475,7 @@ String getWandConfig() {
   jsonBody.clear();
 
   // Provide a flag to indicate prefs are directly available.
-  jsonBody["prefsAvailable"] = true;
+  jsonBody["prefsAvailable"] = true; // Always true for the immediate device.
 
   // Return current powered state for pack and wand.
   jsonBody["wandPowered"] = (WAND_STATUS == MODE_ON);
@@ -568,6 +596,31 @@ String getWifiSettings() {
   return wifiNetwork;
 }
 
+String getCalibration() {
+  // Prepare a JSON object with magnetometer and gyroscope/acceleration data.
+  String calibrationData;
+  calibrationData.clear();
+
+  // Arrays of data points for magnetometer calibration visualization.
+  const float* xPtr;
+  const float* yPtr;
+  const float* zPtr;
+
+  int numPoints = MagCal::getVisPoints(xPtr, yPtr, zPtr);
+  JsonArray arr = jsonCalibration.to<JsonArray>();
+
+  for(int i=0; i<numPoints; i++) {
+      JsonObject obj = arr.add<JsonObject>();
+      obj["x"] = xPtr[i];
+      obj["y"] = yPtr[i];
+      obj["z"] = zPtr[i];
+  }
+
+  // Serialize JSON object to string.
+  serializeJson(jsonCalibration, calibrationData);
+  return calibrationData;
+}
+
 String getTelemetry() {
   // Prepare a JSON object with magnetometer and gyroscope/acceleration data.
   String telemetryData;
@@ -632,15 +685,29 @@ void handleResetSensors(AsyncWebServerRequest *request) {
 void handleCalibrateSensorsEnabled(AsyncWebServerRequest *request) {
   // Turn on calibration mode for the motion sensors.
   resetAllMotionData(false); // Clear but don't re-calibrate.
-  SENSOR_READ_TARGET = CALIBRATION;
+  SENSOR_READ_TARGET = CALIBRATION; // Enables collection of calibration data.
+  MagCal::beginCalibration(); // Start collection of samples, clears counters.
   request->send(200, "application/json", status);
   notifyWSClients();
 }
 
 void handleCalibrateSensorsDisabled(AsyncWebServerRequest *request) {
+  // Determine if proper coverage was achieved before calculating and storing data.
+  float coverage = MagCal::getCoveragePercent();
+  if(coverage >= 60.0f) {
+    // Compute calibration data for the standard calibration object.
+    magCalData = MagCal::computeCalibrationEllipsoid();
+
+    // Save the calibration data (as an object) to preferences.
+    if(preferences.begin("device", false)) {
+      preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
+    }
+  }
+
   // Turn off calibration mode for the motion sensors.
-  SENSOR_READ_TARGET = OFFSETS;
-  resetAllMotionData(true); // Reset and re-calibrate
+  SENSOR_READ_TARGET = OFFSETS; // Switch to offsets mode for brief collection.
+  resetAllMotionData(true); // Reset and re-calibrate with fresh offsets.
+
   request->send(200, "application/json", status);
   notifyWSClients();
 }
@@ -665,9 +732,10 @@ void handleRestart(AsyncWebServerRequest *request) {
 }
 
 void toggleDeviceMute() {
-  if (i_volume_master == i_volume_abs_min) {
+  if(i_volume_master == i_volume_abs_min) {
     i_volume_master = i_volume_revert;
-  } else {
+  }
+  else {
     i_volume_revert = i_volume_master;
 
     // Set the master volume to minimum.
@@ -682,16 +750,17 @@ void handleToggleMute(AsyncWebServerRequest *request) {
   debugln("Web: Toggle Mute");
 
   String s_path = request->url();
-  if (s_path.length() > 0) {
+  if(s_path.length() > 0) {
     int lastSlash = s_path.lastIndexOf('/');
-    if (lastSlash >= 0 && lastSlash < s_path.length() - 1) {
+    if(lastSlash >= 0 && lastSlash < s_path.length() - 1) {
       String segment = s_path.substring(lastSlash + 1);
-      if (segment == "mute") {
+      if(segment == "mute") {
         toggleDeviceMute();
         notifyWSClients();
         request->send(200, "application/json", status);
         return;
-      } else if (segment == "unmute") {
+      }
+      else if(segment == "unmute") {
         toggleDeviceMute();
         notifyWSClients();
         request->send(200, "application/json", status);
@@ -754,7 +823,8 @@ void handleMusicStartStop(AsyncWebServerRequest *request) {
   debugln("Web: Music Start/Stop");
   if(!b_playing_music && !b_music_paused) {
     playMusic();
-  } else {
+  }
+  else {
     stopMusic();
   }
   request->send(200, "application/json", status);
@@ -765,7 +835,8 @@ void handleMusicPauseResume(AsyncWebServerRequest *request) {
   debugln("Web: Music Pause/Resume");
   if(b_playing_music && !b_music_paused) {
     pauseMusic();
-  } else {
+  }
+  else {
     resumeMusic();
   }
   request->send(200, "application/json", status);
@@ -790,16 +861,17 @@ void handleLoopMusicTrack(AsyncWebServerRequest *request) {
   debugln("Web: Toggle Music Track Loop");
 
   String s_path = request->url();
-  if (s_path.length() > 0) {
+  if(s_path.length() > 0) {
     int lastSlash = s_path.lastIndexOf('/');
-    if (lastSlash >= 0 && lastSlash < s_path.length() - 1) {
+    if(lastSlash >= 0 && lastSlash < s_path.length() - 1) {
       String segment = s_path.substring(lastSlash + 1);
-      if (segment == "single") {
+      if(segment == "single") {
         toggleMusicLoop();
         notifyWSClients();
         request->send(200, "application/json", status);
         return;
-      } else if (segment == "all") {
+      }
+      else if(segment == "all") {
         toggleMusicLoop();
         notifyWSClients();
         request->send(200, "application/json", status);
@@ -889,6 +961,38 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
       }
     }
 
+    uint8_t i_orientation = jsonBody["orientation"].as<unsigned short>();
+    switch(i_orientation) {
+      case 1:
+        INSTALL_ORIENTATION = COMPONENTS_UP_USB_FRONT;
+      break;
+      case 2:
+        INSTALL_ORIENTATION = COMPONENTS_UP_USB_REAR;
+      break;
+      case 3:
+        INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT;
+      break;
+      case 4:
+        INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_REAR;
+      break;
+      case 5:
+        INSTALL_ORIENTATION = COMPONENTS_LEFT_USB_FRONT;
+      break;
+      case 6:
+        INSTALL_ORIENTATION = COMPONENTS_LEFT_USB_REAR;
+      break;
+      case 7:
+        INSTALL_ORIENTATION = COMPONENTS_RIGHT_USB_FRONT;
+      break;
+      case 8:
+        INSTALL_ORIENTATION = COMPONENTS_RIGHT_USB_REAR;
+      break;
+      default:
+        // Do not change orientation if an invalid value was provided.
+        i_orientation = 0;
+      break;
+    }
+
     // Set the current magnetic calibration values.
     magCalData.mag_hardiron[0] = jsonBody["hardIron1"].as<float>();
     magCalData.mag_hardiron[1] = jsonBody["hardIron2"].as<float>();
@@ -910,6 +1014,11 @@ AsyncCallbackJsonWebHandler *handleSaveDeviceConfig = new AsyncCallbackJsonWebHa
 
     // Accesses namespace in read/write mode.
     if(preferences.begin("device", false)) {
+      // Store the orientation value to preferences (if not zero).
+      if(i_orientation > 0) {
+        preferences.putShort("orientation", i_orientation);
+      }
+
       // Store the magnetic calibration struct (object) to preferences.
       preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
 
@@ -1087,10 +1196,12 @@ AsyncCallbackJsonWebHandler *wifiChangeHandler = new AsyncCallbackJsonWebHandler
     String subnetMask = jsonBody["subnet"].as<String>();
     String gatewayIP = jsonBody["gateway"].as<String>();
 
-    // If no errors encountered, continue with storing a preferred network (with credentials and IP information).
-    if(wifiNetwork.length() >= 2 && wifiPasswd.length() >= 8) {
-      // Accesses namespace in read/write mode.
-      if(preferences.begin("network", false)) {
+    // Accesses namespace in read/write mode.
+    if(preferences.begin("network", false)) {
+      // Store the state of toggle switches regardless.
+      preferences.putBool("enabled", b_enabled);
+
+      if(wifiNetwork.length() >= 2 && wifiPasswd.length() >= 8) {
         // Clear old network IP info if SSID or password have been changed.
         String old_ssid = preferences.getString("ssid", "");
         String old_passwd = preferences.getString("password", "");
@@ -1101,23 +1212,41 @@ AsyncCallbackJsonWebHandler *wifiChangeHandler = new AsyncCallbackJsonWebHandler
         }
 
         // Store the critical values to enable/disable the external WiFi.
-        preferences.putBool("enabled", b_enabled);
         preferences.putString("ssid", wifiNetwork);
         preferences.putString("password", wifiPasswd);
 
         // Continue saving only if network values are 7 characters or more (eg. N.N.N.N)
+        bool b_static_ip = true;
         if(localAddr.length() >= 7 && localAddr != wifi_address) {
           preferences.putString("address", localAddr);
+        }
+        else {
+          b_static_ip = false;
         }
         if(subnetMask.length() >= 7 && subnetMask != wifi_subnet) {
           preferences.putString("subnet", subnetMask);
         }
+        else {
+          b_static_ip = false;
+        }
         if(gatewayIP.length() >= 7 && gatewayIP != wifi_gateway) {
           preferences.putString("gateway", gatewayIP);
         }
-
-        preferences.end();
+        else {
+          b_static_ip = false;
+        }
+        if(!b_static_ip) {
+          // If any of the above values were invalid, blank all three.
+          preferences.putString("address", "");
+          preferences.putString("subnet", "");
+          preferences.putString("gateway", "");
+        }
       }
+
+      preferences.end();
+    }
+    else {
+      b_errors = true;
     }
 
     if(!b_errors) {
@@ -1225,6 +1354,19 @@ void notifyWSClients() {
   if(b_ws_started) {
     // Send latest status to all connected clients.
     ws.textAll(getEquipmentStatus());
+  }
+}
+
+void sendCalibrationPoints() {
+  if(b_ws_started) {
+    // Gather the latest filtered motion data, serialize it to a JSON string,
+    // and send it to all connected EventSource (SSE) clients as a "telemetry"
+    // event name (using the current time as a unique event identifier).
+    events.send(getCalibration().c_str(), "calibration", millis());
+
+    // Also send the current coverage percentage as a unique event.
+    float coverage = MagCal::getCoveragePercent();
+    events.send(String(coverage).c_str(), "coverage", millis());
   }
 }
 

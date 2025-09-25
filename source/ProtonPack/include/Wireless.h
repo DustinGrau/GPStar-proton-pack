@@ -98,16 +98,17 @@ IPAddress convertToIP(const String ipAddressString) {
   uint8_t quadStartIndex = 0;
   int8_t quadEndIndex = 0;
 
-  for (uint8_t i = 0; i < 4; i++) {
+  for(uint8_t i = 0; i < 4; i++) {
     // Find the index of the next dot
     quadEndIndex = ipAddressString.indexOf('.', quadStartIndex);
 
-    if (quadEndIndex != -1) {
+    if(quadEndIndex != -1) {
       // If a dot is found, extract and store the quad
       String quad = ipAddressString.substring(quadStartIndex, quadEndIndex);
       quads[i] = quad.toInt(); // Convert the quad string to an integer
       quadStartIndex = quadEndIndex + 1;
-    } else {
+    }
+    else {
       // If the dot is not found, this is the last quad
       String lastQuad = ipAddressString.substring(quadStartIndex);
       quads[i] = lastQuad.toInt();
@@ -122,18 +123,26 @@ IPAddress convertToIP(const String ipAddressString) {
 
 // Remove spaces and illegal characters meant for an SSID.
 String sanitizeSSID(const String input) {
-    String result = "";
+  String result = "";
 
-    for (size_t i = 0; i < input.length(); i++) {
-        char c = input[i];
+  for(size_t i = 0; i < input.length(); i++) {
+    char c = input[i];
 
-        // Only allow alphanumeric, hyphens, and underscores
-        if (isalnum(c) || c == '-' || c == '_') {
-            result += c;
-        }
+    // Only allow alphanumeric, hyphens, and underscores
+    if(isalnum(c) || c == '-' || c == '_') {
+      result += c;
     }
+  }
 
-    return result;
+  return result;
+}
+
+// Reset the AP password in case the user forgot it.
+void resetWifiPassword() {
+  if(preferences.begin("credentials", false)) {
+    preferences.putString("password", ap_default_passwd);
+    preferences.end();
+  }
 }
 
 /*
@@ -289,7 +298,7 @@ bool startExternalWifi() {
     #endif
 
     // Provide adequate attempts to connect to the external WiFi network.
-    while (i_curr_attempt < i_max_attempts) {
+    while(i_curr_attempt < i_max_attempts) {
       WiFi.persistent(false); // Don't write SSID/Password to flash memory.
 
       // Attempt to connect to a specified WiFi network.
@@ -297,7 +306,7 @@ bool startExternalWifi() {
 
       // Wait for the connection to be established.
       uint8_t attempt = 0;
-      while (attempt < i_max_attempts && WiFi.status() != WL_CONNECTED) {
+      while(attempt < i_max_attempts && WiFi.status() != WL_CONNECTED) {
         delay(500);
         #if defined(DEBUG_WIRELESS_SETUP)
           debug(F("Connecting to external WiFi network, attempt #"));
@@ -306,7 +315,7 @@ bool startExternalWifi() {
         attempt++;
       }
 
-      if (WiFi.status() == WL_CONNECTED) {
+      if(WiFi.status() == WL_CONNECTED) {
         // Configure static IP values for tis device on the preferred network.
         if(wifi_address.length() >= 7 && wifi_subnet.length() >= 7 && wifi_gateway.length() >= 7) {
           #if defined(DEBUG_WIRELESS_SETUP)
@@ -346,7 +355,8 @@ bool startExternalWifi() {
         WiFi.setAutoReconnect(false); // Don't try to reconnect, wait for a power cycle.
 
         return true; // Exit the loop if connected successfully.
-      } else {
+      }
+      else {
         #if defined(DEBUG_WIRELESS_SETUP)
           debugln(F("Failed to connect to WiFi. Retrying..."));
         #endif
@@ -354,7 +364,7 @@ bool startExternalWifi() {
       }
     }
 
-    if (i_curr_attempt == i_max_attempts) {
+    if(i_curr_attempt == i_max_attempts) {
       #if defined(DEBUG_WIRELESS_SETUP)
         debugln(F("Max connection attempts reached."));
         debugln(F("Cannot connect to external WiFi."));
@@ -398,7 +408,7 @@ bool startWiFi() {
   // Set the mDNS hostname to "ProtonPack_NNNN.local" just like the private AP name.
   bool b_mdns_started = MDNS.begin(ap_ssid.c_str());
   #if defined(DEBUG_WIRELESS_SETUP)
-    if (b_mdns_started) {
+    if(b_mdns_started) {
       debug(F("mDNS Responder Started: "));
       debugln(ap_ssid + ".local");
     }
@@ -419,7 +429,7 @@ bool startWiFi() {
 
 // Stops the web server and disables WiFi to save power or for security.
 void shutdownWireless() {
-  if (WiFi.getMode() != WIFI_OFF) {
+  if(WiFi.getMode() != WIFI_OFF) {
     // Close all websocket connections and stop the web server.
     ws.closeAll();
     httpServer.end();
@@ -427,7 +437,9 @@ void shutdownWireless() {
 
     // Disconnect WiFi and turn off radio.
     WiFi.disconnect(true);
+    delay(1);
     WiFi.mode(WIFI_OFF);
+    delay(1);
     b_ap_started = false;
     b_ext_wifi_started = false;
 
@@ -439,13 +451,19 @@ void shutdownWireless() {
 
 // Restarts WiFi and web server when needed.
 void restartWireless() {
-  // Start WiFi (SoftAP or external, as per user settings)
-  startWiFi();
+  if(!b_ap_started) {
+    if(startWiFi()) {
+      // Start the local web server.
+      startWebServer();
 
-  // Start web server and websocket
-  startWebServer();
+      // Begin timer for remote client events.
+      ms_cleanup.start(i_websocketCleanup);
+      ms_apclient.start(i_apClientCount);
+      ms_otacheck.start(i_otaCheck);
 
-  #if defined(DEBUG_WIRELESS_SETUP)
-    debugln(F("Wireless and web server restarted."));
-  #endif
+      #if defined(DEBUG_WIRELESS_SETUP)
+        debugln(F("Wireless and web server restarted."));
+      #endif
+    }
+  }
 }

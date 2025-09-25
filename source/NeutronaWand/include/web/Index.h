@@ -67,7 +67,7 @@ const char INDEX_page[] PROGMEM = R"=====(
         </p>
       </div>
       <div class="viz-content">
-        <div id="3Dobj"></div>
+        <div id="3Dtelemetry"></div>
       </div>
     </div>
     <button type="button" id="btnRecenter" class="blue" onclick="resetPosition()">Re-center</button>
@@ -139,21 +139,27 @@ const char INDEX_page[] PROGMEM = R"=====(
   <div id="tab3" class="tab">
     <div class="card" style="text-align:center;">
       <div class="block left">
-        <p>
-          Magnetic calibration is critical to obtaining a correct reading from sensors and should be performed in a controlled environment.
-          To begin sending calibration data through the USB connector to your computer, first ensure that the device is properly connected
-          and the MotionCal software is running and able to see the port for the Neutrona Wand controller.
-          Once connected and running, press the "Enable Calibration" button to begin sending data to the MotionCal software.
-          Rotate your Neutrona Wand in all directions to collect calibration data, represented as dots on a sphere.
-          The more dots collected and the more round the sphere, the better the calibration data.
-          Once collected, enter the calibration data via the <a href="/settings/device">Special Device Settings</a> page.
-          Press the "Disable Calibration" button to stop sending data and return to standard telemetry data view.
-        </p>
+        Magnetic calibration is critical to obtaining a correct reading from sensors and must be performed only when all components are fully installed.
+        <ol style="padding-left:20px;">
+          <li>Press "Enable Calibration" to begin.</li>
+          <li>Rotate your Neutrona Wand slowly in all directions to collect calibration data (represented as dots in a sphere).</li>
+          <li>Fill the sphere with dots until the coverage is as close to 100% as possible.</li>
+          <li>Press "Disable Calibration" to stop and store the calculated values.</li>
+        </ol>
       </div>
       <button type="button" id="btnCalibrateOn" class="green" onclick="enableCalibration()">Enable Calibration</button>
       &nbsp;&nbsp;&nbsp;
       <button type="button" id="btnCalibrateOff" class="red" onclick="disableCalibration()">Disable Calibration</button>
       <br/>
+      <br/>
+      <div class="telemetry" id="calInfo">
+        <p>
+          <span class="infoLabel">Coverage:</span> <span class="infoState" id="coverage">&mdash;</span>
+        </p>
+        <div class="viz-content">
+          <div id="3Dcalibration"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -167,7 +173,7 @@ const char INDEX_page[] PROGMEM = R"=====(
       <br/>
       <hr/>
       <br/>
-      <a href="/update">Update ESP32 Firmware</a>
+      <a href="/update">Update Neutrona Wand Firmware</a>
       <br/>
       <br/>
       <a href="/password">Secure Device WiFi</a>

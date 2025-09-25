@@ -106,7 +106,7 @@ void sendDebug(const String message) {
     debugln(message); // Print to serial console.
   #endif
   #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
-    if (b_ws_started) {
+    if(b_ws_started) {
       ws.textAll(message); // Send a copy to the WebSocket.
     }
   #endif
@@ -162,7 +162,7 @@ void setup() {
 
   // RGB Vent Light.
   FastLED.addLeds<NEOPIXEL, TOP_LED_PIN>(vent_leds, VENT_LEDS_MAX).setCorrection(TypicalLEDStrip);
-  for (uint8_t i = 0; i < VENT_LEDS_MAX; i++) {
+  for(uint8_t i = 0; i < VENT_LEDS_MAX; i++) {
     // Initialize all vent_leds to white initially.
     vent_leds[i] = getHueAsRGB(C_WHITE);
   }
@@ -201,9 +201,9 @@ void setup() {
 
   // Attempt to start the sensors or die trying.
   Wire1.begin(IMU_SDA, IMU_SCL, 400000UL);
-  if (!initializeSensors()) {
+  if(!initializeSensors()) {
     debugln("Failed to find sensors");
-    while (1) delay(10);
+    while(1) delay(10);
   }
 
   // Print information about the sensors.
@@ -211,6 +211,7 @@ void setup() {
   gyroscope->printSensorDetails();
   magnetometer->printSensorDetails();
 
+  getSpecialPreferences(); // Get all device preferences.
   configureSensors(); // Set sensor ranges and defaults.
   delay(40); // Pause briefly for the devices to start.
   readRawSensorData(); // Perform an initial sensor read.
@@ -323,17 +324,6 @@ void setup() {
   }
 
 #ifdef ESP32
-  // Begin by setting up WiFi as a prerequisite to all else.
-  if(startWiFi()) {
-    // Start the local web server.
-    startWebServer();
-
-    // Begin timer for remote client events.
-    ms_cleanup.start(i_websocketCleanup);
-    ms_apclient.start(i_apClientCount);
-    ms_otacheck.start(i_otaCheck);
-  }
-
   debugf("Setup complete, free heap: %u bytes\n", ESP.getFreeHeap());
 #endif
 }
@@ -376,11 +366,11 @@ void mainLoop() {
       if(WAND_ACTION_STATUS != ACTION_LED_EEPROM_MENU && WAND_ACTION_STATUS != ACTION_CONFIG_EEPROM_MENU) {
         if(WAND_ACTION_STATUS != ACTION_SETTINGS && b_gpstar_benchtest && SYSTEM_MODE == MODE_ORIGINAL && switch_intensify.doubleClick()) {
           // This allows a standalone wand to "flip the ion arm switch" when in MODE_ORIGINAL by double-clicking the Intensify switch while the wand is turned off
-          changeIonArmSwitchState(!b_pack_ion_arm_switch_on);
+          changeIonArmSwitchState(RED_SWITCH_MODE == SWITCH_OFF);
         }
 
         if(switch_mode.pushed() || b_pack_alarm) {
-          if(WAND_ACTION_STATUS != ACTION_SETTINGS && !b_pack_alarm && (!b_pack_on || b_gpstar_benchtest)) {
+          if(WAND_ACTION_STATUS != ACTION_SETTINGS && !b_pack_alarm) {
             playEffect(S_CLICK);
 
             WAND_ACTION_STATUS = ACTION_SETTINGS;
@@ -400,14 +390,26 @@ void mainLoop() {
           }
           else {
             // Only exit the settings menu when on menu #5 in the top menu or the pack ribbon cable alarm is active.
-            if(i_wand_menu == 5 && WAND_MENU_LEVEL == MENU_LEVEL_1 && WAND_ACTION_STATUS == ACTION_SETTINGS) {
+            if((i_wand_menu == 5 && WAND_MENU_LEVEL == MENU_LEVEL_1 && WAND_ACTION_STATUS == ACTION_SETTINGS) || b_pack_alarm) {
               wandExitMenu();
             }
           }
         }
         else if(WAND_ACTION_STATUS == ACTION_SETTINGS && b_pack_on) {
-          if(!b_gpstar_benchtest) {
-            wandExitMenu();
+          if(!b_gpstar_benchtest && WAND_MENU_LEVEL != MENU_LEVEL_1) {
+            WAND_MENU_LEVEL = MENU_LEVEL_1;
+
+            i_wand_menu = 5;
+
+            // Turn off the vent/top LED to indicate leaving the sub menus.
+            ventLightControl(0);
+
+            // Turn off the slo blow led to indicate we are no longer in the Neutrona Wand sub menus.
+            digitalWriteFast(SLO_BLO_LED_PIN, LOW);
+
+            // Play an indication beep to notify we have changed menu levels.
+            stopEffect(S_BEEPS);
+            playEffect(S_BEEPS);
           }
         }
       }
@@ -585,6 +587,33 @@ void mainLoop() {
 
 // The main loop of the program which manages all system operations which must occur on every loop.
 void loop() {
+#ifdef ESP32
+  // The ESP32 uses a dual-core CPU with the loop() executing in Core0 by default.
+  // Using vTaskDelay even without core-pinning will allow other tasks to run on Core1.
+  // Features such as networking, WiFi, and OTA updates can benefit from this brief delay.
+  vTaskDelay(pdMS_TO_TICKS(1)); // Translate 1 ms to ticks for delay.
+
+  // Run checks on web-related tasks.
+  webLoops();
+
+  // Check the motion sensors if they are available and the timer has completed.
+  checkMotionSensors();
+
+  // Take action with Wifi based on user preference.
+  switch(WIFI_MODE) {
+    case WIFI_ENABLED:
+    default:
+      // Begin by setting up WiFi as a prerequisite to all else.
+      restartWireless();
+    break;
+
+    case WIFI_DISABLED:
+      // Do not start WiFi or the web server.
+      shutdownWireless();
+    break;
+  }
+#endif
+
   switch(WAND_CONN_STATE) {
     case PACK_DISCONNECTED:
       // While waiting for a proton pack, issue a request for synchronization.
@@ -646,17 +675,4 @@ void loop() {
 
     ms_fast_led.start(i_fast_led_delay);
   }
-
-#ifdef ESP32
-  // The ESP32 uses a dual-core CPU with the loop() executing in Core0 by default.
-  // Using vTaskDelay even without core-pinning will allow other tasks to run on Core1.
-  // Features such as networking, WiFi, and OTA updates can benefit from this brief delay.
-  vTaskDelay(pdMS_TO_TICKS(1)); // Translate 1 ms to ticks for delay.
-
-  // Run checks on web-related tasks.
-  webLoops();
-
-  // Check the motion sensors if they are available and the timer has completed.
-  checkMotionSensors();
-#endif
 }

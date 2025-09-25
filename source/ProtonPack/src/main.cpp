@@ -84,7 +84,7 @@ void sendDebug(const String message) {
     debugln(message); // Print to serial console.
   #endif
   #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
-    if (b_ws_started) {
+    if(b_ws_started) {
       ws.textAll(message); // Send a copy to the WebSocket.
     }
   #endif
@@ -562,7 +562,7 @@ void mainLoop() {
   }
 }
 
-void updateLEDs () {
+void updateLEDs() {
   // Update all LED's when the FastLED timer has finished.
   if(ms_fast_led.justFinished()) {
     FastLED.show();
@@ -596,7 +596,7 @@ void loop() {
   // Handle any actions after POST event.
   mainLoop();
 
-  // Update the LEDs
+  // Update the LEDs.
   updateLEDs();
 
 #ifdef ESP32
@@ -611,22 +611,32 @@ void loop() {
   // Get the current temperature from the HDC1080 sensor.
   readTemperature();
 
-  // Take action with Wifi based on presence of the Attenuator.
-  if(b_attenuator_connected) {
-    // Turn off WiFi and the web server if the Attenuator is connected.
-    shutdownWireless();
-  }
-  else if(!b_attenuator_connected && !b_attenuator_syncing && !b_ws_started && b_pack_post_finish) {
-    // Begin by setting up WiFi as a prerequisite to all else.
-    if(startWiFi()) {
-      // Start the local web server.
-      startWebServer();
+  // Take action with Wifi based on user preference and presence of the Attenuator.
+  switch(WIFI_MODE) {
+    case WIFI_DISABLED:
+      shutdownWireless(); // Keep the WiFi off (function will only take action if WiFi is still on).
+    break;
 
-      // Begin timers for remote client events.
-      ms_cleanup.start(i_websocketCleanup);
-      ms_apclient.start(i_apClientCount);
-      ms_otacheck.start(i_otaCheck);
-    }
+    case WIFI_ENABLED:
+      // Force the WiFi to remain on, disregarding any Attenuator connection.
+      if(!b_ws_started && b_pack_post_finish) {
+        // Begin by setting up WiFi as a prerequisite to all else.
+        restartWireless();
+      }
+    break;
+
+    case WIFI_DEFAULT:
+    default:
+      // Take action based solely on the presence of the Attenuator (Connected = WiFi Off, Disconnected = WiFi On).
+      if(b_attenuator_connected) {
+        // Turn off WiFi and the web server if the Attenuator is connected.
+        shutdownWireless();
+      }
+      else if(!b_attenuator_connected && !b_attenuator_syncing && !b_ws_started && b_pack_post_finish) {
+        // Begin by setting up WiFi as a prerequisite to all else.
+        restartWireless();
+      }
+    break;
   }
 #endif
 }

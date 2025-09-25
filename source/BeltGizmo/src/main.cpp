@@ -174,7 +174,7 @@ void WiFiManagementTask(void *parameter) {
         ms_apclient.start(i_apClientCount);
       }
 
-      if (WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
+      if(WiFi.status() == WL_CONNECTED && b_ext_wifi_started && !b_socket_ready) {
         debug(F("WiFi Connected, Socket Not Configured"));
         b_ext_wifi_paused = false; // Resume retries when needed.
         setupWebSocketClient(); // Restore the WebSocket connection.
@@ -261,9 +261,9 @@ void setup() {
 
   btStop(); // Disable Bluetooth which is not needed for this hardware.
 
-  // Boot into proton mode at level 1 by default.
+  // Boot into proton mode at level 5 by default.
   STREAM_MODE = PROTON;
-  POWER_LEVEL = LEVEL_1;
+  POWER_LEVEL = LEVEL_5;
 
   // Device RGB LEDs for use when needed.
   FastLED.addLeds<NEOPIXEL, DEVICE_LED_PIN>(device_leds, DEVICE_NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -377,12 +377,12 @@ void printMemoryStats() {
   Serial.println(F(" bytes"));
 
   // Stack memory (for other tasks)
-  if (AnimationTaskHandle != NULL) {
+  if(AnimationTaskHandle != NULL) {
     Serial.print(F("|--Animation: "));
     Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
     Serial.println(F(" / 2,048 bytes"));
   }
-  if (WiFiManagementTaskHandle != NULL) {
+  if(WiFiManagementTaskHandle != NULL) {
     Serial.print(F("|--WiFi Mgmt.: "));
     Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
     Serial.println(F(" / 2,048 bytes"));
@@ -400,7 +400,7 @@ void loop() {
   #endif
 
   // Exception: Run the WebSocket client loop if connected to WiFi.
-  if (b_ext_wifi_started && b_socket_ready) {
+  if(b_ext_wifi_started && b_socket_ready) {
     wsClient.loop();
   }
 }

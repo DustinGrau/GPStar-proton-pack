@@ -496,7 +496,7 @@ void hatLightControl() {
     case MODE_OFF:
     default:
       if(SYSTEM_MODE == MODE_ORIGINAL) {
-        if(!b_pack_ion_arm_switch_on) {
+        if(RED_SWITCH_MODE == SWITCH_OFF) {
           // Keep the hat lights turned off.
           digitalWriteFast(BARREL_HAT_LED_PIN, LOW);
           digitalWriteFast(TOP_HAT_LED_PIN, LOW);
@@ -2198,28 +2198,33 @@ void bargraphPowerCheck2021Alt(bool b_override) {
 void updatePackPowerLevel() {
   switch(i_power_level) {
     case 5:
+    default:
       // Level 5
+      POWER_LEVEL = LEVEL_5;
       wandSerialSend(W_POWER_LEVEL_5);
     break;
 
     case 4:
       // Level 4
+      POWER_LEVEL = LEVEL_4;
       wandSerialSend(W_POWER_LEVEL_4);
     break;
 
     case 3:
       // Level 3
+      POWER_LEVEL = LEVEL_3;
       wandSerialSend(W_POWER_LEVEL_3);
     break;
 
     case 2:
       // Level 2
+      POWER_LEVEL = LEVEL_2;
       wandSerialSend(W_POWER_LEVEL_2);
     break;
 
     case 1:
-    default:
       // Level 1
+      POWER_LEVEL = LEVEL_1;
       wandSerialSend(W_POWER_LEVEL_1);
     break;
   }
@@ -3062,43 +3067,49 @@ void wandVentStateCheck() {
 // Barrel safety switch is connected to analog pin 7.
 bool switchBarrel() {
   if(switch_barrel.on()) {
-    if(b_switch_barrel_extended) {
-      if(b_extra_pack_sounds) {
-        wandSerialSend(W_WAND_BARREL_RETRACT);
+    if(BARREL_STATE != BARREL_RETRACTED) {
+      if(BARREL_STATE != BARREL_UNKNOWN) {
+        // Prevents sound from playing on bootup.
+        if(b_extra_pack_sounds) {
+          wandSerialSend(W_WAND_BARREL_RETRACT);
+        }
+
+        playEffect(S_WAND_BARREL_RETRACT);
       }
 
-      playEffect(S_WAND_BARREL_RETRACT);
-
       wandSerialSend(W_BARREL_RETRACTED);
-      b_switch_barrel_extended = false;
+      BARREL_STATE = BARREL_RETRACTED;
     }
   }
   else {
     // Play the barrel extension sound effect.
-    if(!b_switch_barrel_extended) {
-      if((getNeutronaWandYearMode() == SYSTEM_AFTERLIFE || getNeutronaWandYearMode() == SYSTEM_FROZEN_EMPIRE)) {
-        if(b_extra_pack_sounds) {
-          wandSerialSend(W_AFTERLIFE_WAND_BARREL_EXTEND);
-        }
+    if(BARREL_STATE != BARREL_EXTENDED) {
+      if(BARREL_STATE != BARREL_UNKNOWN) {
+        // Prevents sound from playing on bootup.
+        if((getNeutronaWandYearMode() == SYSTEM_AFTERLIFE || getNeutronaWandYearMode() == SYSTEM_FROZEN_EMPIRE)) {
+          if(b_extra_pack_sounds) {
+            wandSerialSend(W_AFTERLIFE_WAND_BARREL_EXTEND);
+          }
 
-        // Plays the "thwoop" barrel extension sound in Afterlife mode.
-        playEffect(S_AFTERLIFE_WAND_BARREL_EXTEND);
-      }
-      else {
-        if(b_extra_pack_sounds) {
-          wandSerialSend(W_GB1_WAND_BARREL_EXTEND);
+          // Plays the "thwoop" barrel extension sound in Afterlife mode.
+          playEffect(S_AFTERLIFE_WAND_BARREL_EXTEND);
         }
+        else {
+          if(b_extra_pack_sounds) {
+            wandSerialSend(W_GB1_WAND_BARREL_EXTEND);
+          }
 
-        // Plays the "thwoop" barrel extension sound in Afterlife mode.
-        playEffect(S_GB1_1984_WAND_BARREL_EXTEND);
+          // Plays the "thwoop" barrel extension sound in Afterlife mode.
+          playEffect(S_GB1_1984_WAND_BARREL_EXTEND);
+        }
       }
 
       wandSerialSend(W_BARREL_EXTENDED);
-      b_switch_barrel_extended = true;
+      BARREL_STATE = BARREL_EXTENDED;
     }
   }
 
-  return b_switch_barrel_extended; // Immediate return of state.
+  return (BARREL_STATE == BARREL_EXTENDED); // Immediate return of state.
 }
 
 // Arms/Disarms the power-on reminder (if enabled).
@@ -3611,7 +3622,7 @@ void fireControlCheck() {
         }
       }
 
-      if(switch_intensify.on() && switch_wand.on() && switch_vent.on() && b_switch_barrel_extended) {
+      if(switch_intensify.on() && switch_wand.on() && switch_vent.on() && BARREL_STATE == BARREL_EXTENDED) {
         switch(STREAM_MODE) {
           case PROTON:
           case SLIME:
@@ -3668,7 +3679,7 @@ void fireControlCheck() {
 
       // When Cross The Streams mode is enabled, video game modes are disabled and the wand menu settings can only be accessed when the Neutrona Wand is powered down.
       if(FIRING_MODE == CTS_MODE || FIRING_MODE == CTS_MIX_MODE) {
-        if(switch_mode.on() && switch_wand.on() && switch_vent.on() && b_switch_barrel_extended) {
+        if(switch_mode.on() && switch_wand.on() && switch_vent.on() && BARREL_STATE == BARREL_EXTENDED) {
           if(ms_bmash.remaining() < 1) {
             // Clear counter/timer until user begins firing.
             i_bmash_count = 0;
@@ -3702,7 +3713,7 @@ void fireControlCheck() {
             b_firing_alt = true;
           }
         }
-        else if(switch_mode.on() && switch_wand.on() && switch_vent.on() && b_switch_barrel_extended) {
+        else if(switch_mode.on() && switch_wand.on() && switch_vent.on() && BARREL_STATE == BARREL_EXTENDED) {
           switch(STREAM_MODE) {
             case PROTON:
               // Handle Boson Dart fire start here.
@@ -3862,7 +3873,7 @@ void checkSwitches() {
     case MODE_OFF:
       switch(SYSTEM_MODE) {
         case MODE_ORIGINAL:
-          if(b_pack_ion_arm_switch_on) {
+          if(RED_SWITCH_MODE == SWITCH_ON) {
             if(WAND_ACTION_STATUS == ACTION_IDLE) {
               // We are going to handle the toggle switch sequence for the MODE_ORIGINAL here.
               if(switch_activate.on() && switch_vent.on() && switch_wand.on()) {
@@ -7111,7 +7122,7 @@ uint8_t getRandomFiringEffect() {
 void mixExtraFiringEffects() {
 #ifdef ESP32
   // Mix some impact sound based on user-initiated motions while firing.
-  if (STREAM_MODE == PROTON && !b_firing_cross_streams && b_stream_effects && filteredMotionData.shaken) {
+  if(STREAM_MODE == PROTON && !b_firing_cross_streams && b_stream_effects && filteredMotionData.shaken) {
     // Only play impact sound if firing, in Proton mode, and threshold exceeded.
     uint8_t i_random_effect = getRandomFiringEffect(); // Use last-played effect to choose another.
     switch(i_random_effect) {
@@ -9603,14 +9614,14 @@ void checkRotaryEncoder() {
             wandSerialSend(W_VOLUME_MUSIC_DECREASE);
           }
           else if(i_wand_menu - 1 < 1) {
-            // We are entering the sub menu. Only accessible when the Neutrona Wand is powered down.
-            if(WAND_STATUS == MODE_OFF) {
+            // We are entering a sub menu. Only accessible when the Proton Pack is powered down.
+            if(!b_pack_on || (b_gpstar_benchtest && WAND_STATUS == MODE_OFF)) {
               switch(WAND_MENU_LEVEL) {
                 case MENU_LEVEL_1:
                   WAND_MENU_LEVEL = MENU_LEVEL_2;
                   i_wand_menu = 5;
 
-                  // Turn on the slo blow led to indicate we are in the Neutrona Wand sub menu.
+                  // Turn on the slo blow led to indicate we are in sub menu level 2.
                   digitalWriteFast(SLO_BLO_LED_PIN, HIGH);
 
                   // Play an indication beep to notify we have changed menu levels.
@@ -9629,9 +9640,34 @@ void checkRotaryEncoder() {
                   wandSerialSend(W_MENU_LEVEL_2);
                 break;
 
+              #ifdef ESP32
                 case MENU_LEVEL_2:
+                  // Menu level 3 is only available on the GPStar II controller.
+                  WAND_MENU_LEVEL = MENU_LEVEL_3;
+                  i_wand_menu = 5;
+
+                  // Turn on the vent/top LED to indicate entering sub menu level 3.
+                  ventLightControl(1);
+
+                  // Play an indication beep to notify we have changed menu levels.
+                  stopEffect(S_BEEPS);
+                  playEffect(S_BEEPS);
+
+                  stopEffect(S_LEVEL_1);
+                  stopEffect(S_LEVEL_2);
+                  stopEffect(S_LEVEL_3);
+                  stopEffect(S_LEVEL_4);
+                  stopEffect(S_LEVEL_5);
+
+                  playEffect(S_LEVEL_3);
+
+                  // Tell the Proton Pack to play some sounds.
+                  wandSerialSend(W_MENU_LEVEL_3);
+                break;
+              #endif
+
                 default:
-                  // Cannot go further than level 2 for this menu.
+                  // Cannot go further than level 2 (GPStar I) or level 3 (GPStar II) for this menu.
                   i_wand_menu = 1;
                 break;
               }
@@ -9666,15 +9702,39 @@ void checkRotaryEncoder() {
             wandSerialSend(W_VOLUME_MUSIC_INCREASE);
           }
           else if(i_wand_menu + 1 > 5) {
-            // We are leaving changing menu levels. Only accessible when the Neutrona Wand is powered down.
-            if(WAND_STATUS == MODE_OFF) {
+            // We are leaving changing menu levels. Only accessible when the Proton Pack is powered down.
+            if(!b_pack_on || (b_gpstar_benchtest && WAND_STATUS == MODE_OFF)) {
               switch(WAND_MENU_LEVEL) {
+                case MENU_LEVEL_3:
+                  WAND_MENU_LEVEL = MENU_LEVEL_2;
+
+                  i_wand_menu = 1;
+
+                  // Turn off the vent/top LED to indicate leaving this sub menu.
+                  ventLightControl(0);
+
+                  // Play an indication beep to notify we have changed menu levels.
+                  stopEffect(S_BEEPS);
+                  playEffect(S_BEEPS);
+
+                  stopEffect(S_LEVEL_1);
+                  stopEffect(S_LEVEL_2);
+                  stopEffect(S_LEVEL_3);
+                  stopEffect(S_LEVEL_4);
+                  stopEffect(S_LEVEL_5);
+
+                  playEffect(S_LEVEL_2);
+
+                  // Tell the Proton Pack to play some sounds.
+                  wandSerialSend(W_MENU_LEVEL_2);
+                break;
+
                 case MENU_LEVEL_2:
                   WAND_MENU_LEVEL = MENU_LEVEL_1;
 
                   i_wand_menu = 1;
 
-                  // Turn off the slo blow led to indicate we are no longer in the Neutrona Wand sub menu.
+                  // Turn off the slo blow led to indicate we are no longer in the Neutrona Wand sub menus.
                   digitalWriteFast(SLO_BLO_LED_PIN, LOW);
 
                   // Play an indication beep to notify we have changed menu levels.
@@ -9954,8 +10014,8 @@ void checkRotaryEncoder() {
 
 // Function to control all actions relating to the pack's ion arm switch.
 void changeIonArmSwitchState(bool state) {
-  if(state && !b_pack_ion_arm_switch_on) {
-    b_pack_ion_arm_switch_on = true;
+  if(state && RED_SWITCH_MODE == SWITCH_OFF) {
+    RED_SWITCH_MODE = SWITCH_ON;
 
     // Disable the power on reminder.
     setPowerOnReminder(false);
@@ -9996,8 +10056,8 @@ void changeIonArmSwitchState(bool state) {
       }
     }
   }
-  else if(!state && b_pack_ion_arm_switch_on) {
-    b_pack_ion_arm_switch_on = false;
+  else if(!state && RED_SWITCH_MODE == SWITCH_ON) {
+    RED_SWITCH_MODE = SWITCH_OFF;
 
     switch(SYSTEM_MODE) {
       case MODE_ORIGINAL:
@@ -10087,7 +10147,7 @@ void wandExitMenu() {
 
   // In original mode, we need to re-initalise the 28 and 30 segment bargraph if some switches are already toggled on.
   if(SYSTEM_MODE == MODE_ORIGINAL) {
-    if(switch_vent.on() && switch_wand.on() && b_pack_ion_arm_switch_on) {
+    if(switch_vent.on() && switch_wand.on() && RED_SWITCH_MODE == SWITCH_ON) {
       if(b_extra_pack_sounds) {
         wandSerialSend(W_MODE_ORIGINAL_HEATUP);
       }
@@ -10114,7 +10174,7 @@ void wandExitEEPROMMenu() {
 
   if(b_gpstar_benchtest) {
     // Also need to make sure to reset the "ion arm switch" to off if standalone.
-    b_pack_ion_arm_switch_on = false;
+    RED_SWITCH_MODE = SWITCH_OFF;
   }
 
   i_wand_menu = 5;
@@ -10140,7 +10200,7 @@ void wandExitEEPROMMenu() {
 void checkPowerOnReminder() {
   if(WAND_ACTION_STATUS == ACTION_IDLE && (!b_pack_on || b_gpstar_benchtest)) {
     if(ms_power_indicator.justFinished()) {
-      if((SYSTEM_MODE == MODE_ORIGINAL && !b_pack_ion_arm_switch_on) || SYSTEM_MODE == MODE_SUPER_HERO) {
+      if((SYSTEM_MODE == MODE_ORIGINAL && RED_SWITCH_MODE == SWITCH_OFF) || SYSTEM_MODE == MODE_SUPER_HERO) {
         // Blink the Clippard LED to indicate to the user that the system battery is still powered on.
         digitalWriteFast(CLIPPARD_LED_PIN, (digitalReadFast(CLIPPARD_LED_PIN) == LOW) ? HIGH : LOW);
       }
@@ -10306,10 +10366,11 @@ void resetOverheatLevels() {
 // Use an attached infrared LED to send a command. Only available if using the Wand II (ESP32).
 void sendInfraredCommand(const String sType) {
 #ifdef ESP32
-  if (sType.equals("ghostintrap")) {
+  if(sType.equals("ghostintrap")) {
     // Send the standard Ghost Trap (PKE) IR signal.
     IrSender.sendRaw(ir_GhostInTrap, sizeof(ir_GhostInTrap) / sizeof(ir_GhostInTrap[0]), CARRIER_KHZ);
-  } else {
+  }
+  else {
     debugln(F("Unknown IR Command"));
   }
 #endif

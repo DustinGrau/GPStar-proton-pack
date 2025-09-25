@@ -272,17 +272,13 @@ const uint8_t i_cyclotron_40led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM = { 1, 2
 
 /*
  * Inner Cyclotron LED Panel
- * Individual = Use stock connectors on the pack controller for individual LEDs [ATMega ONLY]
+ * Disabled = Frutto Technology LED panel will be disabled; non-Addressable LEDs will continue working [ATMega only]
  * RGB Static = Use the Frutto Technology LED panel, but colors remain consistent for all stream modes
- * RGB Dynamic = Use the Frutto Technology LED panel, allowing colors to change based on stream modes [Default for ESP32]
+ * RGB Dynamic = Use the Frutto Technology LED panel, allowing colors to change based on stream modes [Default]
  * When enabled, this becomes the first in the chain from the Inner Cyclotron JST-XH connector from the Proton Pack.
  */
-enum INNER_CYC_PANEL_MODES { PANEL_INDIVIDUAL, PANEL_RGB_STATIC, PANEL_RGB_DYNAMIC };
-#ifdef ESP32
-  enum INNER_CYC_PANEL_MODES INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
-#else
-  enum INNER_CYC_PANEL_MODES INNER_CYC_PANEL_MODE = PANEL_INDIVIDUAL;
-#endif
+enum INNER_CYC_PANEL_MODES { PANEL_DISABLED, PANEL_RGB_STATIC, PANEL_RGB_DYNAMIC };
+enum INNER_CYC_PANEL_MODES INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
 
 /*
  * Inner Cyclotron NeoPixel ring ramp control.
@@ -388,9 +384,11 @@ bool b_vent_light_on = false; // To know if the light is on or off.
 enum BARREL_STATES { BARREL_RETRACTED, BARREL_EXTENDED };
 enum BARREL_STATES BARREL_STATE;
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
-enum POWER_LEVELS POWER_LEVEL;
+enum POWER_LEVELS POWER_LEVEL = LEVEL_5;
 enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
-enum STREAM_MODES STREAM_MODE;
+enum STREAM_MODES STREAM_MODE = PROTON; // Default stream mode is Proton.
+enum RED_SWITCH_MODES { SWITCH_ON, SWITCH_OFF };
+enum RED_SWITCH_MODES RED_SWITCH_MODE = SWITCH_OFF; // Default to ion arm switch off until we set otherwise.
 bool b_settings = false; // Used to keep track of being in the wand settings menu.
 
 /*
@@ -401,8 +399,6 @@ bool b_settings = false; // Used to keep track of being in the wand settings men
  */
 enum SYSTEM_MODES { MODE_SUPER_HERO, MODE_ORIGINAL };
 enum SYSTEM_MODES SYSTEM_MODE;
-enum RED_SWITCH_MODES { SWITCH_ON, SWITCH_OFF };
-enum RED_SWITCH_MODES RED_SWITCH_MODE;
 
 /*
  * Cross The Streams Status
@@ -422,7 +418,6 @@ bool b_wand_connected = false;
 bool b_wand_syncing = false;
 bool b_wand_on = false;
 bool b_wand_mash_lockout = false;
-bool b_neutrona_wand_barrel_extended = true; // Assume barrel extended (safety off).
 const uint8_t i_wand_power_level_max = 5; // Max power level of the wand.
 uint8_t i_wand_power_level = 5; // Power level of the wand.
 millisDelay ms_wand_check; // Timer used to determine whether the wand has been disconnected.
@@ -543,6 +538,17 @@ void attenuatorSendData(uint8_t i_message);
 void checkAttenuator();
 void checkWand();
 void powercellDraw(uint8_t i_start = 0);
+
+/**
+ * WiFi Activation Preference (GPStar II Only).
+ *   Set to WIFI_DEFAULT to allow dynamic control based on presence of an Attenuator.
+ *   Set to WIFI_ENABLED to force WiFi on regardless of Attenuator presence.
+ *   Set to WIFI_DISABLED to force WiFi off regardless of Attenuator presence.
+ */
+#ifdef ESP32
+  enum WIFI_MODES { WIFI_DEFAULT, WIFI_ENABLED, WIFI_DISABLED };
+  enum WIFI_MODES WIFI_MODE = WIFI_DEFAULT;
+#endif
 
 /*
  * If you are compiling this for an Arduino Mega and the error message brings you here, go to the bottom of the Configuration.h file for more information.
