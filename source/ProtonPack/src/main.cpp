@@ -42,7 +42,6 @@
 // 3rd-Party Libraries
 #include <CRC32.h>
 #include <digitalWriteFast.h>
-#include <EEPROM.h>
 #include <millisDelay.h>
 #include <FastLED.h>
 #include <ezButton.h>
@@ -53,15 +52,25 @@
   #include <HDC1080.h>
   GuL::HDC1080 tempSensor(Wire1);
   #include <HardwareSerial.h>
+#else
+  #include <EEPROM.h>
 #endif
 
 // Forward declaration for use in all includes.
 void sendDebug(const String message);
 
+// Shared Libraries
+#include <Communication.h>
+#ifdef ESP32
+  #include <WirelessManager.h>
+  // Define the WirelessManager pointer globally (initialized to nullptr).
+  // This matches the extern declaration in Wireless.h
+  WirelessManager* wirelessMgr = nullptr;
+#endif
+
 // Local Files
 #include "Configuration.h"
 #include "MusicSounds.h"
-#include "Communication.h"
 #include "Header.h"
 #include "Colours.h"
 #include "Audio.h"
@@ -76,6 +85,7 @@ void sendDebug(const String message);
 #include "Serial.h"
 #ifdef ESP32
   #include "Wireless.h"
+  #include "Webhandler.h"
 #endif
 
 // Writes a debug message to the serial console or sends to the WebSocket.
@@ -84,7 +94,7 @@ void sendDebug(const String message) {
     debugln(message); // Print to serial console.
   #endif
   #if defined(DEBUG_SEND_TO_WEBSOCKET) and defined(ESP32)
-    if(b_ws_started) {
+    if(b_httpd_started) {
       ws.textAll(message); // Send a copy to the WebSocket.
     }
   #endif
@@ -102,6 +112,17 @@ void setup() {
   // Serial0 (UART0) is enabled by default; end() sets GPIO43 & GPIO44 to GPIO.
   Serial0.end();
 
+  #if DEBUG == 1
+  // When debugging is enabled, wait for Serial to be ready (max 3 seconds).
+  unsigned long startMillis = millis();
+  while (!Serial && millis() - startMillis < 3000) {
+    delay(10);
+  }
+  Serial.flush(); // Ensure buffer is clear.
+  Serial.setTxTimeoutMs(0); // Optional: reduce USB-CDC transmission delay.
+  Serial.println(F("Serial is Ready")); // Should appear after Serial is ready.
+#endif
+
   /* This loop changes GPIO39~GPIO42 to Function 1, which is GPIO.
    * PIN_FUNC_SELECT sets the IOMUX function register appropriately.
    * IO_MUX_GPIO0_REG is the register for GPIO0, which we then seek from.
@@ -116,6 +137,17 @@ void setup() {
 
   // Assign Serial2 to pins 44/43 for the Neutrona Wand communications.
   WandSerial.begin(9600, SERIAL_8N1, WAND_RX_PIN, WAND_TX_PIN);
+
+  // Define the WirelessManager object only after NVS/Preferences are initialized.
+  if(wirelessMgr == nullptr) {
+    wirelessMgr = new WirelessManager("Pack2", "192.168.1.4");
+
+    #if defined(RESET_AP_SETTINGS)
+      // Reset the WiFi password to the expected default on every startup.
+      wirelessMgr->resetWifiPassword();
+      debugln(F("WARNING: Firmware forced a reset of the local WiFi password!"));
+    #endif
+  }
 #else
   Serial.begin(9600); // Standard HW serial (USB) console.
   AttenuatorSerial.begin(9600); // Add-on Attenuator communication (19/18).
@@ -200,7 +232,7 @@ void setup() {
   pinModeFast(NFILTER_LED_PIN, OUTPUT);
 
   // Power Cell, Cyclotron Lid, and N-Filter.
-  FastLED.addLeds<NEOPIXEL, PACK_LED_PIN>(pack_leds, FRUTTO_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX + JEWEL_NFILTER_LED_COUNT).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<NEOPIXEL, PACK_LED_PIN>(pack_leds, MAX_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX + JEWEL_NFILTER_LED_COUNT).setCorrection(TypicalLEDStrip);
   FastLED.setMaxRefreshRate(0); // Disable FastLED's blocking 2.5ms delay.
 
   // Inner Cyclotron LEDs (Inner Panel + Cyclotron + Cavity).
@@ -224,25 +256,6 @@ void setup() {
   pinModeFast(VIBRATION_TOGGLE_LED_PIN, OUTPUT);
 #endif
 
-  // Default mode is Super Hero (for simpler controls).
-  SYSTEM_MODE = MODE_SUPER_HERO;
-
-  // Assume the Super Hero arming mode with Afterlife (default for Haslab).
-  RED_SWITCH_MODE = SWITCH_OFF;
-
-  // Bootup the pack into Proton mode, the same as the wand.
-  STREAM_MODE = PROTON;
-
-  // Set the CTS to not firing.
-  STATUS_CTS = CTS_NOT_FIRING;
-
-  // Set default year selection to toggle switch.
-  SYSTEM_EEPROM_YEAR = SYSTEM_TOGGLE_SWITCH;
-
-  // Set default vibration mode.
-  VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
-  VIBRATION_MODE = VIBRATION_FIRING_ONLY;
-
   // Configure the vibration state.
   if(switch_vibration.getState() == LOW) {
     b_vibration_switch_on = true;
@@ -260,9 +273,6 @@ void setup() {
     SYSTEM_YEAR = SYSTEM_AFTERLIFE;
   }
   SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
-
-  // Set a default for the cyclotron inner panel.
-  INNER_CYC_PANEL_MODE = PANEL_RGB_DYNAMIC;
 
   // Load any saved settings stored in the EEPROM memory of the Proton Pack.
   if(b_eeprom) {
@@ -294,22 +304,18 @@ void setup() {
   // Reset cyclotron ramps.
   resetRampSpeeds();
 
+  // Perform initial pack reset.
+  packOffReset();
+
+  // Update all addressable LEDs to prevent stale LED states.
+  FastLED.show();
+  delay(10);
+
   // Start some timers
   ms_fast_led.start(i_fast_led_delay);
   ms_check_music.start(i_music_check_delay);
   ms_attenuator_check.start(i_attenuator_disconnect_delay);
   ms_cyclotron_switch_plate_leds.start(i_cyclotron_switch_plate_leds_delay);
-
-  // Perform initial pack reset.
-  packOffReset();
-
-  if(SYSTEM_MODE == MODE_SUPER_HERO) {
-    // Auto start the pack if it is in demo light mode.
-    if(b_demo_light_mode) {
-      // Turn the pack on.
-      PACK_ACTION_STATE = ACTION_ACTIVATE;
-    }
-  }
 
   // Perform power-on sequence if demo light mode is not enabled per user preferences.
   if(!b_demo_light_mode) {
@@ -318,12 +324,31 @@ void setup() {
     ms_delay_post.start(0);
   }
   else {
+    if(SYSTEM_MODE == MODE_SUPER_HERO) {
+      // Auto start the pack if it is in startup (demo) light mode.
+      PACK_ACTION_STATE = ACTION_ACTIVATE;
+    }
+
     b_pack_post_finish = true;
   }
 
 #ifdef ESP32
   debugf("Setup complete, free heap: %u bytes\n", ESP.getFreeHeap());
 #endif
+}
+
+void updateLEDs() {
+  // Update all LED's when the FastLED timer has finished.
+  if(ms_fast_led.justFinished()) {
+    FastLED.show();
+
+    // Restart the FastLED timer.
+    ms_fast_led.start(i_fast_led_delay);
+
+    if(b_powercell_updating) {
+      b_powercell_updating = false;
+    }
+  }
 }
 
 // Loop logic dedicated to this device which handles all of the standard operations.
@@ -344,6 +369,12 @@ void mainLoop() {
       case MODE_OFF:
         // Turn on the status indicator LED.
         digitalWriteFast(PACK_STATUS_LED_PIN, HIGH);
+
+        if(vibrationSwitchedCount >= 5) {
+          // Vibration switch was just toggled 5 times with ribbon cable off, so reset the pack wifi password.
+          resetWifiCommand();
+          vibrationSwitchedCount = 0;
+        }
 
         if(PACK_ACTION_STATE == ACTION_IDLE && ms_delay_post.justFinished()) {
           // Brass Pack shutdown steam effect.
@@ -454,11 +485,9 @@ void mainLoop() {
             stopEffect(S_PACK_RECOVERY);
             playEffect(S_PACK_RECOVERY);
 
-            packStartup(false);
+            packStartup(false); // Start the pack using an abbreviated startup sequence.
           }
         }
-
-        checkCyclotronAutoSpeed();
 
         // Play a little bit of smoke and N-Filter vent lights while firing and other misc sound effects.
         if(b_wand_firing) {
@@ -553,7 +582,7 @@ void mainLoop() {
       break;
 
       case ACTION_ACTIVATE:
-        packStartup(true);
+        packStartup(true); // Start the pack using the full-length startup sequence.
       break;
     }
   }
@@ -562,22 +591,11 @@ void mainLoop() {
   }
 }
 
-void updateLEDs() {
-  // Update all LED's when the FastLED timer has finished.
-  if(ms_fast_led.justFinished()) {
-    FastLED.show();
-
-    // Restart the FastLED timer.
-    ms_fast_led.start(i_fast_led_delay);
-
-    if(b_powercell_updating) {
-      b_powercell_updating = false;
-    }
-  }
-}
-
 // The main loop of the program which manages all system operations which must occur on every loop.
 void loop() {
+  #ifdef ESP32
+  if(b_initial_wifi_setup_finished) {
+  #endif
   // Update the available audio device.
   updateAudio();
 
@@ -598,8 +616,8 @@ void loop() {
 
   // Update the LEDs.
   updateLEDs();
-
 #ifdef ESP32
+  }
   // The ESP32 uses a dual-core CPU with the loop() executing in Core0 by default.
   // Using vTaskDelay even without core-pinning will allow other tasks to run on Core1.
   // Features such as networking, WiFi, and OTA updates can benefit from this delay.
@@ -619,7 +637,7 @@ void loop() {
 
     case WIFI_ENABLED:
       // Force the WiFi to remain on, disregarding any Attenuator connection.
-      if(!b_ws_started && b_pack_post_finish) {
+      if(!b_httpd_started && b_pack_post_finish) {
         // Begin by setting up WiFi as a prerequisite to all else.
         restartWireless();
       }
@@ -632,11 +650,15 @@ void loop() {
         // Turn off WiFi and the web server if the Attenuator is connected.
         shutdownWireless();
       }
-      else if(!b_attenuator_connected && !b_attenuator_syncing && !b_ws_started && b_pack_post_finish) {
+      else if(!b_attenuator_connected && !b_attenuator_syncing && !b_httpd_started && b_pack_post_finish) {
         // Begin by setting up WiFi as a prerequisite to all else.
         restartWireless();
       }
     break;
+  }
+
+  if(!b_initial_wifi_setup_finished) {
+    b_initial_wifi_setup_finished = true;
   }
 #endif
 }

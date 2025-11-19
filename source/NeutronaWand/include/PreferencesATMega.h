@@ -42,7 +42,7 @@ void updateCRCEEPROM();
 uint32_t getCRCEEPROM(void);
 uint32_t eepromCRC(void);
 void bargraphYearModeUpdate();
-void resetOverheatLevels();
+void updateOverheatLevels();
 void resetWhiteLEDBlinkRate();
 
 /*
@@ -55,10 +55,12 @@ const uint16_t i_eepromAddress = 0; // The address in the EEPROM to start readin
  */
 struct objLEDEEPROM {
   uint8_t barrel_spectral_custom;
-  uint8_t barrel_spectral_saturation_custom; // Unused
+  uint8_t barrel_spectral_saturation_custom; // Currently unused
+  uint8_t vent_light_auto_intensity;
   uint8_t num_barrel_leds;
   uint8_t num_bargraph_leds;
   uint8_t rgb_vent_light;
+  uint8_t gpstar_audio_led;
 };
 
 /*
@@ -71,10 +73,9 @@ struct objConfigEEPROM {
   uint8_t extra_proton_sounds;
   uint8_t neutrona_wand_sounds;
   uint8_t spectral_mode;
-  uint8_t holiday_mode; // This will be deprecated in 6.0 as part of a new menu refactoring.
+  uint8_t holiday_mode; // This will be deprecated in 6.x as part of a new menu refactoring.
   uint8_t quick_vent;
   uint8_t wand_boot_errors;
-  uint8_t vent_light_auto_intensity;
   uint8_t invert_bargraph;
   uint8_t bargraph_mode;
   uint8_t bargraph_firing_animation;
@@ -94,11 +95,12 @@ struct objConfigEEPROM {
   uint8_t overheat_level_3;
   uint8_t overheat_level_2;
   uint8_t overheat_level_1;
+  uint8_t barrel_switch_polarity;
   uint8_t wand_vibration;
 };
 
 /*
- * Read all user preferences from Proton Pack controller EEPROM.
+ * Read all user preferences from device controller EEPROM.
  */
 void readEEPROM() {
   // Get the stored CRC from the EEPROM.
@@ -153,12 +155,12 @@ void readEEPROM() {
       if(obj_config_eeprom.spectral_mode > 1) {
         b_spectral_mode_enabled = true;
         b_spectral_custom_mode_enabled = true;
-        b_holiday_mode_enabled = true;
+        b_holiday_modes_enabled = true;
       }
       else {
         b_spectral_mode_enabled = false;
         b_spectral_custom_mode_enabled = false;
-        b_holiday_mode_enabled = false;
+        b_holiday_modes_enabled = false;
       }
     }
 
@@ -177,15 +179,6 @@ void readEEPROM() {
       }
       else {
         b_wand_boot_errors = false;
-      }
-    }
-
-    if(obj_config_eeprom.vent_light_auto_intensity > 0 && obj_config_eeprom.vent_light_auto_intensity < 3) {
-      if(obj_config_eeprom.vent_light_auto_intensity > 1) {
-        b_vent_light_control = true;
-      }
-      else {
-        b_vent_light_control = false;
       }
     }
 
@@ -281,7 +274,7 @@ void readEEPROM() {
       }
     }
 
-    if(obj_config_eeprom.system_mode > 0 && obj_config_eeprom.system_mode < 3 && b_gpstar_benchtest) {
+    if(obj_config_eeprom.system_mode > 0 && obj_config_eeprom.system_mode < 3 && b_wand_standalone) {
       if(obj_config_eeprom.system_mode > 1) {
         SYSTEM_MODE = MODE_ORIGINAL;
       }
@@ -299,7 +292,7 @@ void readEEPROM() {
       }
     }
 
-    if(obj_config_eeprom.default_wand_volume > 0 && obj_config_eeprom.default_wand_volume < 102 && b_gpstar_benchtest) {
+    if(obj_config_eeprom.default_wand_volume > 0 && obj_config_eeprom.default_wand_volume < 102) {
       // EEPROM value is from 1 to 101; subtract 1 to get the correct percentage.
       i_volume_master_percentage = obj_config_eeprom.default_wand_volume - 1;
       i_volume_master_eeprom = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
@@ -382,13 +375,30 @@ void readEEPROM() {
       }
     }
 
+    if(obj_config_eeprom.barrel_switch_polarity > 0 && obj_config_eeprom.barrel_switch_polarity < 4) {
+      switch(obj_config_eeprom.barrel_switch_polarity) {
+        case 1:
+        default:
+          BARREL_SWITCH_POLARITY = SWITCH_DEFAULT;
+        break;
+
+        case 2:
+          BARREL_SWITCH_POLARITY = SWITCH_INVERTED;
+        break;
+
+        case 3:
+          BARREL_SWITCH_POLARITY = SWITCH_DISABLED;
+        break;
+      }
+    }
+
     if(obj_config_eeprom.wand_vibration > 0 && obj_config_eeprom.wand_vibration < 5) {
       switch(obj_config_eeprom.wand_vibration) {
         case 4:
         default:
           // Do nothing. Readings are taken from the vibration toggle switch from the Proton pack or configuration setting in stand alone mode.
           VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
-          if(b_gpstar_benchtest) {
+          if(b_wand_standalone) {
             VIBRATION_MODE = VIBRATION_NONE;
           }
           else {
@@ -416,7 +426,7 @@ void readEEPROM() {
     }
 
     // Rebuild the overheat enabled power levels.
-    resetOverheatLevels();
+    updateOverheatLevels();
 
     // Reset the blinking white LED interval.
     resetWhiteLEDBlinkRate();
@@ -433,6 +443,15 @@ void readEEPROM() {
 
     if(obj_led_eeprom.barrel_spectral_saturation_custom > 0 && obj_led_eeprom.barrel_spectral_saturation_custom != 255) {
       i_spectral_wand_custom_saturation = obj_led_eeprom.barrel_spectral_saturation_custom;
+    }
+
+    if(obj_led_eeprom.vent_light_auto_intensity > 0 && obj_led_eeprom.vent_light_auto_intensity < 3) {
+      if(obj_led_eeprom.vent_light_auto_intensity > 1) {
+        b_vent_light_control = true;
+      }
+      else {
+        b_vent_light_control = false;
+      }
     }
 
     if(obj_led_eeprom.num_barrel_leds == LEDS_2 || obj_led_eeprom.num_barrel_leds == LEDS_5 ||
@@ -482,6 +501,17 @@ void readEEPROM() {
         b_rgb_vent_light = false;
       }
     }
+
+    if(obj_led_eeprom.gpstar_audio_led > 0 && obj_led_eeprom.gpstar_audio_led < 3) {
+      if(obj_led_eeprom.gpstar_audio_led > 1) {
+        b_gpstar_audio_led_enabled = true;
+      }
+      else {
+        b_gpstar_audio_led_enabled = false;
+      }
+
+      setAudioLED(b_gpstar_audio_led_enabled);
+    }
   }
   else {
     // CRC doesn't match; let's clear the EEPROMs to be safe.
@@ -509,19 +539,19 @@ void saveLEDEEPROM() {
 
   uint8_t i_barrel_led_count = WAND_BARREL_LED_COUNT; // 5 = Hasbro, 50 = GPStar Neutrona Barrel, 2 = GPStar Barrel LED Mini, 48 = Frutto.
   uint8_t i_bargraph_led_count = BARGRAPH_TYPE_EEPROM; // 28 segment, 30 segment.
-  uint8_t i_rgb_vent_light = 1; // 1 = RGB Vent Light disabled, 2 = RGB Vent Light enabled
-
-  if(b_rgb_vent_light) {
-    i_rgb_vent_light = 2;
-  }
+  uint8_t i_vent_light_auto_intensity = b_vent_light_control ? 2 : 1; // 1 = Vent Light auto intensity disabled, 2 = Vent Light auto intensity enabled
+  uint8_t i_rgb_vent_light = b_rgb_vent_light ? 2 : 1; // 1 = RGB Vent Light disabled, 2 = RGB Vent Light enabled
+  uint8_t i_gpstar_audio_led = b_gpstar_audio_led_enabled ? 2 : 1; // 1 = GPStar Audio LED disabled, 2 = GPStar Audio LED enabled
 
   // Build the LED EEPROM object with the new data.
   objLEDEEPROM obj_led_eeprom = {
     i_spectral_wand_custom_colour,
     i_spectral_wand_custom_saturation,
+    i_vent_light_auto_intensity,
     i_barrel_led_count,
     i_bargraph_led_count,
-    i_rgb_vent_light
+    i_rgb_vent_light,
+    i_gpstar_audio_led
   };
 
   // Save to the EEPROM.
@@ -544,75 +574,35 @@ void saveConfigEEPROM() {
   uint8_t i_eeprom_volume_master_percentage = 100 * (MINIMUM_VOLUME - i_volume_master_eeprom) / MINIMUM_VOLUME;
 
   // 1 = false, 2 = true.
-  uint8_t i_cross_the_streams = 1;
-  uint8_t i_cross_the_streams_mix = 1;
-  uint8_t i_overheating = 2;
-  uint8_t i_extra_proton_sounds = 2;
-  uint8_t i_neutrona_wand_sounds = 2;
-  uint8_t i_spectral = 1;
-  uint8_t i_quick_vent = 2;
-  uint8_t i_wand_boot_errors = 1;
-  uint8_t i_vent_light_auto_intensity = 2;
-  uint8_t i_invert_bargraph = 1;
+  uint8_t i_cross_the_streams = (FIRING_MODE == CTS_MODE || FIRING_MODE == CTS_MIX_MODE) ? 2 : 1;
+  uint8_t i_cross_the_streams_mix = (FIRING_MODE == CTS_MIX_MODE) ? 2 : 1;
+  uint8_t i_overheating = b_overheat_enabled ? 2 : 1;
+  uint8_t i_extra_proton_sounds = b_stream_effects ? 2 : 1;
+  uint8_t i_neutrona_wand_sounds = b_extra_pack_sounds ? 2 : 1;
+  uint8_t i_spectral = b_spectral_mode_enabled ? 2 : 1;
+  uint8_t i_quick_vent = b_quick_vent ? 2 : 1;
+  uint8_t i_wand_boot_errors = b_wand_boot_errors ? 2 : 1;
+  uint8_t i_invert_bargraph = b_bargraph_invert ? 2 : 1;
   uint8_t i_bargraph_mode = 1; // 1 = default, 2 = super hero, 3 = original.
   uint8_t i_bargraph_firing_animation = 1; // 1 = default, 2 = super hero, 3 = original.
-  uint8_t i_bargraph_overheat_blinking = 1;
+  uint8_t i_bargraph_overheat_blinking = b_overheat_bargraph_blink ? 2 : 1;
   uint8_t i_neutrona_wand_year_mode = 1; // 1 = default, 2 = 1984, 3 = 1989, 4 = Afterlife, 5 = Frozen Empire.
   uint8_t i_cts_mode = 1; // 1 = default, 2 = 1984, 3 = 1989, 4 = Afterlife, 5 = Frozen Empire.
-  uint8_t i_system_mode = 1; // 1 = super hero, 2 = original.
-  uint8_t i_beep_loop = 2;
+  uint8_t i_system_mode = (SYSTEM_MODE == MODE_ORIGINAL) ? 2 : 1; // 1 = super hero, 2 = original.
+  uint8_t i_beep_loop = b_beep_loop ? 2 : 1;
   uint8_t i_default_wand_volume = 101; // <- i_eeprom_volume_master_percentage + 1
   uint8_t i_overheat_start_timer_level_5 = i_ms_overheat_initiate_level_5 / 1000;
   uint8_t i_overheat_start_timer_level_4 = i_ms_overheat_initiate_level_4 / 1000;
   uint8_t i_overheat_start_timer_level_3 = i_ms_overheat_initiate_level_3 / 1000;
   uint8_t i_overheat_start_timer_level_2 = i_ms_overheat_initiate_level_2 / 1000;
   uint8_t i_overheat_start_timer_level_1 = i_ms_overheat_initiate_level_1 / 1000;
-  uint8_t i_overheat_level_5 = 1;
-  uint8_t i_overheat_level_4 = 1;
-  uint8_t i_overheat_level_3 = 1;
-  uint8_t i_overheat_level_2 = 1;
-  uint8_t i_overheat_level_1 = 1;
+  uint8_t i_overheat_level_5 = b_overheat_level_5 ? 2 : 1;
+  uint8_t i_overheat_level_4 = b_overheat_level_4 ? 2 : 1;
+  uint8_t i_overheat_level_3 = b_overheat_level_3 ? 2 : 1;
+  uint8_t i_overheat_level_2 = b_overheat_level_2 ? 2 : 1;
+  uint8_t i_overheat_level_1 = b_overheat_level_1 ? 2 : 1;
+  uint8_t i_barrel_switch_polarity = 1; // 1 = default, 2 = inverted, 3 = disabled.
   uint8_t i_wand_vibration = 4; // 1 = always, 2 = when firing, 3 = off, 4 = default.
-
-  if(FIRING_MODE == CTS_MODE || FIRING_MODE == CTS_MIX_MODE) {
-    i_cross_the_streams = 2;
-  }
-
-  if(FIRING_MODE == CTS_MIX_MODE) {
-    i_cross_the_streams_mix = 2;
-  }
-
-  if(!b_overheat_enabled) {
-    i_overheating = 1;
-  }
-
-  if(!b_stream_effects) {
-    i_extra_proton_sounds = 1;
-  }
-
-  if(!b_extra_pack_sounds) {
-    i_neutrona_wand_sounds = 1;
-  }
-
-  if(b_spectral_mode_enabled) {
-    i_spectral = 2;
-  }
-
-  if(!b_quick_vent) {
-    i_quick_vent = 1;
-  }
-
-  if(b_wand_boot_errors) {
-    i_wand_boot_errors = 2;
-  }
-
-  if(!b_vent_light_control) {
-    i_vent_light_auto_intensity = 1;
-  }
-
-  if(b_bargraph_invert) {
-    i_invert_bargraph = 2;
-  }
 
   switch(BARGRAPH_MODE_EEPROM) {
     case BARGRAPH_EEPROM_SUPER_HERO:
@@ -652,10 +642,6 @@ void saveConfigEEPROM() {
     break;
   }
 
-  if(b_overheat_bargraph_blink) {
-    i_bargraph_overheat_blinking = 2;
-  }
-
   switch(WAND_YEAR_MODE) {
     case YEAR_FROZEN_EMPIRE:
       i_neutrona_wand_year_mode = 5;
@@ -692,37 +678,24 @@ void saveConfigEEPROM() {
     break;
   }
 
-  if(SYSTEM_MODE == MODE_ORIGINAL) {
-    i_system_mode = 2;
-  }
-
   if(i_eeprom_volume_master_percentage <= 100) {
     // Need to add 1 to this because the EEPROM cannot contain a 0 value.
     i_default_wand_volume = i_eeprom_volume_master_percentage + 1;
   }
 
-  if(!b_beep_loop) {
-    i_beep_loop = 1;
-  }
+  switch(BARREL_SWITCH_POLARITY) {
+    case SWITCH_DEFAULT:
+    default:
+      i_barrel_switch_polarity = 1;
+    break;
 
-  if(b_overheat_level_5) {
-    i_overheat_level_5 = 2;
-  }
+    case SWITCH_INVERTED:
+      i_barrel_switch_polarity = 2;
+    break;
 
-  if(b_overheat_level_4) {
-    i_overheat_level_4 = 2;
-  }
-
-  if(b_overheat_level_3) {
-    i_overheat_level_3 = 2;
-  }
-
-  if(b_overheat_level_2) {
-    i_overheat_level_2 = 2;
-  }
-
-  if(b_overheat_level_1) {
-    i_overheat_level_1 = 2;
+    case SWITCH_DISABLED:
+      i_barrel_switch_polarity = 3;
+    break;
   }
 
   switch(VIBRATION_MODE_EEPROM) {
@@ -755,7 +728,6 @@ void saveConfigEEPROM() {
     0,
     i_quick_vent,
     i_wand_boot_errors,
-    i_vent_light_auto_intensity,
     i_invert_bargraph,
     i_bargraph_mode,
     i_bargraph_firing_animation,
@@ -775,6 +747,7 @@ void saveConfigEEPROM() {
     i_overheat_level_3,
     i_overheat_level_2,
     i_overheat_level_1,
+    i_barrel_switch_polarity,
     i_wand_vibration
   };
 

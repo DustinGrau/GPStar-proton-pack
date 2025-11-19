@@ -21,10 +21,10 @@ Only 4 connections between the boards will be required: TX/RX and 5V/Ground.
 1. Solder the small pad marked "5V" just below the sockets for SPKR +/-. This will allow the WAV Trigger to operate from the 5V supplied by USB and later the battery for your Proton Pack.
 1. There is a small switch near the power connect (barrel) to on the WAV Trigger, set it to the “load” position.
 1. Connect the following wires from the FTDI to WAV Trigger:
-	- RX on the FTDI to the TX of the WAV Trigger.
-	- TX from the FTDI to the RX of the WAV Trigger.
-	- 5V from the FTDI to 5Vin.
-	- GND from one side to the other.
+    - RX on the FTDI to the TX of the WAV Trigger.
+    - TX from the FTDI to the RX of the WAV Trigger.
+    - 5V from the FTDI to 5Vin.
+    - GND from one side to the other.
 1. Plug in the USB cable from your computer to the FTDI board.
 1. Run the WT-Flasher app on your computer, then click on BROWSE and navigate to and select the 1.40 firmware hex file `WAVTrig_20231001_v140.hex` that you downloaded from the extras folder in this repository.
 2. Once connected to your computer, click the RESCAN button and select the device from the drop down USB Serial Port menu.

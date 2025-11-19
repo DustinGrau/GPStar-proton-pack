@@ -65,9 +65,9 @@ Some users have made use of what's called the "DPDT Mod" which uses any standard
 - A [5.5mm x 2.1mm (or 5521) female port](https://a.co/d/hxna1qj) is installed on the Proton Pack as a charging port
 - All ground connections are tied together: from the USB, Barrel Jack, and Charging Port
 - Each positive (+) connection is attached to a post on the toggle or switch as follows:
-	- The 12V+ and 5V+ to the Proton Pack are connected to the upper posts of the toggle/switch
-	- The Barrel Jack's 12V+ and USB's 5V+ are connected to the center posts of the toggle/switch
-	- ONLY the 12V+ from the charging port is connected to the end OPPOSITE the Proton Pack connections
+    - The 12V+ and 5V+ to the Proton Pack are connected to the upper posts of the toggle/switch
+    - The Barrel Jack's 12V+ and USB's 5V+ are connected to the center posts of the toggle/switch
+    - ONLY the 12V+ from the charging port is connected to the end OPPOSITE the Proton Pack connections
 
 For a visual aid see the ASCII drawing below for reference. The 12V is intended to go to your audio amplifier, while the 5V goes to the Proton Pack PCB. **If using the GPStar Audio Amp** which can supply 5V to your pack/wand PCB's you can simply use the 12V connection only and ignore all 5V connections shown/mentioned.
 

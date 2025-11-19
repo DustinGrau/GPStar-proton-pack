@@ -30,12 +30,14 @@
  */
 #define DEVICE_LED_PIN 4
 #define DEVICE_MAX_LEDS 500 // Set a hard max for allocating the array of LEDs
-uint8_t deviceNumLeds = 250; // Default is 50 LEDs per meter, with a length of 5 meters (eg. 250)
+uint16_t i_num_leds = 250; // Default is 50 LEDs per meter, with a length of 5 meters (eg. 250)
+bool b_grb_leds = false; // Denotes whether to use GRB ordering for LEDs.
 CRGB device_leds[DEVICE_MAX_LEDS];
 
 /*
  * Define Color Palettes
  */
+CRGBPalette16 paletteWhite;
 CRGBPalette16 paletteProton;
 CRGBPalette16 paletteSlime;
 CRGBPalette16 paletteStasis;
@@ -43,7 +45,11 @@ CRGBPalette16 paletteMeson;
 CRGBPalette16 paletteSpectral;
 CRGBPalette16 paletteHalloween;
 CRGBPalette16 paletteChristmas;
-CRGBPalette16 paletteWhite;
+CRGBPalette16 cp_StreamPalette; // Current color palette in use.
+static const uint8_t i_palette_count = 8; // Total number of palettes available.
+static const uint16_t i_selftest_interval = 2000; // 2 seconds between palette changes.
+millisDelay ms_selftest_cycle; // Timer for self-test cycling using an interval.
+uint8_t i_selftest_palette = 0; // Current palette index for cycling in self-test.
 
 /*
  * Addressable LED Devices
@@ -51,16 +57,6 @@ CRGBPalette16 paletteWhite;
 enum device {
   PRIMARY_LED
 };
-
-/*
- * Timer and delay for LED animation sequence
- */
-CRGBPalette16 cp_StreamPalette; // Current color palette
-millisDelay ms_anim_change;
-const uint16_t i_animation_time = 10; // How often to update the position of LEDs
-const uint8_t i_animation_step = 6; // Base rate for stepping through positions
-uint8_t i_min_brightness = 0;   // Minimum brightness
-uint8_t i_max_brightness = 255; // Maximum brightness
 
 /**
  * WebSocketData - Holds all relevant fields received from the WebSocket JSON payload.
@@ -83,8 +79,6 @@ WebSocketData wsData; // Instance of WebSocketData struct.
 /*
  * Wand Firing Modes + Settings
  */
-enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
-enum POWER_LEVELS POWER_LEVEL = LEVEL_5;
 enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS, SELFTEST };
 enum STREAM_MODES STREAM_MODE;
 bool b_firing = false;

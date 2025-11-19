@@ -1,7 +1,7 @@
 /**
  *   GPStar Ghost Trap - Ghostbusters Props, Mods, and Kits.
  *   Copyright (C) 2025 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
- *                    & Nomake Wan <-redacted->
+ *                    & Nomake Wan <nomake_wan@yahoo.co.jp>
  *                    & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,8 @@
  * expect to see them. Using the console should be reserved for active
  * debugging, while the websocket will help with confirming operations
  * while using the device (post-setup for wireless).
+ *
+ * For console output, must first set DEBUG 1 in main.cpp to enable debug macros.
  */
 #define DEBUG_WIRELESS_SETUP   // Output debugs related to the WiFi/network setup.
 //#define DEBUG_PERFORMANCE      // Send debug messages for CPU/memory to the (USB) console.
@@ -45,14 +47,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250925081904";
-
-/*
- * Preferred WiFi Network Defaults
- * Directly provides information for an external WiFi network for the device to join.
- */
-String user_wifi_ssid = ""; // Preferred network SSID for external WiFi
-String user_wifi_pass = ""; // Preferred network password for external WiFi
+String build_date = "V6_20251118082808";
 
 /*
  * You can set the default master startup volume for your pack here.
@@ -106,9 +101,6 @@ const uint8_t VOLUME_MUSIC_MULTIPLIER = 5;
 const uint8_t VOLUME_EFFECTS_MULTIPLIER = 5;
 
 /*
- * Set to true to enable the onboard amplifier on the WAV Trigger.
- * This is for the WAV Trigger only and does not affect GPStar Audio.
- * If you use the output pins directly on the WAV Trigger board to your speakers, you will need to enable the onboard amp.
- * NOTE: The onboard mono audio amplifier and speaker connector specifications: 2W into 4 Ohms, 1.25W into 8 Ohms
+ * Set to true to have the LED on the GPStar Audio stay on while the system is running.
  */
-const bool b_onboard_amp_enabled = false;
+bool b_gpstar_audio_led_enabled = false;

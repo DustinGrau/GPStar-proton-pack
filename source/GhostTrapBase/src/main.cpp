@@ -1,7 +1,7 @@
 /**
  *   GPStar Ghost Trap - Ghostbusters Props, Mods, and Kits.
  *   Copyright (C) 2025 Michael Rajotte <michael.rajotte@gpstartechnologies.com>
- *                    & Nomake Wan <-redacted->
+ *                    & Nomake Wan <nomake_wan@yahoo.co.jp>
  *                    & Dustin Grau <dustin.grau@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -22,30 +22,56 @@
 // Required for PlatformIO
 #include <Arduino.h>
 
-// Suppress warning about SPI hardware pins
-// Define this before including <FastLED.h>
-#define FASTLED_INTERNAL
+// Set to 1 to enable built-in debug messages via Serial device output.
+// Use with DEBUG_SEND_TO_CONSOLE and other DEBUG_'s in Configuration.h
+#define DEBUG 0
 
-// PROGMEM macro
+// Debug macros
+#if DEBUG == 1
+  #define debug(...) Serial.print(__VA_ARGS__)
+  #define debugf(...) Serial.printf(__VA_ARGS__)
+  #define debugln(...) Serial.println(__VA_ARGS__)
+#else
+  #define debug(...)
+  #define debugf(...)
+  #define debugln(...)
+#endif
+
+// PROGMEM macros
 #define PROGMEM_READU32(x) pgm_read_dword_near(&(x))
 #define PROGMEM_READU16(x) pgm_read_word_near(&(x))
 #define PROGMEM_READU8(x) pgm_read_byte_near(&(x))
 
 // 3rd-Party Libraries
 #include <millisDelay.h>
-#include <FastLED.h>
 #include <ezButton.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
 
+// Serial comms definitions (move to Serial.h?)
+#define TX_PIN 44 // Pin to transmit serial data to trap cartridge
+#define RX_PIN 43 // Pin to receive serial data from trap cartridge
+#define CartridgeComs Serial0
+
+// Forward declaration for use in all includes.
+void sendDebug(const String message);
+
+// Shared Libraries
+#include <Communication.h>
+#include <WirelessManager.h>
+
 // Local Files
 #include "Configuration.h"
 #include "Header.h"
-#include "Colours.h"
 #include "MusicSounds.h"
 #include "Audio.h"
 #include "Wireless.h"
+#include "Webhandler.h"
 #include "System.h"
+
+// Define the WirelessManager pointer globally (initialized to nullptr).
+// This matches the extern declaration in Wireless.h
+WirelessManager* wirelessMgr = nullptr;
 
 // Task Handles
 TaskHandle_t AnimationTaskHandle = NULL;
@@ -84,22 +110,15 @@ void AnimationTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing AnimationTask in core"));
-      Serial.print(xPortGetCoreID());
+      debug(F("Executing AnimationTask in core"));
+      debug(xPortGetCoreID());
       // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+      debug(F(" | Stack HWM: "));
+      debugln(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
     // Update LEDs using appropriate colour scheme and environment vars.
     updateLEDs();
-
-    // Update the state of any LEDs.
-    FastLED.show();
-
-    // Verify the state of any other devices which need updating.
-    checkBlower();
-    checkSmoke();
 
     vTaskDelay(8 / portTICK_PERIOD_MS); // 8ms delay
   }
@@ -109,8 +128,8 @@ void AnimationTask(void *parameter) {
 void PreferencesTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
-    Serial.print(F("Executing PreferencesTask in core"));
-    Serial.println(xPortGetCoreID());
+    debug(F("Executing PreferencesTask in core"));
+    debugln(xPortGetCoreID());
   #endif
 
   // Print partition information to verify NVS availability
@@ -122,34 +141,36 @@ void PreferencesTask(void *parameter) {
   esp_err_t err = nvs_flash_init();
   if(err != ESP_OK) {
     #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.printf("NVS initialization failed with error: %s\n", esp_err_to_name(err));
+    debug(F("NVS initialization failed with error: "));
+    debugln(esp_err_to_name(err));
     #endif
 
     // If initialization fails, erase and reinitialize NVS.
-    debug(F("Erasing and reinitializing NVS..."));
+    debugln(F("Erasing and reinitializing NVS..."));
     nvs_flash_erase();
 
     err = nvs_flash_init();
     if(err != ESP_OK) {
       #if defined(DEBUG_SEND_TO_CONSOLE)
-      Serial.printf("Failed to reinitialize NVS: %s\n", esp_err_to_name(err));
+      debug(F("Failed to reinitialize NVS: "));
+      debugln(esp_err_to_name(err));
       #endif
     }
     else {
-      debug(F("NVS reinitialized successfully"));
+      debugln(F("NVS reinitialized successfully"));
     }
   }
   else {
-    debug(F("NVS initialized successfully"));
+    debugln(F("NVS initialized successfully"));
   }
 
   /*
    * Get Local Device Preferences
    * Accesses the "device" namespace in read-only mode under the "nvs" partition.
    */
-  bool b_namespace_opened = preferences.begin("device", true);
-  if(b_namespace_opened) {
-    switch(preferences.getShort("display_type", 0)) {
+  Preferences preferences;
+  if(preferences.begin("device", true)) {
+    switch(preferences.getUShort("display_type", 0)) {
       case 0:
         DISPLAY_TYPE = STATUS_TEXT;
       break;
@@ -165,27 +186,27 @@ void PreferencesTask(void *parameter) {
     // Preferences for smoke (enabled, duration) on doors opened/closed.
     b_smoke_opened_enabled = preferences.getBool("smoke_opened", false);
     b_smoke_closed_enabled = preferences.getBool("smoke_closed", false);
-    i_smoke_opened_duration = preferences.getShort("smoke_op_dur", 2000);
-    i_smoke_closed_duration = preferences.getShort("smoke_cl_dur", 3000);
+    i_smoke_opened_duration = preferences.getUShort("smoke_op_dur", 2000);
+    i_smoke_closed_duration = preferences.getUShort("smoke_cl_dur", 3000);
 
     preferences.end();
   }
   else {
     // If namespace is not initialized, open in read/write mode and set defaults.
     if(preferences.begin("device", false)) {
-      preferences.putShort("display_type", DISPLAY_TYPE);
+      preferences.putUShort("display_type", DISPLAY_TYPE);
       preferences.putBool("smoke_opened", b_smoke_opened_enabled);
       preferences.putBool("smoke_closed", b_smoke_closed_enabled);
-      preferences.putShort("smoke_op_dur", i_smoke_opened_duration);
-      preferences.putShort("smoke_cl_dur", i_smoke_closed_duration);
+      preferences.putUShort("smoke_op_dur", i_smoke_opened_duration);
+      preferences.putUShort("smoke_cl_dur", i_smoke_closed_duration);
       preferences.end();
     }
   }
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F("PreferencesTask Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    debug(F("PreferencesTask Stack HWM: "));
+    debugln(uxTaskGetStackHighWaterMark(NULL));
   #endif
 
   // Task ends after setup is complete and MUST be removed from scheduling.
@@ -230,39 +251,15 @@ void WiFiManagementTask(void *parameter) {
   while(true) {
     #if defined(DEBUG_TASK_TO_CONSOLE)
       // Confirm the core in use for this task, and when it runs.
-      Serial.print(F("Executing WiFiManagementTask in core"));
-      Serial.print(xPortGetCoreID());
+      debug(F("Executing WiFiManagementTask in core"));
+      debug(xPortGetCoreID());
       // Get the stack high water mark for optimizing bytes allocated.
-      Serial.print(F(" | Stack HWM: "));
-      Serial.println(uxTaskGetStackHighWaterMark(NULL));
+      debug(F(" | Stack HWM: "));
+      debugln(uxTaskGetStackHighWaterMark(NULL));
     #endif
 
-    // Proceed with management if the AP and web server are started.
-    if(b_ap_started && b_ws_started) {
-      if(ms_cleanup.remaining() < 1) {
-        // Clean up oldest WebSocket connections.
-        ws.cleanupClients();
-
-        // Restart timer for next cleanup action.
-        ms_cleanup.start(i_websocketCleanup);
-      }
-
-      if(ms_apclient.remaining() < 1) {
-        // Update the current count of AP clients.
-        i_ap_client_count = WiFi.softAPgetStationNum();
-
-        // Restart timer for next count.
-        ms_apclient.start(i_apClientCount);
-      }
-
-      if(ms_otacheck.remaining() < 1) {
-        // Handles device reboot after an OTA update.
-        ElegantOTA.loop();
-
-        // Restart timer for next check.
-        ms_otacheck.start(i_otaCheck);
-      }
-    }
+    // Perform periodic checks for WiFi clients and OTA updates.
+    webLoops();
 
     vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
   }
@@ -272,9 +269,20 @@ void WiFiManagementTask(void *parameter) {
 void WiFiSetupTask(void *parameter) {
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Confirm the core in use for this task, and when it runs.
-    Serial.print(F("Executing WiFiSetupTask in core"));
-    Serial.println(xPortGetCoreID());
+    debug(F("Executing WiFiSetupTask in core"));
+    debugln(xPortGetCoreID());
   #endif
+
+  // Define the WirelessManager object only after NVS/Preferences are initialized.
+  if(wirelessMgr == nullptr) {
+    wirelessMgr = new WirelessManager("Trap", "192.168.1.10");
+
+    #if defined(RESET_AP_SETTINGS)
+      // Reset the WiFi password to the expected default on every startup.
+      wirelessMgr->resetWifiPassword();
+      debugln(F("WARNING: Firmware forced a reset of the local WiFi password!"));
+    #endif
+  }
 
   // Begin by setting up WiFi as a prerequisite to all else.
   if(startWiFi()) {
@@ -289,8 +297,8 @@ void WiFiSetupTask(void *parameter) {
 
   #if defined(DEBUG_TASK_TO_CONSOLE)
     // Get the stack high water mark for optimizing bytes allocated.
-    Serial.print(F("WiFiSetupTask Stack HWM: "));
-    Serial.println(uxTaskGetStackHighWaterMark(NULL));
+    debug(F("WiFiSetupTask Stack HWM: "));
+    debugln(uxTaskGetStackHighWaterMark(NULL));
   #endif
 
   // Task ends after setup is complete and MUST be removed from scheduling.
@@ -302,21 +310,16 @@ void setup() {
   Serial.begin(115200); // Serial monitor via USB connection.
   delay(1000); // Provide a delay to allow serial output.
 
+  Serial0.end();
+  CartridgeComs.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
+
   // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
   // Lower frequency means less power consumption, but slower performance (obviously).
   setCpuFrequencyMhz(160);
   #if defined(DEBUG_SEND_TO_CONSOLE)
-    Serial.print(F("CPU Freq (MHz): "));
-    Serial.println(getCpuFrequencyMhz());
+    debug(F("CPU Freq (MHz): "));
+    debugln(getCpuFrequencyMhz());
   #endif
-
-  #if defined(USE_ESP32_S3)
-    // RGB LED on the ESP32-S3 device itself.
-    FastLED.addLeds<WS2812, BUILT_IN_LED>(device_leds, DEVICE_NUM_LEDS);
-  #endif
-
-  // RGB LEDs on the top of the trap (Frutto Technology).
-  FastLED.addLeds<WS2812, TOP_PIXELS>(top_leds, NUM_TOP_PIXELS);
 
   // Get initial switch/button states.
   switchLoops();
@@ -324,27 +327,9 @@ void setup() {
   // Delay before configuring and running tasks.
   delay(200);
 
-  // Configure the blower fan.
-  pinMode(BLOWER_PIN, OUTPUT);
-  digitalWrite(BLOWER_PIN, LOW); // Set to LOW (off)
-
-  // Configure the smoke (coil + pump) device.
-  pinMode(SMOKE_PIN, OUTPUT);
-  digitalWrite(SMOKE_PIN, LOW); // Set to LOW (off)
-
-  // Configure the the top 2 white lights.
-  pinMode(TOP_2WHITE, OUTPUT);
-  digitalWrite(TOP_2WHITE, LOW); // Set to LOW (off)
-
   // Set up for reading the switches to determine door state.
-  pinMode(DOOR_CLOSED_PIN, INPUT);
-  pinMode(DOOR_OPENED_PIN, INPUT);
   DOOR_STATE = DOORS_UNKNOWN; // Default until we first read the pins.
   LAST_DOOR_STATE = DOOR_STATE; // Keep setting in sync until read.
-
-  // Prepare the on-board (non-power) LED to be used as an output pin for indication.
-  pinMode(BUILT_IN_LED, OUTPUT);
-  digitalWrite(BUILT_IN_LED, LOW);
 
   /**
    * By default the WiFi will run on core0, while the standard loop() runs on core1.
@@ -408,13 +393,13 @@ void printCPULoad() {
   float cpuLoadCore0 = 100.0 - ((float)idle0 / (float)(idle0 + idle1)) * 100.0;
   float cpuLoadCore1 = 100.0 - ((float)idle1 / (float)(idle0 + idle1)) * 100.0;
 
-  Serial.print(F("CPU Load Core0: "));
-  Serial.print(cpuLoadCore0);
-  Serial.println(F("%"));
+  debug(F("CPU Load Core0: "));
+  debug(cpuLoadCore0);
+  debugln(F("%"));
 
-  Serial.print(F("CPU Load Core1: "));
-  Serial.print(cpuLoadCore1);
-  Serial.println(F("%"));
+  debug(F("CPU Load Core1: "));
+  debug(cpuLoadCore1);
+  debugln(F("%"));
 
   // Reset idle times after calculation
   idleTimeCore0 = 0;
@@ -422,42 +407,42 @@ void printCPULoad() {
 }
 
 void printMemoryStats() {
-  Serial.println(F("Memory Usage Stats:"));
+  debugln(F("Memory Usage Stats:"));
 
   // Heap memory
-  Serial.print(F("|-Total Free Heap: "));
-  Serial.print(formatBytesWithCommas(esp_get_free_heap_size()));
-  Serial.println(F(" bytes"));
+  debug(F("|-Total Free Heap: "));
+  debug(formatBytesWithCommas(esp_get_free_heap_size()));
+  debugln(F(" bytes"));
 
-  Serial.print(F("|-Minimum Free Heap Ever: "));
-  Serial.print(formatBytesWithCommas(esp_get_minimum_free_heap_size()));
-  Serial.println(F(" bytes"));
+  debug(F("|-Minimum Free Heap Ever: "));
+  debug(formatBytesWithCommas(esp_get_minimum_free_heap_size()));
+  debugln(F(" bytes"));
 
-  Serial.print(F("|-Maximum Allocatable Block: "));
-  Serial.print(formatBytesWithCommas(heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)));
-  Serial.println(F(" bytes"));
+  debug(F("|-Maximum Allocatable Block: "));
+  debug(formatBytesWithCommas(heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)));
+  debugln(F(" bytes"));
 
   // Stack memory (for the main task)
-  Serial.println(F("|-Tasks Stack High Water Mark:"));
-  Serial.print(F("|--Main Task: "));
-  Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(NULL)));
-  Serial.println(F(" bytes"));
+  debug(F("|-Tasks Stack High Water Mark:"));
+  debug(F("|--Main Task: "));
+  debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(NULL)));
+  debugln(F(" bytes"));
 
   // Stack memory (for other tasks)
   if(AnimationTaskHandle != NULL) {
-    Serial.print(F("|--Animation: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
-    Serial.println(F(" / 2,048 bytes"));
+    debug(F("|--Animation: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(AnimationTaskHandle)));
+    debugln(F(" / 2,048 bytes"));
   }
   if(UserInputTaskHandle != NULL) {
-    Serial.print(F("|--User Input: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
-    Serial.println(F(" / 4,096 bytes"));
+    debug(F("|--User Input: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(UserInputTaskHandle)));
+    debugln(F(" / 4,096 bytes"));
   }
   if(WiFiManagementTaskHandle != NULL) {
-    Serial.print(F("|--WiFi Mgmt.: "));
-    Serial.print(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
-    Serial.println(F(" / 2,048 bytes"));
+    debug(F("|--WiFi Mgmt.: "));
+    debug(formatBytesWithCommas(uxTaskGetStackHighWaterMark(WiFiManagementTaskHandle)));
+    debugln(F(" / 2,048 bytes"));
   }
 }
 
@@ -465,7 +450,7 @@ void loop() {
   // No work done here, only in the tasks!
 
   #if defined(DEBUG_PERFORMANCE)
-  Serial.println(F("=================================================="));
+  debugln(F("=================================================="));
   printCPULoad();      // Print CPU load
   printMemoryStats();  // Print memory usage
   delay(3000);         // Wait 5 seconds before printing again

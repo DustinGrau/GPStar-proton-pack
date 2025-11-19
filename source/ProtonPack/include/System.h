@@ -18,34 +18,28 @@
  */
 
 #pragma once
+
+#ifdef ESP32
+  // Declare external reference to WirelessManager pointer (allocated in main.cpp after NVS init)
+  extern WirelessManager* wirelessMgr;
+#endif
+
+// Forward function declarations.
 void updateLEDs();
+void executeCommand(uint8_t i_command, uint16_t i_value); // From Command.h
 
-/**
- * Function: sanitizeCyclotronMultipliers
- * Purpose: Ensures cyclotron-related multipliers stay within safe bounds to prevent divide-by-zero and out-of-bounds errors.
- * Inputs: None (operates on global variables)
- * Outputs: None (modifies global variables in place)
- *          Adjusts i_cyclotron_multiplier, i_cyclotron_switch_led_multiplier, i_powercell_multiplier as needed.
- *
- * Min/max values are based on:
- *   - Minimum of 1: Prevents divide-by-zero errors in code sections where these multipliers are used as divisors (e.g., timer calculations, fade logic).
- *   - Maximums: These reflect the highest values allowed by the intended limits for each effect, as seen in the main control and increment functions.
- *      Cyclotron  : 9
- *      Switch LED : 9
- *      Powercell  : 6
- */
 void sanitizeCyclotronMultipliers() {
-  // Cyclotron multiplier: must be between 1 and 9
+  // Cyclotron multiplier: must be between 1 and 4
   if(i_cyclotron_multiplier < 1) i_cyclotron_multiplier = 1;
-  if(i_cyclotron_multiplier > 9) i_cyclotron_multiplier = 9;
+  if(i_cyclotron_multiplier > 4) i_cyclotron_multiplier = 4;
 
-  // Cyclotron switch LED multiplier: must be between 1 and 9
+  // Cyclotron switch LED multiplier: must be between 1 and 4
   if(i_cyclotron_switch_led_multiplier < 1) i_cyclotron_switch_led_multiplier = 1;
-  if(i_cyclotron_switch_led_multiplier > 9) i_cyclotron_switch_led_multiplier = 9;
+  if(i_cyclotron_switch_led_multiplier > 4) i_cyclotron_switch_led_multiplier = 4;
 
-  // Powercell multiplier: must be between 1 and 6
+  // Powercell multiplier: must be between 1 and 4
   if(i_powercell_multiplier < 1) i_powercell_multiplier = 1;
-  if(i_powercell_multiplier > 6) i_powercell_multiplier = 6;
+  if(i_powercell_multiplier > 4) i_powercell_multiplier = 4;
 }
 
 void innerCyclotronCakeOff() {
@@ -132,7 +126,7 @@ void ventLight(bool b_on) {
   uint8_t i_colour_scheme = getDeviceColour(VENT_LIGHT, STREAM_MODE, true);
   b_vent_light_on = b_on;
 
-  if(b_on) {
+  if(b_on && b_cyclotron_lid_on) {
     // If doing firing smoke effects, let's change the light colours.
     if((b_wand_firing && b_smoke_continuous_level[i_wand_power_level - 1]) || b_overheating) {
       if(STREAM_MODE == PROTON) {
@@ -186,8 +180,12 @@ void ventLight(bool b_on) {
 // This function handles returning ring-simulated Cyclotron lookup table values.
 uint8_t cyclotronLookupTable(uint8_t index) {
   switch(i_cyclotron_leds) {
+    case QUAD_CYCLOTRON_LED_COUNT:
+      // DIY 4 LED array.
+      return PROGMEM_READU8(i_cyclotron_4led_matrix[index]);
+    break;
+
     case HASLAB_CYCLOTRON_LED_COUNT:
-    default:
       // Hasbro 12 LED array.
       return PROGMEM_READU8(i_cyclotron_12led_matrix[index]);
     break;
@@ -197,8 +195,9 @@ uint8_t cyclotronLookupTable(uint8_t index) {
       return PROGMEM_READU8(i_cyclotron_20led_matrix[index]);
     break;
 
-    case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
-      // Frutto Max 36 LED array.
+    case MAX_CYCLOTRON_LED_COUNT:
+    default:
+      // Frutto/GPStar 36 LED array.
       return PROGMEM_READU8(i_cyclotron_36led_matrix[index]);
     break;
 
@@ -460,7 +459,7 @@ void packAlarm() {
 
 // Returns whether we should be using the slime cyclotron effect or not.
 bool usingSlimeCyclotron() {
-  if(STREAM_MODE == SLIME && b_cyclotron_colour_toggle) {
+  if(STREAM_MODE == SLIME && b_cyclotron_colour_toggle && b_cyclotron_lid_on) {
     if(i_cyclotron_leds == HASLAB_CYCLOTRON_LED_COUNT && !b_cyclotron_haslab_chsv_colour_change) {
       return false;
     }
@@ -746,8 +745,9 @@ void cyclotronLidLedsOff() {
 }
 
 void resetCyclotronState() {
-  // Turn off optional N-Filter LED.
-  digitalWriteFast(NFILTER_LED_PIN, LOW);
+  // Turn off optional N-Filter LEDs.
+  ventLight(false);
+  ventLightLEDW(false);
 
   // Stop the slime Cyclotron effect timer.
   ms_cyclotron_slime_effect.stop();
@@ -769,7 +769,7 @@ void resetCyclotronState() {
   }
 
   // Tell the Inner Cyclotron to turn off the LEDs.
-  if(b_cyclotron_lid_on || (!b_pack_alarm || PACK_STATE == MODE_OFF)) {
+  if(b_cyclotron_lid_on || !b_pack_alarm || PACK_STATE == MODE_OFF) {
     innerCyclotronCakeOff();
     innerCyclotronCavityOff();
   }
@@ -856,9 +856,12 @@ void playVentSounds() {
   playEffect(S_SPARKS_LOOP);
 }
 
-void packStartup(bool firstStart) {
+void packStartup(bool fullStartup) {
   PACK_STATE = MODE_ON;
   PACK_ACTION_STATE = ACTION_IDLE;
+
+  // Reset the vibration switch counter.
+  vibrationSwitchedCount = 0;
 
   // Stop the Brass Pack shutdown timer in case it's running.
   ms_delay_post.stop();
@@ -876,7 +879,7 @@ void packStartup(bool firstStart) {
     attenuatorSerialSend(A_ALARM_ON);
   }
   else {
-    if(!firstStart) {
+    if(!fullStartup) {
       // Tell the wand the pack alarm is off.
       packSerialSend(P_ALARM_OFF);
 
@@ -910,7 +913,7 @@ void packStartup(bool firstStart) {
 
       case SYSTEM_AFTERLIFE:
       default:
-        if(firstStart) {
+        if(fullStartup) {
           if(STREAM_MODE == SLIME) {
             playEffect(S_AFTERLIFE_PACK_STARTUP, false, i_volume_effects - 30);
             playEffect(S_AFTERLIFE_PACK_IDLE_LOOP, true, i_volume_effects - 40, true, 18000);
@@ -947,7 +950,7 @@ void packStartup(bool firstStart) {
           ms_idle_fire_fade.start(0);
         }
         else {
-          if(firstStart) {
+          if(fullStartup) {
             if(STREAM_MODE == SLIME) {
               playEffect(S_FROZEN_EMPIRE_PACK_STARTUP, false, i_volume_effects - 30);
               playEffect(S_FROZEN_EMPIRE_PACK_IDLE_LOOP, true, i_volume_effects - 40, true, 10000);
@@ -1139,9 +1142,6 @@ void packShutdown() {
     // Turn off the fans.
     fanNFilter(false);
 
-    // Turn off the Cyclotron auto speed timer.
-    ms_cyclotron_auto_speed_timer.stop();
-
     // Reset vent sounds flag.
     b_vent_sounds = true;
   }
@@ -1310,6 +1310,7 @@ void cyclotronSwitchLEDOff() {
 
 void packOffReset() {
   powercellOff();
+  
   cyclotronSwitchLEDOff();
 
   ms_overheating_length.stop();
@@ -1321,6 +1322,7 @@ void packOffReset() {
   b_reset_start_led = true; // Reset the start LED of the Cyclotron.
 
   resetCyclotronState();
+
   resetRampUp();
 
   // Update Power Cell LED timer delay and optional Cyclotron LED switch plate LED timer delays.
@@ -1628,7 +1630,6 @@ void checkSwitches() {
     stopEffect(S_VENT_DRY);
 
     playEffect(S_CLICK);
-
     playEffect(S_VENT_DRY);
 
     // Play some spark sounds if the pack is running and the lid is put back on.
@@ -1741,6 +1742,10 @@ void checkSwitches() {
     stopEffect(S_VOICE_VIBRATION_DISABLED);
 
     if(switch_vibration.getState() == LOW) {
+      if(PACK_STATE == MODE_OFF && switch_alarm.getState() == HIGH) {
+        vibrationSwitchedCount++;
+      }
+
       if(!b_vibration_switch_on) {
         // Tell the wand to enable vibration.
         packSerialSend(P_VIBRATION_ENABLED);
@@ -1771,22 +1776,30 @@ void checkSwitches() {
     b_switch_mode_override = false;
   }
 
-  if(b_use_ribbon_cable && (switch_alarm.isPressed() || switch_alarm.isReleased())) {
-    // Play a sound when the ribbon cable is attached or detached.
-    if(ribbonCableAttached()) {
-      // Only play this sound if the pack is off to match Frozen Empire.
-      if(PACK_STATE == MODE_OFF) {
-        stopEffect(S_CLICK);
-        playEffect(S_CLICK);
+  if(switch_alarm.isPressed() || switch_alarm.isReleased()) {
+    // Reset the vibration switch counter.
+    vibrationSwitchedCount = 0;
+
+    if(b_use_ribbon_cable) {
+      // Play a sound when the ribbon cable is attached or detached.
+      if(ribbonCableAttached()) {
+        // Only play this sound if the pack is off to match Frozen Empire.
+        if(PACK_STATE == MODE_OFF) {
+          stopEffect(S_CLICK);
+          playEffect(S_CLICK);
+        }
       }
-    }
-    else {
-      stopEffect(S_RIBBON_CABLE_DETACH);
-      playEffect(S_RIBBON_CABLE_DETACH);
+      else {
+        stopEffect(S_RIBBON_CABLE_DETACH);
+        playEffect(S_RIBBON_CABLE_DETACH);
+      }
     }
   }
 
   if(switch_power.isPressed() || switch_power.isReleased()) {
+    // Reset the vibration switch counter.
+    vibrationSwitchedCount = 0;
+
     // When the ion arm switch is used to turn the Proton Pack on, play a extra sound effect in Afterlife or Frozen Empire.
     switch(SYSTEM_YEAR) {
       case SYSTEM_AFTERLIFE:
@@ -2456,7 +2469,6 @@ uint8_t cyclotron84LookupTable(uint8_t index) {
   if(b_clockwise) {
     switch(i_cyclotron_leds) {
       case HASLAB_CYCLOTRON_LED_COUNT:
-      default:
         // 1984 CW 12 LED array.
         return PROGMEM_READU8(i_1984_cyclotron_12_leds_cw[index]);
       break;
@@ -2466,7 +2478,8 @@ uint8_t cyclotron84LookupTable(uint8_t index) {
         return PROGMEM_READU8(i_1984_cyclotron_20_leds_cw[index]);
       break;
 
-      case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+      case MAX_CYCLOTRON_LED_COUNT:
+      default:
         // 1984 CW 36 LED array.
         return PROGMEM_READU8(i_1984_cyclotron_36_leds_cw[index]);
       break;
@@ -2480,7 +2493,6 @@ uint8_t cyclotron84LookupTable(uint8_t index) {
   else {
     switch(i_cyclotron_leds) {
       case HASLAB_CYCLOTRON_LED_COUNT:
-      default:
         // 1984 CCW 12 LED array.
         return PROGMEM_READU8(i_1984_cyclotron_12_leds_ccw[index]);
       break;
@@ -2490,7 +2502,8 @@ uint8_t cyclotron84LookupTable(uint8_t index) {
         return PROGMEM_READU8(i_1984_cyclotron_20_leds_ccw[index]);
       break;
 
-      case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+      case MAX_CYCLOTRON_LED_COUNT:
+      default:
         // 1984 CCW 36 LED array.
         return PROGMEM_READU8(i_1984_cyclotron_36_leds_ccw[index]);
       break;
@@ -2673,12 +2686,12 @@ void cyclotronFade() {
           switch(i_cyclotron_leds) {
             case OUTER_CYCLOTRON_LED_MAX:
             case FRUTTO_CYCLOTRON_LED_COUNT:
-            case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+            case MAX_CYCLOTRON_LED_COUNT:
+            default:
               r_cyclotron_led_fade_out[i].go(0, i_outer_current_ramp_speed * 3, CIRCULAR_OUT);
             break;
 
             case HASLAB_CYCLOTRON_LED_COUNT:
-            default:
               r_cyclotron_led_fade_out[i].go(0, i_outer_current_ramp_speed * 2, CIRCULAR_OUT);
             break;
           }
@@ -2760,7 +2773,7 @@ void cyclotron84LightOn(uint8_t cLed) {
   if(i_cyclotron_leds == FRUTTO_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 2;
   }
-  else if(i_cyclotron_leds == FRUTTO_MAX_CYCLOTRON_LED_COUNT) {
+  else if(i_cyclotron_leds == MAX_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 4;
   }
   */
@@ -2806,7 +2819,7 @@ void cyclotron84LightOff(uint8_t cLed) {
   if(i_cyclotron_leds == FRUTTO_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 2;
   }
-  else if(i_cyclotron_leds == FRUTTO_MAX_CYCLOTRON_LED_COUNT) {
+  else if(i_cyclotron_leds == MAX_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 4;
   }
   */
@@ -3006,7 +3019,8 @@ void cyclotron2021(uint16_t iRampDelay) {
 
       switch(i_cyclotron_leds) {
         case OUTER_CYCLOTRON_LED_MAX:
-        case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+        case MAX_CYCLOTRON_LED_COUNT:
+        default:
           if(i_cyclotron_multiplier > 1) {
             if(t_iRampDelay - i_cyclotron_multiplier > 0) {
               t_iRampDelay = t_iRampDelay - i_cyclotron_multiplier;
@@ -3033,7 +3047,6 @@ void cyclotron2021(uint16_t iRampDelay) {
 
         case FRUTTO_CYCLOTRON_LED_COUNT:
         case HASLAB_CYCLOTRON_LED_COUNT:
-        default:
           i_fast_led_delay = FAST_LED_UPDATE_MS;
 
           if(i_cyclotron_multiplier > 1) {
@@ -3059,7 +3072,8 @@ void cyclotron2021(uint16_t iRampDelay) {
     }
 
     switch(i_cyclotron_leds) {
-      case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+      case MAX_CYCLOTRON_LED_COUNT:
+      default:
         if(i_cyclotron_multiplier > 1) {
           if(iRampDelay - i_cyclotron_multiplier > 0) {
             iRampDelay = iRampDelay - i_cyclotron_multiplier;
@@ -3091,7 +3105,6 @@ void cyclotron2021(uint16_t iRampDelay) {
       break;
 
       case HASLAB_CYCLOTRON_LED_COUNT:
-      default:
         if(i_cyclotron_multiplier > 1) {
           if(iRampDelay - i_cyclotron_multiplier > 0) {
             iRampDelay = iRampDelay - i_cyclotron_multiplier;
@@ -3126,7 +3139,8 @@ void cyclotron2021(uint16_t iRampDelay) {
           // Do nothing; already 0.
         break;
 
-        case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+        case MAX_CYCLOTRON_LED_COUNT:
+        default:
           if(b_ramp_down || b_ramp_up || b_pack_alarm || b_wand_mash_lockout) {
             if(i_curr_cyclotron_position == 39) {
               // Top gap between lenses is about 27 pixels wide.
@@ -3169,7 +3183,6 @@ void cyclotron2021(uint16_t iRampDelay) {
         break;
 
         case HASLAB_CYCLOTRON_LED_COUNT:
-        default:
           if(b_ramp_down || b_ramp_up || b_pack_alarm || b_wand_mash_lockout) {
             if(i_curr_cyclotron_position > 32) {
               // Top gap between lenses is about 9 pixels wide.
@@ -3319,7 +3332,7 @@ void cyclotron1984Alarm() {
   if(i_cyclotron_leds == FRUTTO_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 2;
   }
-  else if(i_cyclotron_leds == FRUTTO_MAX_CYCLOTRON_LED_COUNT) {
+  else if(i_cyclotron_leds == MAX_CYCLOTRON_LED_COUNT) {
     i_led_array_width = 4;
   }
   */
@@ -3515,7 +3528,7 @@ void packOverheatingFinished() {
 
   resetRampUp();
 
-  packStartup(false);
+  packStartup(false); // Start the pack using an abbreviated startup sequence.
 
   // Turn off the vent lights
   ventLight(false);
@@ -3849,9 +3862,13 @@ void cyclotronControl() {
       r_outer_cyclotron_ramp.go(i_outer_current_ramp_speed); // Reset the ramp.
       r_inner_cyclotron_ramp.go(i_inner_current_ramp_speed); // Reset the Inner Cyclotron ramp.
 
-      if(SYSTEM_YEAR == SYSTEM_1984 || SYSTEM_YEAR == SYSTEM_1989) {
+      if(SYSTEM_YEAR == SYSTEM_1984) {
         r_outer_cyclotron_ramp.go((uint16_t)(i_1984_delay * 1.3), i_1984_ramp_down_length, CIRCULAR_IN);
         r_inner_cyclotron_ramp.go(i_inner_ramp_delay, i_1984_ramp_down_length, CIRCULAR_IN);
+      }
+      else if(SYSTEM_YEAR == SYSTEM_1989) {
+        r_outer_cyclotron_ramp.go((uint16_t)(i_1984_delay * 1.3), i_1989_ramp_down_length, CIRCULAR_IN);
+        r_inner_cyclotron_ramp.go(i_inner_ramp_delay, i_1989_ramp_down_length, CIRCULAR_IN);
       }
       else {
         if(ms_mash_lockout.isRunning()) {
@@ -3892,6 +3909,21 @@ void cyclotronControl() {
 
   if(b_cyclotron_lid_on) {
     cyclotronFade();
+  }
+}
+
+void stopOverheatBeepWarnings() {
+  switch(SYSTEM_YEAR) {
+    case SYSTEM_AFTERLIFE:
+    case SYSTEM_FROZEN_EMPIRE:
+    default:
+      stopEffect(S_PACK_BEEPS_OVERHEAT);
+    break;
+
+    case SYSTEM_1984:
+    case SYSTEM_1989:
+      stopEffect(S_BEEP_8);
+    break;
   }
 }
 
@@ -4068,30 +4100,6 @@ void packVentingStart() {
   cyclotronSpeedRevert();
 
   attenuatorSerialSend(A_VENTING);
-}
-
-void checkCyclotronAutoSpeed() {
-  // No need to start any timers until after any ramping has finished; only in Afterlife and Frozen Empire do we do the auto speed increases.
-  if(b_wand_firing && !b_ramp_up && !b_ramp_down) {
-    if(ms_cyclotron_auto_speed_timer.justFinished() && i_cyclotron_multiplier < 6) {
-      // Increase the Cyclotron speed.
-      i_cyclotron_multiplier++;
-
-      // Increase the Cyclotron Switch Panel LEDs speed.
-      i_cyclotron_switch_led_multiplier++;
-
-      // Ensure values are within expected bounds.
-      sanitizeCyclotronMultipliers();
-
-      // Restart the timer.
-      if(i_wand_power_level > 0) {
-        ms_cyclotron_auto_speed_timer.start(i_cyclotron_auto_speed_timer_length / i_wand_power_level);
-      }
-      else {
-        ms_cyclotron_auto_speed_timer.start(i_cyclotron_auto_speed_timer_length);
-      }
-    }
-  }
 }
 
 void modeFireStartSounds() {
@@ -4340,10 +4348,6 @@ void wandFiring() {
   b_wand_firing = true;
   attenuatorSerialSend(A_FIRING);
 
-  if(SYSTEM_YEAR == SYSTEM_AFTERLIFE || SYSTEM_YEAR == SYSTEM_FROZEN_EMPIRE) {
-    ms_cyclotron_auto_speed_timer.start(i_cyclotron_auto_speed_timer_length / i_wand_power_level);
-  }
-
   if(b_stream_effects && STATUS_CTS == CTS_NOT_FIRING) {
     uint16_t i_s_random = random(7,15) * 1000;
     ms_firing_sound_mix.start(i_s_random);
@@ -4496,9 +4500,6 @@ void wandStoppedFiring() {
 
   attenuatorSerialSend(A_FIRING_STOPPED);
 
-  // Stop the auto speed timer.
-  ms_cyclotron_auto_speed_timer.stop();
-
   b_wand_firing = false;
   b_firing_alt = false;
   b_firing_intensify = false;
@@ -4525,18 +4526,7 @@ void wandStoppedFiring() {
   ms_delay_post_2.stop();
 
   // Stop overheat beeps.
-  switch(SYSTEM_YEAR) {
-    case SYSTEM_AFTERLIFE:
-    case SYSTEM_FROZEN_EMPIRE:
-    default:
-      stopEffect(S_PACK_BEEPS_OVERHEAT);
-    break;
-
-    case SYSTEM_1984:
-    case SYSTEM_1989:
-      stopEffect(S_BEEP_8);
-    break;
-  }
+  stopOverheatBeepWarnings();
 }
 
 void checkMenuVibration() {
@@ -4564,30 +4554,9 @@ void cyclotronSpeedRevert() {
 }
 
 void cyclotronSpeedIncrease() {
-  switch(SYSTEM_YEAR) {
-    case SYSTEM_AFTERLIFE:
-    case SYSTEM_FROZEN_EMPIRE:
-    default:
-      if(i_cyclotron_multiplier < 9) {
-        i_cyclotron_multiplier++;
-      }
-
-      if(i_cyclotron_switch_led_multiplier < 9) {
-        i_cyclotron_switch_led_multiplier++;
-      }
-
-      if(i_powercell_multiplier < 6) {
-        i_powercell_multiplier++;
-      }
-    break;
-
-    case SYSTEM_1984:
-    case SYSTEM_1989:
-      i_cyclotron_multiplier++;
-      i_cyclotron_switch_led_multiplier++;
-      i_powercell_multiplier++;
-    break;
-  }
+  i_cyclotron_multiplier++;
+  i_cyclotron_switch_led_multiplier++;
+  i_powercell_multiplier++;
 
   sanitizeCyclotronMultipliers();
 }
@@ -4934,7 +4903,8 @@ void resetCyclotronLEDs() {
     break;
 
     // For Frutto Technology Max Cyclotron (36) LEDs.
-    case FRUTTO_MAX_CYCLOTRON_LED_COUNT:
+    case MAX_CYCLOTRON_LED_COUNT:
+    default:
       i_2021_delay = CYCLOTRON_DELAY_2021_36_LED;
     break;
 
@@ -4945,13 +4915,12 @@ void resetCyclotronLEDs() {
 
     // Default HasLab (12) LEDs.
     case HASLAB_CYCLOTRON_LED_COUNT:
-    default:
       i_2021_delay = CYCLOTRON_DELAY_2021_12_LED;
     break;
   }
 }
 
-void resetContinuousSmoke() {
+void updateContinuousSmoke() {
   b_smoke_continuous_level[0] = b_smoke_continuous_level_1;
   b_smoke_continuous_level[1] = b_smoke_continuous_level_2;
   b_smoke_continuous_level[2] = b_smoke_continuous_level_3;
@@ -5326,6 +5295,120 @@ void systemPOST() {
   }
 }
 
+void resetWifiCommand() {
+  bool b_reset_success = false;
+  #ifdef ESP32
+    // If GPStar Pack II, reset our own Wifi password.
+    wirelessMgr->resetWifiPassword();
+    b_reset_success = true;
+  #else
+    // If not ESP32, send a message to the wireless module to have it reset its password.
+    if(b_attenuator_connected) {
+      attenuatorSerialSend(A_RESET_WIFI_PASSWORD);
+      b_reset_success = true;
+    }
+  #endif
+
+  // Play voice confirmation if successful.
+  if(b_reset_success) {
+    playEffect(S_VOICE_PACK_WIFI_RESET);
+  }
+}
+
+/*
+ * Prevent stream mode change if wand is firing, in an error state, or VG modes are disabled.
+ */
+bool canChangeStreamMode() {
+  if(!b_pack_on || b_wand_firing || b_overheating || b_pack_alarm || b_pack_shutting_down || SYSTEM_MODE == MODE_ORIGINAL || !(STREAM_MODE_FLAG & FLAG_VG)) {
+    return false;
+  }
+  return true;
+}
+
+/*
+ * Change the current stream mode to a new mode, if allowed.
+ */
+void changeStreamMode(STREAM_MODES new_mode) {
+  if(!canChangeStreamMode()) {
+    debugln("Stream mode change not allowed while pack is firing or in error state.");
+    return;
+  }
+
+  // Debounce rapid calls to avoid flooding the serial interface.
+  if(ms_streamchange.remaining() > 0) {
+    debugln("Stream mode change suppressed due to debounce timer.");
+    return;
+  }
+
+  // Continue to change the stream mode.
+  switch(new_mode) {
+    case PROTON:
+      executeCommand(A_PROTON_MODE, 0);
+    break;
+    case STASIS:
+      if(!!(STREAM_MODE_FLAG & FLAG_VG)) {
+        executeCommand(A_STASIS_MODE, 0);
+      }
+      else {
+        debugln("VG modes not enabled, cannot switch to Stasis.");
+      }
+    break;
+    case SLIME:
+      if(!!(STREAM_MODE_FLAG & FLAG_VG)) {
+        executeCommand(A_SLIME_MODE, 0);
+      }
+      else {
+        debugln("VG modes not enabled, cannot switch to Slime.");
+      }
+    break;
+    case MESON:
+      if(!!(STREAM_MODE_FLAG & FLAG_VG)) {
+        executeCommand(A_MESON_MODE, 0);
+      }
+      else {
+        debugln("VG modes not enabled, cannot switch to Meson.");
+      }
+    break;
+    case SPECTRAL:
+      if(!!(STREAM_MODE_FLAG & FLAG_SPECTRAL)) {
+        executeCommand(A_SPECTRAL_MODE, 0);
+      }
+      else {
+        debugln("Spectral mode not enabled, cannot switch to Spectral.");
+      }
+    break;
+    case HOLIDAY_HALLOWEEN:
+      if(!!(STREAM_MODE_FLAG & FLAG_HOLIDAY_HALLOWEEN)) {
+        executeCommand(A_HALLOWEEN_MODE, 0);
+      }
+      else {
+        debugln("Halloween mode not enabled, cannot switch to Halloween.");
+      }
+    break;
+    case HOLIDAY_CHRISTMAS:
+      if(!!(STREAM_MODE_FLAG & FLAG_HOLIDAY_CHRISTMAS)) {
+        executeCommand(A_CHRISTMAS_MODE, 0);
+      }
+      else {
+        debugln("Christmas mode not enabled, cannot switch to Christmas.");
+      }
+    break;
+    case SPECTRAL_CUSTOM:
+      if(!!(STREAM_MODE_FLAG & FLAG_SPECTRAL_CUSTOM)) {
+        executeCommand(A_SPECTRAL_CUSTOM_MODE, 0);
+      }
+      else {
+        debugln("Spectral Custom mode not enabled, cannot switch to Spectral Custom.");
+      }
+    break;
+    default:
+      debugln("Invalid Stream Mode");
+    break;
+  }
+
+  ms_streamchange.start(i_stream_change_delay); // Restart debounce timer.
+}
+
 #ifdef ESP32
 void readTemperature() {
   // Read the HDC1080 and store the current temperature readings in C and F.
@@ -5340,7 +5423,7 @@ void readTemperature() {
       debugf("\t\tTemp: %.1f C (%.1f F)\n", f_temperature_c, f_temperature_f);
 
       // Send value to the Attenuator, multiplied by 100 to avoid float issues.
-      attenuatorSerialSend(A_TEMPERATURE_PACK, f_temperature_c * 100);
+      //attenuatorSerialSend(A_TEMPERATURE_PACK, f_temperature_c * 100);
     }
   }
 }

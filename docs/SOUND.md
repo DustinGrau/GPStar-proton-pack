@@ -16,7 +16,7 @@ The compatibility matrix below notes whether a device is compatible with major v
 
 | Audio Device | v1.x | v2.x | v3.x | v4.x | v5.0.x | v5.1.x | v5.4.x | v6.0.x |
 |-------------------|------|------|------|------|------|------|------|------|
-| Robertsonics WAV Trigger  | v134 | v134 | v140 | v140 | v140 | v140 | v140 | v140 |
+| Robertsonics WAV Trigger | v134 | v134 | v140 | v140 | v140 | v140 | v140 | v140 |
 | <span class="logo-icon-tiny"></span> GPStar Audio | &mdash; | &mdash; | &mdash; | &mdash; | v100<sup>1</sup> | v102<sup>2</sup> | v103<sup>3</sup> | v104<sup>4</sup> |
 
 <sup>1</sup> All initial orders for GPStar Audio controllers shipped with v100 firmware which delivers all of the basic functionality needed for a Pack+Wand operation.
@@ -29,7 +29,18 @@ The compatibility matrix below notes whether a device is compatible with major v
 
 **Firmware Updates**
 
-All firmware files for the audio controllers can be found in the [extras/sound/](https://github.com/gpstar81/GPStar-proton-pack/blob/main/extras/sound/) folder. Files are grouped by their device name, and a firmware update tool for the GPStar Audio firmware is available for ease of flashing that device.
+Use the FTDI to USB programming cable that came with the first generation GPStar kits or any other suitable FTDI 5V basic serial connector. The UART Pins on the PCB should align with with the standard wire order for FTDI-to-USB cables which use a single Dupont 6-pin connector. Observe these common colours and notes to ensure proper orientation:
+
+**IMPORTANT: Beside the connection on the GPStar Audio board, there is a small black switch, move it to the LOAD position before connecting the cable.**
+
+**After flashing, please move the switch back to the BOOT position.**
+
+### GPStar Audio Firmware Flasher
+
+- [Windows (x64 only)](https://github.com/gpstar81/GPStar-proton-pack/blob/main/extras/sound/GPStar%20Audio/gpstarAudioFirmwareFlasher.exe?raw=1)
+- [MacOS Intel](https://github.com/gpstar81/GPStar-proton-pack/blob/main/extras/sound/GPStar%20Audio/GPStar-Audio-Firmware-Flasher-Mac.dmg?raw=1) (Must enable Rosetta for Apple Silicon CPUs)
+
+![UART GPStar Audio Connection](images/uart_gpstar_audio.jpg)
 
 ## Pack Audio
 
@@ -40,14 +51,14 @@ This is where you can branch out to other options as desired and can really go a
 We recommend a handful of small form-factor audio amplifiers which will provide the loudness demanded by many kit users. The following are listed in order of their peak output, but also compatibility within the GPStar ecosystem.
 
 - [GPStar Amplifier II - 50W @ 4Ω 24V Class D Stereo Amplifier](https://gpstartechnologies.com/products/gpstar-amplifier-ii)
-	- This beast of an amplifier is capable of running some serious wattage through matched speakers. When provided with the recommended 24V supply voltage the output is closer to 60W @ 4Ω, and is therefore reserved for the most serious of users willing to install and carry a suitable battery system on their Proton Pack.
-	- It is possible to run this amplifier at 12V as well for considerable sound output at around 30W @ 4Ω.
-	- If using 8Ω speakers, expect roughly 30W @ 24V and 15W @ 12V.
+    - This beast of an amplifier is capable of running some serious wattage through matched speakers. When provided with the recommended 24V supply voltage the output is closer to 60W @ 4Ω, and is therefore reserved for the most serious of users willing to install and carry a suitable battery system on their Proton Pack.
+    - It is possible to run this amplifier at 12V as well for considerable sound output at around 30W @ 4Ω.
+    - If using 8Ω speakers, expect roughly 30W @ 24V and 15W @ 12V.
 - [GPStar Amplifier - 15W @ 8Ω 12V Class D Stereo Amplifier](https://gpstartechnologies.com/products/gpstar-amplifier)
-	- A more common class of amplifier with a 12V input. This is the same form-factor as the GPStar Amplifier II, but without the built-in heatsink. Output is identical to the Drok 15W listed next.
+    - A more common class of amplifier with a 12V input. This is the same form-factor as the GPStar Amplifier II, but without the built-in heatsink. Output is identical to the Drok 15W listed next.
 - [Drok 15W Class D Stereo Amplifier](https://a.co/d/9VnB8e9)
-	- While rated at 15W that is only when driven at 24V. Expect closer to 10W @ 8Ω when driven with a standard 12V TalentCell battery.
-	- This is an off-the-shelf item which has been tested successfully with the full replacement kits and various speaker recommendations. In terms of capability this is identical to the GPStar Amplifier, though it has a built-in volume control if that is something you desire (otherwise the audio input will be controlled by the Proton Pack controller).
+    - While rated at 15W that is only when driven at 24V. Expect closer to 10W @ 8Ω when driven with a standard 12V TalentCell battery.
+    - This is an off-the-shelf item which has been tested successfully with the full replacement kits and various speaker recommendations. In terms of capability this is identical to the GPStar Amplifier, though it has a built-in volume control if that is something you desire (otherwise the audio input will be controlled by the Proton Pack controller).
 
 It should go without saying that for any amplifier which can run on 12V, the more wattage it can output and will drain the battery faster at higher volumes. Testing of the 12V amplifiers shows a draw of 1-1.25A at full power, hence a 6000 mAh TalentCell is going to be recommended for a full day of audio playback.
 
@@ -56,28 +67,28 @@ It should go without saying that for any amplifier which can run on 12V, the mor
 Speakers may be subjective to your personal tastes and budget, so kits do not ship with speakers. However, we have tested and do recommend several options which are listed below in order of quality and availability. The most important criteria is to match the speakers to the maximum output of the amplifier chosen. For instance, you would want speakers which can handle at least 60W @ 4Ω for the GPStar Amplifier II.
 
 - [2x LaVoce FSN030.71 3" Neodymium Full-Range Woofer 8Ω](https://www.parts-express.com/LaVoce-FSN030.71-3-Neodymium-Full-Range-Woofer-8-Ohm-293-706)
-	- Considered by our team as the peak of performance, weight, and quality this 30W @ 8Ω speaker is going to provide the lightest option with the most compatibility with all amplifiers recommended.
+    - Considered by our team as the peak of performance, weight, and quality this 30W @ 8Ω speaker is going to provide the lightest option with the most compatibility with all amplifiers recommended.
 - [2x LaVoce FSF030.70 3" Ferrite Full-Range Woofer 8Ω](https://www.parts-express.com/LaVoce-FSF030.70-3-Full-Range-Woofer-8-Ohm-293-705)
-	- Identical to the LaVoce FSN030.71 in specs, this is a standard magnet driver with a reduced cost per speaker. Consider this as a budget alternative.
+    - Identical to the LaVoce FSN030.71 in specs, this is a standard magnet driver with a reduced cost per speaker. Consider this as a budget alternative.
 - [2x 3" Dayton Audio DMA-80 8Ω Full Range Drivers](https://www.daytonaudio.com/product/1619/dma80-8-3-dual-magnet-aluminum-cone-full-range-driver-8-ohm)
-	- These speakers are a mix of lightest weight due to their neodymium core and aluminum cone, with decent quality at 25W RMS (50W peak).
+    - These speakers are a mix of lightest weight due to their neodymium core and aluminum cone, with decent quality at 25W RMS (50W peak).
 - [Pair of 3" Full Range Bookshelf Speaker (15W @ 8Ω)](https://a.co/d/cMg5Vrt)
-	- These are the most economical options and can be perfectly suitable with the GPStar or Drok 15W amplifiers. However, their quality is not as good as the LaVoce or Dayton Audio speakers.
+    - These are the most economical options and can be perfectly suitable with the GPStar or Drok 15W amplifiers. However, their quality is not as good as the LaVoce or Dayton Audio speakers.
 
 ### Accessories
 
 The following items are optional and may not even be necessary depending on the amplifier chosen. For instance, if using either of the GPStar amplifiers it is not necessary to provide a Ground Loop Isolator as this is built into those amplifiers already.
 
 - [8" Auxiliary Stereo Audio Cable w/ 90&deg; Jack](https://a.co/d/3H4zxZw)
-	- Optional: Useful in tight locations, depending on where the amp is mounted
+    - Optional: Useful in tight locations, depending on where the amp is mounted
 - [Ground Loop Isolator](https://a.co/d/faBkok9) - Not required for the GPStar Amplifier
-	- Recommended for 3rd-party Amps: Prevents unwanted hum and noise from the amplifier due to the LEDs
+    - Recommended for 3rd-party Amps: Prevents unwanted hum and noise from the amplifier due to the LEDs
 - [2 Input to 1 Output Passive Mixer](https://a.co/d/6tI6nVJ)
-	- For users who may want to mix a second source into their Proton Pack, such as an Aux-In or Bluetooth device, this is a good option to mix your GPStar Audio (or WAV Trigger) input with an external source.
+    - For users who may want to mix a second source into their Proton Pack, such as an Aux-In or Bluetooth device, this is a good option to mix your GPStar Audio (or WAV Trigger) input with an external source.
 
 **Note:** As of mid-2024 all kits which include an amplifier will ship with the new GPStar Amplifier which is a high-powered Class D stereo amp. This device is very similar to the Drok amplifier noted, though it includes more 12V pass-through options for chaining other devices which need the full power offered by the Talentcell battery. It also includes a built-in 5V regulator which may be used for powering other kit devices via JST-XH connectors.
 
-The placement of your speakers is up to you. Though it is possible to mount a 3" speaker in the location used for the original pack speaker, a mount should be used to help offload some of the added weight from that device. And if the stock vibration motor is not important (as the solution above will provide some physical feedback in that regard), removal of that device opens up a cavity just behind and above the cross-bar of a standard ALICE frame for another speaker. For the latter, it will be necessary to carefully  drill some small holes into the motherboard of the pack for sound output.
+The placement of your speakers is up to you. Though it is possible to mount a 3" speaker in the location used for the original pack speaker, a mount should be used to help offload some of the added weight from that device. And if the stock vibration motor is not important (as the solution above will provide some physical feedback in that regard), removal of that device opens up a cavity just behind and above the cross-bar of a standard ALICE frame for another speaker. For the latter, it will be necessary to carefully drill some small holes into the motherboard of the pack for sound output.
 
 Shown below is an example of how a pair of stereo speakers may be mounted inside of the pack. The upper speaker is located where the original speaker was mounted, while the lower speaker occupies the space where the vibration motor casing was secured into the pack. Note the WAV Trigger and amplifier as shown here are mounted in the space normally occupied by the D-cell battery compartment, primarily so the volume control for the amplifier can be accessed from the service door when the pack is reassembled. That portion of the motherboard would need to be partially or fully removed if you wish to use this space as shown.
 

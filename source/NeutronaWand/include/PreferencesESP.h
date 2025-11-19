@@ -32,22 +32,25 @@ void updateCRCEEPROM(uint32_t);
 uint32_t getCRCEEPROM(void);
 uint32_t eepromCRC(void);
 void bargraphYearModeUpdate();
-void resetOverheatLevels();
+void updateOverheatLevels();
 void resetWhiteLEDBlinkRate();
+
+// Reference global instances defined elsewhere
+extern Axis3F accelOffsets;
+extern Axis3F gyroOffsets;
 
 // Include ESP32 Preferences library
 #include <Preferences.h>
 
-// Preferences for system configuration, which will use a "led" and "config" namespaces.
-// For Wireless.h will store SSID and AP password within a "credentials" namespace.
-Preferences preferences;
-
 // Data structure for LED settings (stored in Preferences)
 struct objLEDEEPROM {
   uint8_t barrelSpectralCustom;
-  uint8_t barrelSpectralSaturationCustom;
+  uint8_t barrelSpectralSaturationCustom; // Currently unused
+  uint8_t ventLightAutoIntensity;
   uint8_t numBarrelLeds;
   uint8_t numBargraphLeds;
+  // Note there is no RGB Vent Light setting for ESP32 as it must always be enabled
+  uint8_t gpstar_audio_led;
 } gObjLEDEEPROM;
 
 // Data structure for configuration settings (stored in Preferences)
@@ -58,10 +61,9 @@ struct objConfigEEPROM {
   uint8_t extraProtonSounds;
   uint8_t neutronaWandSounds;
   uint8_t spectralMode;
-  uint8_t holidayMode;
+  uint8_t holidayMode; // This will be deprecated in 6.x as part of a new menu refactoring.
   uint8_t quickVent;
   uint8_t wandBootErrors;
-  uint8_t ventLightAutoIntensity;
   uint8_t invertBargraph;
   uint8_t bargraphMode;
   uint8_t bargraphFiringAnimation;
@@ -81,6 +83,7 @@ struct objConfigEEPROM {
   uint8_t overheatLevel3;
   uint8_t overheatLevel2;
   uint8_t overheatLevel1;
+  uint8_t barrelSwitchPolarity;
   uint8_t wandVibration;
 } gObjConfigEEPROM;
 
@@ -88,18 +91,27 @@ struct objConfigEEPROM {
 void saveLEDEEPROM() {
   gObjLEDEEPROM.barrelSpectralCustom = i_spectral_wand_custom_colour;
   gObjLEDEEPROM.barrelSpectralSaturationCustom = i_spectral_wand_custom_saturation;
+  gObjLEDEEPROM.ventLightAutoIntensity = b_vent_light_control ? 2 : 1;
   gObjLEDEEPROM.numBarrelLeds = WAND_BARREL_LED_COUNT;
   gObjLEDEEPROM.numBargraphLeds = BARGRAPH_TYPE_EEPROM;
+  gObjLEDEEPROM.gpstar_audio_led = b_gpstar_audio_led_enabled ? 2 : 1;
 
-  preferences.begin("led", false);
-  preferences.putBytes("led", &gObjLEDEEPROM, sizeof(gObjLEDEEPROM));
-  preferences.end();
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
+  if(preferences.begin("led", false)) {
+    preferences.putBytes("led", &gObjLEDEEPROM, sizeof(gObjLEDEEPROM));
+    preferences.end();
+  }
 
   updateCRCEEPROM(eepromCRC());
 }
 
 // Load LED settings from Preferences into the global instance
 void loadLEDEEPROM() {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
   if(preferences.begin("led", true)) {
     if(preferences.isKey("led")) {
       preferences.getBytes("led", &gObjLEDEEPROM, sizeof(gObjLEDEEPROM));
@@ -110,6 +122,9 @@ void loadLEDEEPROM() {
 
 // Clear LED settings in Preferences
 void clearLEDEEPROM() {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
   if(preferences.begin("led", false)) {
     preferences.clear();
     preferences.end();
@@ -132,7 +147,6 @@ void saveConfigEEPROM() {
   uint8_t i_spectral = 1;
   uint8_t i_quick_vent = 2;
   uint8_t i_wand_boot_errors = 1;
-  uint8_t i_vent_light_auto_intensity = 2;
   uint8_t i_invert_bargraph = 1;
   uint8_t i_bargraph_mode = 1; // 1 = default, 2 = super hero, 3 = original.
   uint8_t i_bargraph_firing_animation = 1; // 1 = default, 2 = super hero, 3 = original.
@@ -152,6 +166,7 @@ void saveConfigEEPROM() {
   uint8_t i_overheat_level_3 = 1;
   uint8_t i_overheat_level_2 = 1;
   uint8_t i_overheat_level_1 = 1;
+  uint8_t i_barrel_switch_polarity = 1; // 1 = default, 2 = inverted, 3 = disabled.
   uint8_t i_wand_vibration = 4; // 1 = always, 2 = when firing, 3 = off, 4 = default.
 
   if(FIRING_MODE == CTS_MODE || FIRING_MODE == CTS_MIX_MODE) {
@@ -184,10 +199,6 @@ void saveConfigEEPROM() {
 
   if(b_wand_boot_errors) {
     i_wand_boot_errors = 2;
-  }
-
-  if(!b_vent_light_control) {
-    i_vent_light_auto_intensity = 1;
   }
 
   if(b_bargraph_invert) {
@@ -305,6 +316,21 @@ void saveConfigEEPROM() {
     i_overheat_level_1 = 2;
   }
 
+  switch(BARREL_SWITCH_POLARITY) {
+    case SWITCH_DEFAULT:
+    default:
+      i_barrel_switch_polarity = 1;
+    break;
+
+    case SWITCH_INVERTED:
+      i_barrel_switch_polarity = 2;
+    break;
+
+    case SWITCH_DISABLED:
+      i_barrel_switch_polarity = 3;
+    break;
+  }
+
   switch(VIBRATION_MODE_EEPROM) {
     case VIBRATION_ALWAYS:
       i_wand_vibration = 1;
@@ -333,7 +359,6 @@ void saveConfigEEPROM() {
   gObjConfigEEPROM.holidayMode = 0;
   gObjConfigEEPROM.quickVent = i_quick_vent;
   gObjConfigEEPROM.wandBootErrors = i_wand_boot_errors;
-  gObjConfigEEPROM.ventLightAutoIntensity = i_vent_light_auto_intensity;
   gObjConfigEEPROM.invertBargraph = i_invert_bargraph;
   gObjConfigEEPROM.bargraphMode = i_bargraph_mode;
   gObjConfigEEPROM.bargraphFiringAnimation = i_bargraph_firing_animation;
@@ -353,7 +378,11 @@ void saveConfigEEPROM() {
   gObjConfigEEPROM.overheatLevel3 = i_overheat_level_3;
   gObjConfigEEPROM.overheatLevel2 = i_overheat_level_2;
   gObjConfigEEPROM.overheatLevel1 = i_overheat_level_1;
+  gObjConfigEEPROM.barrelSwitchPolarity = i_barrel_switch_polarity;
   gObjConfigEEPROM.wandVibration = i_wand_vibration;
+
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
 
   if(preferences.begin("config", false)) {
     preferences.putBytes("config", &gObjConfigEEPROM, sizeof(gObjConfigEEPROM));
@@ -365,6 +394,9 @@ void saveConfigEEPROM() {
 
 // Load config settings from Preferences
 void loadConfigEEPROM() {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
   if(preferences.begin("config", true)) {
     if(preferences.isKey("config")) {
       preferences.getBytes("config", &gObjConfigEEPROM, sizeof(gObjConfigEEPROM));
@@ -375,6 +407,9 @@ void loadConfigEEPROM() {
 
 // Clear config settings in Preferences
 void clearConfigEEPROM() {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
   if(preferences.begin("config", false)) {
     preferences.clear();
     preferences.end();
@@ -385,6 +420,9 @@ void clearConfigEEPROM() {
 
 // CRC helpers for Preferences
 void updateCRCEEPROM(uint32_t crc) {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
   if(preferences.begin("crc", false)) {
     preferences.putUInt("crc", crc);
     preferences.end();
@@ -393,6 +431,9 @@ void updateCRCEEPROM(uint32_t crc) {
 
 uint32_t getCRCEEPROM() {
   uint32_t crc = 0;
+
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
 
   if(preferences.begin("crc", true)) {
     crc = preferences.getUInt("crc");
@@ -460,12 +501,12 @@ void readEEPROM() {
       if(gObjConfigEEPROM.spectralMode > 1) {
         b_spectral_mode_enabled = true;
         b_spectral_custom_mode_enabled = true;
-        b_holiday_mode_enabled = true;
+        b_holiday_modes_enabled = true;
       }
       else {
         b_spectral_mode_enabled = false;
         b_spectral_custom_mode_enabled = false;
-        b_holiday_mode_enabled = false;
+        b_holiday_modes_enabled = false;
       }
     }
 
@@ -484,15 +525,6 @@ void readEEPROM() {
       }
       else {
         b_wand_boot_errors = false;
-      }
-    }
-
-    if(gObjConfigEEPROM.ventLightAutoIntensity > 0 && gObjConfigEEPROM.ventLightAutoIntensity < 3) {
-      if(gObjConfigEEPROM.ventLightAutoIntensity > 1) {
-        b_vent_light_control = true;
-      }
-      else {
-        b_vent_light_control = false;
       }
     }
 
@@ -588,7 +620,7 @@ void readEEPROM() {
       }
     }
 
-    if(gObjConfigEEPROM.systemMode > 0 && gObjConfigEEPROM.systemMode < 3 && b_gpstar_benchtest) {
+    if(gObjConfigEEPROM.systemMode > 0 && gObjConfigEEPROM.systemMode < 3 && b_wand_standalone) {
       if(gObjConfigEEPROM.systemMode > 1) {
         SYSTEM_MODE = MODE_ORIGINAL;
       }
@@ -606,7 +638,7 @@ void readEEPROM() {
       }
     }
 
-    if(gObjConfigEEPROM.defaultWandVolume > 0 && gObjConfigEEPROM.defaultWandVolume < 102 && b_gpstar_benchtest) {
+    if(gObjConfigEEPROM.defaultWandVolume > 0 && gObjConfigEEPROM.defaultWandVolume < 102) {
       // EEPROM value is from 1 to 101; subtract 1 to get the correct percentage.
       i_volume_master_percentage = gObjConfigEEPROM.defaultWandVolume - 1;
       i_volume_master_eeprom = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
@@ -689,13 +721,35 @@ void readEEPROM() {
       }
     }
 
+    if(gObjConfigEEPROM.barrelSwitchPolarity > 0 && gObjConfigEEPROM.barrelSwitchPolarity < 4) {
+      switch(gObjConfigEEPROM.barrelSwitchPolarity) {
+        case 1:
+        default:
+          BARREL_SWITCH_POLARITY = SWITCH_DEFAULT;
+        break;
+
+        case 2:
+          BARREL_SWITCH_POLARITY = SWITCH_INVERTED;
+        break;
+
+        case 3:
+          BARREL_SWITCH_POLARITY = SWITCH_DISABLED;
+        break;
+      }
+    }
+
     if(gObjConfigEEPROM.wandVibration > 0 && gObjConfigEEPROM.wandVibration < 5) {
       switch(gObjConfigEEPROM.wandVibration) {
         case 4:
         default:
           // Do nothing. Readings are taken from the vibration toggle switch from the Proton pack or configuration setting in stand alone mode.
           VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
-          VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+          if(b_wand_standalone) {
+            VIBRATION_MODE = VIBRATION_NONE;
+          }
+          else {
+            VIBRATION_MODE = VIBRATION_FIRING_ONLY;
+          }
         break;
 
         case 3:
@@ -718,7 +772,7 @@ void readEEPROM() {
     }
 
     // Rebuild the overheat enabled power levels.
-    resetOverheatLevels();
+    updateOverheatLevels();
 
     // Reset the blinking white LED interval.
     resetWhiteLEDBlinkRate();
@@ -729,6 +783,15 @@ void readEEPROM() {
 
     if(gObjLEDEEPROM.barrelSpectralSaturationCustom > 0 && gObjLEDEEPROM.barrelSpectralSaturationCustom != 255) {
       i_spectral_wand_custom_saturation = gObjLEDEEPROM.barrelSpectralSaturationCustom;
+    }
+
+    if(gObjLEDEEPROM.ventLightAutoIntensity > 0 && gObjLEDEEPROM.ventLightAutoIntensity < 3) {
+      if(gObjLEDEEPROM.ventLightAutoIntensity > 1) {
+        b_vent_light_control = true;
+      }
+      else {
+        b_vent_light_control = false;
+      }
     }
 
     if(gObjLEDEEPROM.numBarrelLeds == LEDS_2 || gObjLEDEEPROM.numBarrelLeds == LEDS_5 ||
@@ -766,6 +829,17 @@ void readEEPROM() {
 
       BARGRAPH_TYPE = BARGRAPH_TYPE_EEPROM;
     }
+
+    if(gObjLEDEEPROM.gpstar_audio_led > 0 && gObjLEDEEPROM.gpstar_audio_led < 3) {
+      if(gObjLEDEEPROM.gpstar_audio_led > 1) {
+        b_gpstar_audio_led_enabled = true;
+      }
+      else {
+        b_gpstar_audio_led_enabled = false;
+      }
+
+      setAudioLED(b_gpstar_audio_led_enabled);
+    }
   }
   else {
     // CRC mismatch; clear preferences
@@ -777,18 +851,24 @@ void readEEPROM() {
 
 // Used to get UI preferences from the device namespace.
 void getSpecialPreferences() {
-  /*
-   * Get Local Device Preferences
-   * Accesses the "device" namespace in read-only mode under the "nvs" partition.
-   */
-  bool b_namespace_opened = preferences.begin("device", true);
-  if(b_namespace_opened) {
+  // Create Preferences object to handle non-volatile storage (NVS).
+  Preferences preferences;
+
+  // Accesses the "device" namespace in read-only mode.
+  if(preferences.begin("device", true)) {
+    // Restore the standalone mode flag from preferences.
+    b_wand_standalone = preferences.getBool("standalone", false);
+
     // Return stored values if available, otherwise use a default value.
     s_track_listing = preferences.getString("track_list", "");
 
     // Restore the magnetometer calibration data from preferences.
     if(preferences.isKey("orientation")) {
-      switch(preferences.getShort("orientation", 0)) {
+      switch(preferences.getUShort("orientation", 0)) {
+        case 0:
+        default:
+          INSTALL_ORIENTATION = COMPONENTS_NOT_ORIENTED;
+        break;
         case 1:
           INSTALL_ORIENTATION = COMPONENTS_UP_USB_FRONT;
         break;
@@ -796,7 +876,6 @@ void getSpecialPreferences() {
           INSTALL_ORIENTATION = COMPONENTS_UP_USB_REAR;
         break;
         case 3:
-        default:
           // Default for Haslab.
           INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT;
         break;
@@ -816,12 +895,30 @@ void getSpecialPreferences() {
         case 8:
           INSTALL_ORIENTATION = COMPONENTS_RIGHT_USB_REAR;
         break;
+        case 9:
+          // Special debug mode for bench testing without orientation.
+          INSTALL_ORIENTATION = COMPONENTS_FACTORY_DEFAULT;
+        break;
       }
     }
 
     // Restore the magnetometer calibration data from preferences.
     if(preferences.isKey("mag_cal")) {
       preferences.getBytes("mag_cal", &magCalData, sizeof(magCalData));
+
+      size_t readA = preferences.getBytes("accel_cal", &accelOffsets, sizeof(accelOffsets));
+      if(readA == sizeof(accelOffsets)) {
+        calibratedOffsets.accelX = accelOffsets.x;
+        calibratedOffsets.accelY = accelOffsets.y;
+        calibratedOffsets.accelZ = accelOffsets.z;
+      }
+
+      size_t readG = preferences.getBytes("gyro_cal", &gyroOffsets, sizeof(gyroOffsets));
+      if(readG == sizeof(gyroOffsets)) {
+        calibratedOffsets.gyroX = gyroOffsets.x;
+        calibratedOffsets.gyroY = gyroOffsets.y;
+        calibratedOffsets.gyroZ = gyroOffsets.z;
+      }
     }
 
     preferences.end();
@@ -829,8 +926,16 @@ void getSpecialPreferences() {
   else {
     // If namespace is not initialized, open in read/write mode and set defaults.
     if(preferences.begin("device", false)) {
+      preferences.putBool("standalone", b_wand_standalone);
       preferences.putString("track_list", "");
+      preferences.putUShort("orientation", 3); // COMPONENTS_DOWN_USB_FRONT
+      preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
       preferences.end();
     }
+  }
+
+  // Fallback to the Haslab as default if not set.
+  if(INSTALL_ORIENTATION == COMPONENTS_NOT_ORIENTED) {
+    INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT;
   }
 }

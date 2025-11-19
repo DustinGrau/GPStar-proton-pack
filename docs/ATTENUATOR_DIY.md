@@ -41,8 +41,8 @@ This device was designed to allow for certain "real" parts as opposed to being 1
 
 * [M3x4 Button Hex Head Screws](https://a.co/d/h5No0N9) (Qty: 14) - Used for decoration on the sides of the body.
 * [M4x6 Cheese Head Slotted Screws](https://a.co/d/eUhDiRO) (Qty: 4) - Used for decoration on the top of the body.
-	* You could also use [8-40 x 1/4" Fillister Head Slotted Screws](https://a.co/d/es5eXBC)
-	* M4 nuts may be required to secure the screws to the Attenuator shell.
+    * You could also use [8-40 x 1/4" Fillister Head Slotted Screws](https://a.co/d/es5eXBC)
+    * M4 nuts may be required to secure the screws to the Attenuator shell.
 
 The back plate will be attached using either M5 or M4 screws depending on the material used. For screws, your best value is to purchase an assorted set as this cost less than buying a single size of screw.
 
@@ -62,13 +62,13 @@ Device labels can be obtained or created by any means desired. The sizes [offere
 
 It is worth noting that the device is meant to attach to the left shoulder strap of a standard ALICE pack. The width of the strap is typically around 80mm while worn, so this device will fit near perfectly once the strap is pressed against your shoulder/chest. These are the overall dimensions if you wish to approximate the needed space or design your own enclosure. Maintaining these dimensions ensures the components above will fit within the enclosure.
 
-	Width: 80mm
-	Height: 115mm
-	Depth: 38mm
+    Width: 80mm
+    Height: 115mm
+    Depth: 38mm
 
 ## WiFi Connectivity
 
-A primary benefit of using an ESP32 controller it is possible to connect to the device via WiFi. The SSID (Network Name) will be broadcast as **"ProtonPack_####"** where "####" is the last 4 hexadecimal values for the MAC address of the WiFi interface. This will differ for each ESP32 device, making each network unique to the attached pack. The default password is **"555-2368"** and can (and should) be changed via the web interface after successfully connecting to the network. The IP address for the device will be hardcoded as "192.168.1.2" with the web interface accessible at `http://192.168.1.2` or simply `http://ProtonPack_####.local`.
+A primary benefit of using an ESP32 controller it is possible to connect to the device via WiFi. The SSID (Network Name) will be broadcast as either **"GPStar_Attenuator"** or **"ProtonPack_####"** where "####" is the last 4 hexadecimal values for the MAC address of the WiFi interface. This will differ for each ESP32 device, making each network unique to the attached pack. The default password is **"555-2368"** and can (and should) be changed via the web interface after successfully connecting to the network. The IP address for the device will be hardcoded as "192.168.1.2" with the web interface accessible at `http://192.168.1.2` or simply `http://GPStar_Attenuator.local` or `http://ProtonPack_####.local`.
 
 **Security Notice**
 
@@ -96,21 +96,23 @@ The following is a diagram of the ESP32 pins from left and right, when oriented 
 | Encoder A     | GPIO32    |     | GPIO19    | PN2222        |
 | Encoder B     | GPIO33    |     | GPIO18    | Piezo Buzzer  |
 |               | GPIO25    |     | GPIO5     |               |
-|               | GPIO26    |     | GPIO17    | to Pack RX1   |
-|               | GPIO27    |     | GPIO16    | to Pack TX1   |
+|               | GPIO26    |     | GPIO17    | to Pack RX1<sup>2</sup> |
+|               | GPIO27    |     | GPIO16    | to Pack TX1<sup>2</sup> |
 |               | GPIO14    |     | GPIO4     | Encoder Post  |
 |               | GPIO12    |     | GPIO2     |               |
 |               | GPIO13    |     | GPIO15    |               |
 | Ground (Pack) | GND       |     | GND       | Common Ground |
-| +5V (Pack)    | VIN       |     | 3.3V      | Vib. Motor +  |
+| +5V (Pack)    | 5V/VIN    |     | 3.3V      | Vib. Motor +  |
 |               |         | **USB** |         |               |
 
 When connecting to the pack, the following wiring scheme was used with the recommended 4-pin connector:
 
-	1 - GND (Black)
-	2 - VIN (Red)
-	3 - TX2 (White) to Pack RX1
-	4 - RX2 (Yellow) to Pack TX1
+    1 - GND (Black)
+    2 - 5V/VIN (Red)
+    3 - TX2 (White) to Pack RX1<sup>2</sup>
+    4 - RX2 (Yellow) to Pack TX1<sup>2</sup>
+
+<sup>2</sup> This is on GPStar I Proton Pack boards. On GPStar II Proton Pack boards the data pins are labeled "Attenuator RX2/TX2".
 
 It is advised to add a 330uF capacitor to the VIN+GND pins to help regulate power which will be shared with the controller, bargraph, and addressable LEDs.
 
@@ -143,7 +145,7 @@ The rotary encoder is similar to that used on the Proton Pack and Neutrona Wand 
 | ROTARY ENCODER (DIAL)             |   | MCU Pin   |
 |-----------------------------------|---|-----------|
 | GND                               | → | GND       |
-| <font color="red">+ (VCC)</font>  | → | VIN (5V)  |
+| <font color="red">+ (VCC)</font>  | → | 5V/VIN    |
 | <font color="green">SW</font>     | → | D4/GPIO4  |
 | <font color="blue">DT (B)</font>  | → | D2/GPIO33 |
 | <font color="blue">CLK (A)</font> | → | D3/GPIO32 |
@@ -152,9 +154,9 @@ The rotary encoder is similar to that used on the Proton Pack and Neutrona Wand 
 
 | LED'S                           |   | Component | MCU Pin |
 |---------------------------------|---|-----------|---------|
-| <font color="red">Red</font>    | → | 100uf | 5V/VIN    |
+| <font color="red">Red</font>    | → | 100uf | 5V/VIN      |
 | <font color="green">Green</font>  | → | 470 Ω | D9/GPIO23 |
-| <font color="gray">Black</font> | → | 100uf | GND       |
+| <font color="gray">Black</font> | → | 100uf | GND         |
 
 **Note:** It is advised to place a 100uf capacitor across the positive and negative connections to these devices, just to buffer any current fluctuations.
 
@@ -164,7 +166,7 @@ Addressable LEDs have a distinct data flow with solder pads labelled `DIN` and `
 
 | PIEZO BUZZER                   | Component(s) | MCU Pin |
 |--------------------------------|--------------|---------|
-| <font color="red">Red</font>   | →     | VIN/5V |
+| <font color="red">Red</font>   | →     | 5V/VIN |
 | Black                          | NPN C |          |
 |                                | NPN B | R 270 Ω → D10/GPIO18 |
 |                                | NPN E | GND      |

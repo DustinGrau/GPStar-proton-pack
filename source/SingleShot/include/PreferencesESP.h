@@ -35,144 +35,153 @@
  * Function prototypes.
  */
 void readEEPROM();
-void saveConfigEEPROM();
-void loadConfigEEPROM();
 void clearConfigEEPROM();
-void updateCRCEEPROM(uint32_t);
-uint32_t getCRCEEPROM(void);
-uint32_t eepromCRC(void);
-void resetOverheatLevels();
-void resetWhiteLEDBlinkRate();
+void saveConfigEEPROM();
+
+// Reference global instances defined elsewhere
+extern Axis3F accelOffsets;
+extern Axis3F gyroOffsets;
 
 // Include ESP32 Preferences library
 #include <Preferences.h>
 
-// Preferences for system configuration, which will use a "led" and "config" namespaces.
-// For Wireless.h will store SSID and AP password within a "credentials" namespace.
-Preferences preferences;
-
-// Data structure for configuration settings (stored in Preferences)
-struct objConfigEEPROM {
-  uint8_t deviceBootErrors;
-  uint8_t ventLightAutoIntensity;
-  uint8_t invertBargraph;
-  uint8_t defaultSystemVolume;
-  uint8_t deviceVibration;
-} gObjConfigEEPROM;
-
-// Save configuration preferences to NVS (ESP32)
+// Save config settings to Preferences
 void saveConfigEEPROM() {
-  // Convert the current EEPROM volume value into a percentage.
-  uint8_t eepromVolumeMasterPercentage = 100 * (MINIMUM_VOLUME - i_volume_master_eeprom) / MINIMUM_VOLUME;
-
-  // 1 = false, 2 = true.
-  gObjConfigEEPROM.deviceBootErrors = b_device_boot_errors ? 2 : 1;
-  gObjConfigEEPROM.ventLightAutoIntensity = b_vent_light_control ? 2 : 1;
-  gObjConfigEEPROM.invertBargraph = b_bargraph_invert ? 2 : 1;
-  gObjConfigEEPROM.defaultSystemVolume = (eepromVolumeMasterPercentage <= 100) ? (eepromVolumeMasterPercentage + 1) : 101;
-
-  switch(VIBRATION_MODE_EEPROM) {
-    case VIBRATION_ALWAYS:
-    default:
-      gObjConfigEEPROM.deviceVibration = 1;
-    break;
-    case VIBRATION_FIRING_ONLY:
-      gObjConfigEEPROM.deviceVibration = 2;
-    break;
-    case VIBRATION_NONE:
-      gObjConfigEEPROM.deviceVibration = 3;
-    break;
-  }
+  Preferences preferences;
 
   if(preferences.begin("config", false)) {
-    preferences.putBytes("config", &gObjConfigEEPROM, sizeof(gObjConfigEEPROM));
-    preferences.end();
-  }
-
-  updateCRCEEPROM(eepromCRC());
-}
-
-// Load configuration preferences from NVS (ESP32)
-void loadConfigEEPROM() {
-  if(preferences.begin("config", true)) {
-    if(preferences.isKey("config")) {
-      preferences.getBytes("config", &gObjConfigEEPROM, sizeof(gObjConfigEEPROM));
-    }
+    preferences.putBytes("config", &blasterConfig, sizeof(blasterConfig));
     preferences.end();
   }
 }
 
 // Clear configuration preferences in NVS (ESP32)
 void clearConfigEEPROM() {
+  Preferences preferences;
+
   if(preferences.begin("config", false)) {
     preferences.clear();
     preferences.end();
   }
-
-  updateCRCEEPROM(eepromCRC());
 }
 
-// CRC helpers for Preferences (ESP32)
-void updateCRCEEPROM(uint32_t crc) {
-  if(preferences.begin("crc", false)) {
-    preferences.putUInt("crc", crc);
-    preferences.end();
-  }
-}
-
-uint32_t getCRCEEPROM() {
-  uint32_t crc = 0;
-
-  if(preferences.begin("crc", true)) {
-    crc = preferences.getUInt("crc");
-    preferences.end();
-  }
-
-  return crc;
-}
-
-// Calculate CRC for all stored preferences (ESP32)
-uint32_t eepromCRC() {
-  CRC32 crc;
-  loadConfigEEPROM();
-  crc.update((uint8_t*)&gObjConfigEEPROM, sizeof(gObjConfigEEPROM));
-  return crc.finalize();
-}
-
-// Read all user preferences from Preferences (ESP32)
+// Read configuration preferences from NVS (ESP32)
 void readEEPROM() {
-  uint32_t storedCrc = getCRCEEPROM();
-  uint32_t calcCrc = eepromCRC();
-  if(storedCrc == calcCrc) {
-    // Map loaded config to runtime variables
-    b_device_boot_errors = (gObjConfigEEPROM.deviceBootErrors > 1);
-    b_vent_light_control = (gObjConfigEEPROM.ventLightAutoIntensity > 1);
-    b_bargraph_invert = (gObjConfigEEPROM.invertBargraph > 1);
+  Preferences preferences;
+  bool b_config_loaded = false;
 
-    if(gObjConfigEEPROM.defaultSystemVolume > 0 && gObjConfigEEPROM.defaultSystemVolume < 102) {
-      i_volume_master_percentage = gObjConfigEEPROM.defaultSystemVolume - 1;
-      i_volume_master_eeprom = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
-      i_volume_revert = i_volume_master_eeprom;
-      i_volume_master = i_volume_master_eeprom;
+  if(preferences.begin("config", true)) {
+    if(preferences.isKey("config")) {
+      // Validate stored size matches current struct size
+      size_t i_stored_size = preferences.getBytesLength("config");
+      if(i_stored_size == sizeof(blasterConfig)) {
+        size_t i_bytes_read = preferences.getBytes("config", &blasterConfig, sizeof(blasterConfig));
+        b_config_loaded = (i_bytes_read == sizeof(blasterConfig));
+      }
     }
+    preferences.end();
+  }
 
-    switch(gObjConfigEEPROM.deviceVibration) {
-      case 3:
-        VIBRATION_MODE_EEPROM = VIBRATION_NONE;
-        break;
-      case 2:
-        VIBRATION_MODE_EEPROM = VIBRATION_FIRING_ONLY;
-        break;
-      case 1:
-      default:
-        VIBRATION_MODE_EEPROM = VIBRATION_ALWAYS;
-        break;
-    }
-    VIBRATION_MODE = VIBRATION_MODE_EEPROM;
+  if(b_config_loaded) {
+    // Successfully loaded a valid configuration, apply to other variables.
+    i_volume_master_percentage = blasterConfig.defaultSystemVolume;
+    i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
+    i_volume_revert = i_volume_master;
+    setAudioLED(blasterConfig.gpstarAudioLed);
   }
   else {
-    // CRC mismatch: clear preferences and notify
+    // Failed to load valid config; reset to defaults
     playEffect(S_VOICE_EEPROM_LOADING_FAILED_RESET);
     clearConfigEEPROM();
+  }
+}
+
+// Used to get UI preferences from the device namespace.
+void getSpecialPreferences() {
+  Preferences preferences;
+
+  /*
+   * Get Local Device Preferences
+   * Accesses the "device" namespace in read-only mode under the "nvs" partition.
+   */
+  bool b_namespace_opened = preferences.begin("device", true);
+  if(b_namespace_opened) {
+    // Return stored values if available, otherwise use a default value.
+    s_track_listing = preferences.getString("track_list", "");
+
+    // Restore the magnetometer calibration data from preferences.
+    if(preferences.isKey("orientation")) {
+      switch(preferences.getUShort("orientation", 0)) {
+        case 0:
+        default:
+          INSTALL_ORIENTATION = COMPONENTS_NOT_ORIENTED;
+        break;
+        case 1:
+          INSTALL_ORIENTATION = COMPONENTS_UP_USB_FRONT;
+        break;
+        case 2:
+          INSTALL_ORIENTATION = COMPONENTS_UP_USB_REAR;
+        break;
+        case 3:
+          // Default for Haslab.
+          INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT;
+        break;
+        case 4:
+          INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_REAR;
+        break;
+        case 5:
+          INSTALL_ORIENTATION = COMPONENTS_LEFT_USB_FRONT;
+        break;
+        case 6:
+          INSTALL_ORIENTATION = COMPONENTS_LEFT_USB_REAR;
+        break;
+        case 7:
+          // Default for Mack's Factory.
+          INSTALL_ORIENTATION = COMPONENTS_RIGHT_USB_FRONT;
+        break;
+        case 8:
+          INSTALL_ORIENTATION = COMPONENTS_RIGHT_USB_REAR;
+        break;
+        case 9:
+          // Special debug mode for bench testing without orientation.
+          INSTALL_ORIENTATION = COMPONENTS_FACTORY_DEFAULT;
+        break;
+      }
+    }
+
+    // Restore the magnetometer calibration data from preferences.
+    if(preferences.isKey("mag_cal")) {
+      preferences.getBytes("mag_cal", &magCalData, sizeof(magCalData));
+
+      size_t readA = preferences.getBytes("accel_cal", &accelOffsets, sizeof(accelOffsets));
+      if(readA == sizeof(accelOffsets)) {
+        calibratedOffsets.accelX = accelOffsets.x;
+        calibratedOffsets.accelY = accelOffsets.y;
+        calibratedOffsets.accelZ = accelOffsets.z;
+      }
+
+      size_t readG = preferences.getBytes("gyro_cal", &gyroOffsets, sizeof(gyroOffsets));
+      if(readG == sizeof(gyroOffsets)) {
+        calibratedOffsets.gyroX = gyroOffsets.x;
+        calibratedOffsets.gyroY = gyroOffsets.y;
+        calibratedOffsets.gyroZ = gyroOffsets.z;
+      }
+    }
+
+    preferences.end();
+  }
+  else {
+    // If namespace is not initialized, open in read/write mode and set defaults.
+    if(preferences.begin("device", false)) {
+      preferences.putString("track_list", "");
+      preferences.putUShort("orientation", 3); // COMPONENTS_DOWN_USB_FRONT
+      preferences.putBytes("mag_cal", &magCalData, sizeof(magCalData));
+      preferences.end();
+    }
+  }
+
+  // Fallback to the Haslab as default if not set.
+  if(INSTALL_ORIENTATION == COMPONENTS_NOT_ORIENTED) {
+    INSTALL_ORIENTATION = COMPONENTS_DOWN_USB_FRONT;
   }
 }

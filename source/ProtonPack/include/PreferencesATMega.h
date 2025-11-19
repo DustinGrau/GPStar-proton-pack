@@ -42,7 +42,7 @@ void updateCRCEEPROM();
 uint32_t eepromCRC(void);
 void resetCyclotronLEDs();
 void resetInnerCyclotronLEDs();
-void resetContinuousSmoke();
+void updateContinuousSmoke();
 void updateProtonPackLEDCounts();
 
 /*
@@ -72,6 +72,10 @@ struct objLEDEEPROM {
   uint8_t cyclotron_cavity_type;
   uint8_t inner_cyclotron_led_panel;
   uint8_t powercell_inverted;
+  uint8_t cyclotron_single_center_led;
+  uint8_t vg_powercell;
+  uint8_t vg_cyclotron;
+  uint8_t gpstar_audio_led;
 };
 
 /*
@@ -88,11 +92,9 @@ struct objConfigEEPROM {
   uint8_t overheat_sync_to_fan;
   uint8_t year_mode; // 1984, 1989, Afterlife, Frozen Empire or the Proton Pack toggle switch default.
   uint8_t system_mode; // Super Hero or Mode Original.
-  uint8_t vg_powercell; // For disabling or enabling video game colours for the Power Cell.
-  uint8_t vg_cyclotron; // For disabling or enabling video game colours for the Cyclotron.
   uint8_t demo_light_mode; // Enables pack startup automatically at bootup (battery power-on).
-  uint8_t cyclotron_three_led_toggle; // Toggles between the 1-LED or 3-LED for 84/89 modes.
-  uint8_t default_system_volume; // Default master volume at bootup (battery power-on)
+  uint8_t wand_quick_bootup; // Controls whether pack does short or full bootup from wand in AL/FE.
+  uint8_t default_system_volume; // Default master volume at bootup (battery power-on).
   uint8_t overheat_smoke_duration_level_5;
   uint8_t overheat_smoke_duration_level_4;
   uint8_t overheat_smoke_duration_level_3;
@@ -121,11 +123,11 @@ void readEEPROM() {
     objLEDEEPROM obj_led_eeprom;
     EEPROM.get(i_eepromAddress, obj_led_eeprom);
 
-    if(obj_led_eeprom.powercell_count == HASLAB_POWERCELL_LED_COUNT || obj_led_eeprom.powercell_count == FRUTTO_POWERCELL_LED_COUNT) {
+    if(obj_led_eeprom.powercell_count == HASLAB_POWERCELL_LED_COUNT || obj_led_eeprom.powercell_count == MAX_POWERCELL_LED_COUNT) {
       i_powercell_leds = obj_led_eeprom.powercell_count;
 
       switch(i_powercell_leds) {
-        case FRUTTO_POWERCELL_LED_COUNT:
+        case MAX_POWERCELL_LED_COUNT:
           // 15 Power Cell LEDs.
           i_powercell_delay_1984 = POWERCELL_DELAY_1984_15_LED;
           i_powercell_delay_2021 = POWERCELL_DELAY_2021_15_LED;
@@ -147,7 +149,7 @@ void readEEPROM() {
     }
 
     if(obj_led_eeprom.cyclotron_count == HASLAB_CYCLOTRON_LED_COUNT || obj_led_eeprom.cyclotron_count == FRUTTO_CYCLOTRON_LED_COUNT ||
-      obj_led_eeprom.cyclotron_count == FRUTTO_MAX_CYCLOTRON_LED_COUNT || obj_led_eeprom.cyclotron_count == OUTER_CYCLOTRON_LED_MAX) {
+      obj_led_eeprom.cyclotron_count == MAX_CYCLOTRON_LED_COUNT || obj_led_eeprom.cyclotron_count == OUTER_CYCLOTRON_LED_MAX) {
       i_cyclotron_leds = obj_led_eeprom.cyclotron_count;
     }
     else if(b_power_meter_available) {
@@ -226,6 +228,33 @@ void readEEPROM() {
       }
     }
 
+    if(obj_led_eeprom.cyclotron_single_center_led > 0 && obj_led_eeprom.cyclotron_single_center_led < 3) {
+      if(obj_led_eeprom.cyclotron_single_center_led > 1) {
+        b_cyclotron_single_led = true;
+      }
+      else {
+        b_cyclotron_single_led = false;
+      }
+    }
+
+    if(obj_led_eeprom.vg_powercell > 0 && obj_led_eeprom.vg_powercell < 3) {
+      if(obj_led_eeprom.vg_powercell > 1) {
+        b_powercell_colour_toggle = true;
+      }
+      else {
+        b_powercell_colour_toggle = false;
+      }
+    }
+
+    if(obj_led_eeprom.vg_cyclotron > 0 && obj_led_eeprom.vg_cyclotron < 3) {
+      if(obj_led_eeprom.vg_cyclotron > 1) {
+        b_cyclotron_colour_toggle = true;
+      }
+      else {
+        b_cyclotron_colour_toggle = false;
+      }
+    }
+
     if(obj_led_eeprom.inner_cyclotron_led_panel > 0 && obj_led_eeprom.inner_cyclotron_led_panel < 5) {
       if(obj_led_eeprom.inner_cyclotron_led_panel > 1) {
         // 2 = Disabled, 3 = RGB Static, 4 = RGB Dynamic.
@@ -293,6 +322,17 @@ void readEEPROM() {
 
     if(obj_led_eeprom.inner_panel_brightness > 19 && obj_led_eeprom.inner_panel_brightness < 101) {
       i_cyclotron_panel_brightness = obj_led_eeprom.inner_panel_brightness;
+    }
+
+    if(obj_led_eeprom.gpstar_audio_led > 0 && obj_led_eeprom.gpstar_audio_led < 3) {
+      if(obj_led_eeprom.gpstar_audio_led > 1) {
+        b_gpstar_audio_led_enabled = true;
+      }
+      else {
+        b_gpstar_audio_led_enabled = false;
+      }
+
+      setAudioLED(b_gpstar_audio_led_enabled);
     }
 
     // Update the LED counts for the Proton Pack.
@@ -418,24 +458,6 @@ void readEEPROM() {
       }
     }
 
-    if(obj_config_eeprom.vg_powercell > 0 && obj_config_eeprom.vg_powercell < 3) {
-      if(obj_config_eeprom.vg_powercell > 1) {
-        b_powercell_colour_toggle = true;
-      }
-      else {
-        b_powercell_colour_toggle = false;
-      }
-    }
-
-    if(obj_config_eeprom.vg_cyclotron > 0 && obj_config_eeprom.vg_cyclotron < 3) {
-      if(obj_config_eeprom.vg_cyclotron > 1) {
-        b_cyclotron_colour_toggle = true;
-      }
-      else {
-        b_cyclotron_colour_toggle = false;
-      }
-    }
-
     if(obj_config_eeprom.demo_light_mode > 0 && obj_config_eeprom.demo_light_mode < 3) {
       if(obj_config_eeprom.demo_light_mode > 1) {
         b_demo_light_mode = true;
@@ -445,21 +467,23 @@ void readEEPROM() {
       }
     }
 
+    if(obj_config_eeprom.wand_quick_bootup > 0 && obj_config_eeprom.wand_quick_bootup < 3) {
+      if(obj_config_eeprom.wand_quick_bootup > 1) {
+        // If quick bootup from wand is true, long startup must be false.
+        b_wand_long_startup = false;
+      }
+      else {
+        // If quick bootup from wand is false, long startup must be true.
+        b_wand_long_startup = true;
+      }
+    }
+
     if(obj_config_eeprom.use_ribbon_cable > 0 && obj_config_eeprom.use_ribbon_cable < 3) {
       if(obj_config_eeprom.use_ribbon_cable > 1) {
         b_use_ribbon_cable = true;
       }
       else {
         b_use_ribbon_cable = false;
-      }
-    }
-
-    if(obj_config_eeprom.cyclotron_three_led_toggle > 0 && obj_config_eeprom.cyclotron_three_led_toggle < 3) {
-      if(obj_config_eeprom.cyclotron_three_led_toggle > 1) {
-        b_cyclotron_single_led = false;
-      }
-      else {
-        b_cyclotron_single_led = true;
       }
     }
 
@@ -567,6 +591,8 @@ void readEEPROM() {
         break;
       }
     }
+
+    updateContinuousSmoke();
   }
   else {
     // CRC doesn't match; let's clear the EEPROMs to be safe.
@@ -575,8 +601,6 @@ void readEEPROM() {
     clearConfigEEPROM();
     clearLEDEEPROM();
   }
-
-  resetContinuousSmoke();
 }
 
 void clearLEDEEPROM() {
@@ -595,10 +619,7 @@ void saveLEDEEPROM() {
   // Inner Cyclotron LED Panel toggle flag
 
   // GRB / RGB Inner Cyclotron toggle flag
-  uint8_t i_grb_cyclotron_cake = 1;
-  if(CAKE_LED_TYPE == GRB_LED) {
-    i_grb_cyclotron_cake = 2;
-  }
+  uint8_t i_grb_cyclotron_cake = (CAKE_LED_TYPE == GRB_LED) ? 2 : 1;
 
   // 2 = RGB, 3 = GRB, 4 = GBR.
   uint8_t i_inner_cyclotron_cavity_led_type = 2;
@@ -635,10 +656,17 @@ void saveLEDEEPROM() {
   }
 
   // Power Cell inverted toggle flag.
-  uint8_t i_powercell_inverted = 1;
-  if(b_powercell_invert) {
-    i_powercell_inverted = 2;
-  }
+  uint8_t i_powercell_inverted = b_powercell_invert ? 2 : 1;
+
+  // Cyclotron 1/3-LED setting for 84/89 modes.
+  uint8_t i_cyclotron_single_center_led = b_cyclotron_single_led ? 2 : 1;
+
+  // Power Cell and Cyclotron VG color flags.
+  uint8_t i_vg_powercell = b_powercell_colour_toggle ? 2 : 1;
+  uint8_t i_vg_cyclotron = b_cyclotron_colour_toggle ? 2 : 1;
+
+  // GPStar Audio LED status.
+  uint8_t i_gpstar_audio_led = b_gpstar_audio_led_enabled ? 2 : 1;
 
   // Write the data to the EEPROM if any of the values have changed.
   objLEDEEPROM obj_led_eeprom = {
@@ -659,7 +687,11 @@ void saveLEDEEPROM() {
     i_inner_cyclotron_cavity_num_leds,
     i_inner_cyclotron_cavity_led_type,
     i_inner_cyclotron_led_panel,
-    i_powercell_inverted
+    i_powercell_inverted,
+    i_cyclotron_single_center_led,
+    i_vg_powercell,
+    i_vg_cyclotron,
+    i_gpstar_audio_led
   };
 
   // Save and update our object in the EEPROM.
@@ -685,23 +717,21 @@ void saveConfigEEPROM() {
   uint8_t i_eeprom_volume_master_percentage = 100 * ((MINIMUM_VOLUME + i_volume_min_adj) - i_volume_master_eeprom) / (MINIMUM_VOLUME + i_volume_min_adj);
 
   // 1 = false, 2 = true.
-  uint8_t i_proton_stream_effects = 2;
-  uint8_t i_cyclotron_direction = 2; // 1 = counter-clockwise, 2 = clockwise.
-  uint8_t i_center_led_fade = 2;
-  uint8_t i_simulate_ring = 2;
-  uint8_t i_smoke_settings = 2;
+  uint8_t i_proton_stream_effects = b_stream_effects ? 2 : 1;
+  uint8_t i_cyclotron_direction = b_clockwise ? 2 : 1; // 1 = counter-clockwise, 2 = clockwise.
+  uint8_t i_center_led_fade = b_fade_cyclotron_led ? 2 : 1;
+  uint8_t i_simulate_ring = b_cyclotron_simulate_ring ? 2 : 1;
+  uint8_t i_smoke_settings = b_smoke_enabled ? 2 : 1;
 
-  uint8_t i_overheat_strobe = 2;
-  uint8_t i_overheat_lights_off = 2;
-  uint8_t i_overheat_sync_to_fan = 1;
+  uint8_t i_overheat_strobe = b_overheat_strobe ? 2 : 1;
+  uint8_t i_overheat_lights_off = b_overheat_lights_off ? 2 : 1;
+  uint8_t i_overheat_sync_to_fan = b_overheat_sync_to_fan ? 2 : 1;
   uint8_t i_year_mode_eeprom = SYSTEM_EEPROM_YEAR;
-  uint8_t i_system_mode = 1; // 1 = super hero, 2 = original.
+  uint8_t i_system_mode = (SYSTEM_MODE == MODE_ORIGINAL) ? 2 : 1; // 1 = super hero, 2 = original.
 
-  uint8_t i_vg_powercell = 1;
-  uint8_t i_vg_cyclotron = 2;
-  uint8_t i_demo_light_mode = 1;
-  uint8_t i_use_ribbon_cable = 1;
-  uint8_t i_cyclotron_three_led_toggle = 1; // 1 = single led, 2 = three leds.
+  uint8_t i_demo_light_mode = b_demo_light_mode ? 2 : 1;
+  uint8_t i_wand_quick_bootup = !b_wand_long_startup ? 2 : 1;
+  uint8_t i_use_ribbon_cable = b_use_ribbon_cable ? 2 : 1;
   uint8_t i_default_system_volume = 101; // <- i_eeprom_volume_master_percentage + 1
   uint8_t i_overheat_smoke_duration_level_5 = i_ms_overheating_length_5 / 1000;
   uint8_t i_overheat_smoke_duration_level_4 = i_ms_overheating_length_4 / 1000;
@@ -709,93 +739,17 @@ void saveConfigEEPROM() {
   uint8_t i_overheat_smoke_duration_level_2 = i_ms_overheating_length_2 / 1000;
   uint8_t i_overheat_smoke_duration_level_1 = i_ms_overheating_length_1 / 1000;
 
-  uint8_t i_smoke_continuous_level_5 = 2;
-  uint8_t i_smoke_continuous_level_4 = 2;
-  uint8_t i_smoke_continuous_level_3 = 2;
-  uint8_t i_smoke_continuous_level_2 = 2;
-  uint8_t i_smoke_continuous_level_1 = 2;
+  uint8_t i_smoke_continuous_level_5 = b_smoke_continuous_level_5 ? 2 : 1;
+  uint8_t i_smoke_continuous_level_4 = b_smoke_continuous_level_4 ? 2 : 1;
+  uint8_t i_smoke_continuous_level_3 = b_smoke_continuous_level_3 ? 2 : 1;
+  uint8_t i_smoke_continuous_level_2 = b_smoke_continuous_level_2 ? 2 : 1;
+  uint8_t i_smoke_continuous_level_1 = b_smoke_continuous_level_1 ? 2 : 1;
 
   uint8_t i_pack_vibration = 4; // 1 = always, 2 = when firing, 3 = off, 4 = default.
-
-  if(!b_stream_effects) {
-    i_proton_stream_effects = 1;
-  }
-
-  if(!b_clockwise) {
-    i_cyclotron_direction = 1;
-  }
-
-  if(!b_fade_cyclotron_led) {
-    i_center_led_fade = 1;
-  }
-
-  if(!b_cyclotron_simulate_ring) {
-    i_simulate_ring = 1;
-  }
-
-  if(!b_smoke_enabled) {
-    i_smoke_settings = 1;
-  }
-
-  if(!b_overheat_strobe) {
-    i_overheat_strobe = 1;
-  }
-
-  if(!b_overheat_lights_off) {
-    i_overheat_lights_off = 1;
-  }
-
-  if(b_overheat_sync_to_fan) {
-    i_overheat_sync_to_fan = 2;
-  }
-
-  if(SYSTEM_MODE == MODE_ORIGINAL) {
-    i_system_mode = 2;
-  }
-
-  if(b_powercell_colour_toggle) {
-    i_vg_powercell = 2;
-  }
-
-  if(!b_cyclotron_colour_toggle) {
-    i_vg_cyclotron = 1;
-  }
-
-  if(b_demo_light_mode) {
-    i_demo_light_mode = 2;
-  }
-
-  if(b_use_ribbon_cable) {
-    i_use_ribbon_cable = 2;
-  }
-
-  if(!b_cyclotron_single_led) {
-    i_cyclotron_three_led_toggle = 2;
-  }
 
   if(i_eeprom_volume_master_percentage <= 100) {
     // Need to add 1 to this because the EEPROM cannot contain a 0 value.
     i_default_system_volume = i_eeprom_volume_master_percentage + 1;
-  }
-
-  if(!b_smoke_continuous_level_5) {
-    i_smoke_continuous_level_5 = 1;
-  }
-
-  if(!b_smoke_continuous_level_4) {
-    i_smoke_continuous_level_4 = 1;
-  }
-
-  if(!b_smoke_continuous_level_3) {
-    i_smoke_continuous_level_3 = 1;
-  }
-
-  if(!b_smoke_continuous_level_2) {
-    i_smoke_continuous_level_2 = 1;
-  }
-
-  if(!b_smoke_continuous_level_1) {
-    i_smoke_continuous_level_1 = 1;
   }
 
   switch(VIBRATION_MODE_EEPROM) {
@@ -834,10 +788,8 @@ void saveConfigEEPROM() {
     i_overheat_sync_to_fan,
     i_year_mode_eeprom,
     i_system_mode,
-    i_vg_powercell,
-    i_vg_cyclotron,
     i_demo_light_mode,
-    i_cyclotron_three_led_toggle,
+    i_wand_quick_bootup,
     i_default_system_volume,
     i_overheat_smoke_duration_level_5,
     i_overheat_smoke_duration_level_4,

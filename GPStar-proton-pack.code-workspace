@@ -1,15 +1,28 @@
 {
 	"folders": [
     {
-      "path": "."
+      "name": "Documentation",
+      "path": "docs"
+    },
+	    {
+	      "name": "Scripts",
+	      "path": "scripts"
+	    },
+    {
+      "name": "SharedLib",
+      "path": "source/SharedLib"
     },
     {
       "name": "Attenuator",
       "path": "source/Attenuator"
     },
     {
-      "name": "BeltGizmo",
-      "path": "source/BeltGizmo"
+      "name": "ProtonPack",
+      "path": "source/ProtonPack"
+    },
+    {
+      "name": "NeutronaWand",
+      "path": "source/NeutronaWand"
     },
     {
       "name": "GhostTrapBase",
@@ -20,16 +33,12 @@
       "path": "source/GhostTrapCartridge"
     },
     {
-      "name": "NeutronaWand",
-      "path": "source/NeutronaWand"
-    },
-    {
-      "name": "ProtonPack",
-      "path": "source/ProtonPack"
-    },
-    {
       "name": "SingleShot",
       "path": "source/SingleShot"
+    },
+    {
+      "name": "BeltGizmo",
+      "path": "source/BeltGizmo"
     },
     {
       "name": "StreamEffects",
@@ -38,13 +47,19 @@
   ],
 	"settings": {
 	  "editor.detectIndentation": false,
-	  "editor.indentSize": "2",
 	  "editor.insertSpaces": true,
     "editor.tabSize": 2,
     "files.associations": {
       "string": "cpp",
       "cstdint": "cpp",
-      "cmath": "cpp"
+      "cmath": "cpp",
+      "complex": "cpp",
+      "ostream": "cpp",
+      "array": "cpp",
+      "span": "cpp",
+      "string_view": "cpp",
+      "vector": "cpp",
+      "system_error": "cpp"
     },
     "workbench.editor.enablePreview": false
   }

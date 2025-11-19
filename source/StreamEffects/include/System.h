@@ -19,6 +19,16 @@
 
 #pragma once
 
+// Writes a debug message to the serial console or sends to the WebSocket.
+void sendDebug(const String message) {
+  #if defined(DEBUG_SEND_TO_CONSOLE)
+    debugln(message); // Print to serial console.
+  #endif
+  #if defined(DEBUG_SEND_TO_WEBSOCKET)
+    ws.textAll(message); // Send a copy to the WebSocket.
+  #endif
+}
+
 // Clear any prior information from the WebSocket client.
 void resetWebSocketData() {
   wsData.mode = "";
@@ -40,14 +50,14 @@ void printPartitions() {
   esp_partition_iterator_t iterator = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
   if(iterator == nullptr) {
-    Serial.println(F("No partitions found."));
+    debugln(F("No partitions found."));
     return;
   }
 
-  Serial.println(F("Partitions:"));
+  debugln(F("Partitions:"));
   while(iterator != nullptr) {
     partition = esp_partition_get(iterator);
-    Serial.printf("Label: %s, Size: %lu bytes, Address: 0x%08lx\n",
+    debugf("Label: %s, Size: %lu bytes, Address: 0x%08lx\n",
                   partition->label,
                   partition->size,
                   partition->address);
@@ -62,26 +72,142 @@ void ledsOff() {
   fill_solid(device_leds, DEVICE_MAX_LEDS, CRGB::Black);
 }
 
-void animateLights() {
-  static uint8_t paletteIndex = 0; // Tracks the current base color index in the palette
-  static uint16_t wavePosition = 0; // Tracks the position of the wave
+void initializePalettes() {
+  paletteProton = CRGBPalette16(
+    CRGB::Red, CRGB::Red, CRGB::Maroon, CRGB::Maroon,
+    CRGB::Orange, CRGB::Red, CRGB::Red, CRGB::Black,
+    CRGB::Red, CRGB::Red, CRGB::Maroon, CRGB::Maroon,
+    CRGB::Orange, CRGB::Red, CRGB::Red, CRGB::Black
+  );
 
-  if(ms_anim_change.justFinished()) {
-    ms_anim_change.start(i_animation_time);
+  paletteSlime = CRGBPalette16(
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::LimeGreen, CRGB::LimeGreen, CRGB::Black, CRGB::Black,
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::LimeGreen, CRGB::LimeGreen, CRGB::Black, CRGB::Black
+  );
 
-    // Iterate through all LEDs
-    for(uint16_t i = 0; i < deviceNumLeds; i++) {
-      // Calculate a brightness factor based on the wave position
-      uint8_t brightness = sin8((wavePosition + i * 20) % 255);
+  paletteStasis = CRGBPalette16(
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Indigo, CRGB::Indigo, CRGB::Black, CRGB::Black,
+    CRGB::Blue, CRGB::Blue, CRGB::Blue, CRGB::Blue,
+    CRGB::Indigo, CRGB::Indigo, CRGB::Black, CRGB::Black
+  );
 
-      // Use the brightness to modulate the color from the palette
-      CRGB color = ColorFromPalette(cp_StreamPalette, paletteIndex + i * 5);
-      device_leds[i] = color;
-      device_leds[i].nscale8(brightness); // Scale the color by brightness
-    }
+  paletteMeson = CRGBPalette16(
+    CRGB::Yellow, CRGB::Yellow, CRGB::Orange, CRGB::Orange,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Yellow, CRGB::Yellow, CRGB::Orange, CRGB::Orange,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
+  );
 
-    // Increment the palette index and wave position for the next frame
-    paletteIndex += (i_animation_step / 2) * wsData.wandPower; // Adjust this step size for smoother or faster transitions
-    wavePosition += i_animation_step * wsData.wandPower; // Adjust this step size to control wave speed
+  paletteSpectral = CRGBPalette16(
+    CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, 
+    CRGB::Blue, CRGB::Indigo, CRGB::Violet, CRGB::Black,
+    CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, 
+    CRGB::Blue, CRGB::Indigo, CRGB::Violet, CRGB::Black
+  );
+
+  paletteHalloween = CRGBPalette16(
+    CRGB::Orange, CRGB::Orange, CRGB::Orange, CRGB::Orange,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Purple, CRGB::Purple, CRGB::Purple, CRGB::Purple,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
+  );
+
+  paletteChristmas = CRGBPalette16(
+    CRGB::Red, CRGB::Red, CRGB::Red, CRGB::Red,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::Green, CRGB::Green, CRGB::Green, CRGB::Green,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
+  );
+
+  paletteWhite = CRGBPalette16(
+    CRGB::GhostWhite, CRGB::GhostWhite, CRGB::Gainsboro, CRGB::Gainsboro,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
+    CRGB::GhostWhite, CRGB::GhostWhite, CRGB::Gainsboro, CRGB::Gainsboro,
+    CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
+  );
+}
+
+// Function to update the current palette based on stream mode.
+void updateStreamPalette() {
+  switch(STREAM_MODE) {
+    case PROTON:
+      cp_StreamPalette = paletteProton;
+    break;
+    case SLIME:
+      cp_StreamPalette = paletteSlime;
+    break;
+    case STASIS:
+      cp_StreamPalette = paletteStasis;
+    break;
+    case MESON:
+      cp_StreamPalette = paletteMeson;
+    break;
+    case SPECTRAL:
+      cp_StreamPalette = paletteSpectral;
+    break;
+    case HOLIDAY_HALLOWEEN:
+      cp_StreamPalette = paletteHalloween;
+    break;
+    case HOLIDAY_CHRISTMAS:
+      cp_StreamPalette = paletteChristmas;
+    break;
+    case SELFTEST:
+      // Initialize timer on first entry to self-test mode
+      if(!ms_selftest_cycle.isRunning()) {
+        ms_selftest_cycle.start(i_selftest_interval);
+        i_selftest_palette = 0; // Reset to first palette
+      }
+
+      // Cycle through all available palettes every 2 seconds during self-test
+      if(ms_selftest_cycle.justFinished()) {
+        sendDebug("Self-Test: Switching to Palette #" + String(i_selftest_palette) + " w/ Power Level " + String(wsData.wandPower));
+
+        // Set current palette based on count of palettes available
+        switch(i_selftest_palette % i_palette_count) {
+          case 0: cp_StreamPalette = paletteWhite; break;
+          case 1: cp_StreamPalette = paletteProton; break;
+          case 2: cp_StreamPalette = paletteSlime; break;
+          case 3: cp_StreamPalette = paletteStasis; break;
+          case 4: cp_StreamPalette = paletteMeson; break;
+          case 5: cp_StreamPalette = paletteSpectral; break;
+          case 6: cp_StreamPalette = paletteHalloween; break;
+          case 7: cp_StreamPalette = paletteChristmas; break;
+        }
+
+        // Advance to next palette for the next cycle
+        i_selftest_palette = (i_selftest_palette + 1) % i_palette_count;
+
+        // Restart timer for next cycle.
+        ms_selftest_cycle.restart();
+      }
+    break;
+    default:
+      cp_StreamPalette = paletteWhite;
+    break;
   }
+
+  b_testing = STREAM_MODE == SELFTEST; // Reset the testing flag.
+}
+
+// Animate the LEDs using FastLED's built-in palette system for smooth color transitions.
+void animateLights() {
+  static uint8_t i_palette_start_index = 0; // Starting index for palette distribution across LEDs.
+  
+  // Use FastLED's fill_palette function for automatic color distribution and blending
+  // Parameters: LED array, number of LEDs, starting palette index, delta between LEDs, palette, brightness, blending mode.
+  fill_palette(device_leds, i_num_leds, i_palette_start_index, 255 / i_num_leds, cp_StreamPalette, 255, LINEARBLEND);
+  
+  // Handle GRB LED ordering if necessary, swapping R and G channels for every LED.
+  if(b_grb_leds) {
+    for(uint16_t i = 0; i < i_num_leds; i++) {
+      CRGB b_temp_color = device_leds[i];
+      device_leds[i] = CRGB(b_temp_color.g, b_temp_color.r, b_temp_color.b);
+    }
+  }
+
+  // Increment starting index to create flowing animation effect using the wand power level.
+  i_palette_start_index += wsData.wandPower;
 }

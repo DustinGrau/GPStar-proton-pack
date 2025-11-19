@@ -83,9 +83,14 @@
 #define HASLAB_POWERCELL_LED_COUNT 13
 
 /*
- * The Frutto Power Cell has 15 LEDs.
+ * The GPStar and Frutto Power Cell has 15 LEDs.
  */
-#define FRUTTO_POWERCELL_LED_COUNT 15
+#define MAX_POWERCELL_LED_COUNT 15
+
+/*
+ * Support for 4-LED DIY packs.
+ */
+ #define QUAD_CYCLOTRON_LED_COUNT 4
 
 /*
  * The HasLab Cyclotron Lid has 12 LEDs.
@@ -98,9 +103,9 @@
 #define FRUTTO_CYCLOTRON_LED_COUNT 20
 
 /*
- * The Frutto Max Cyclotron Lid has 36 LEDs.
+ * The GPStar and Frutto Max Cyclotron Lid has 36 LEDs.
  */
-#define FRUTTO_MAX_CYCLOTRON_LED_COUNT 36
+#define MAX_CYCLOTRON_LED_COUNT 36
 
 /*
  * Set the number of steps for the Outer Cyclotron (lid).
@@ -153,7 +158,7 @@
  *    That jewel chains off Cyclotron lens assembly #4 in the lid (top left lens).
  * Max 62 LEDs: 15 for the Power Cell, 40 for the Cyclotron lid, and 7 for the jewel.
  */
-const uint8_t i_max_pack_leds = FRUTTO_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX;
+const uint8_t i_max_pack_leds = MAX_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX;
 const uint8_t i_nfilter_jewel_leds = JEWEL_NFILTER_LED_COUNT;
 
 /*
@@ -180,7 +185,7 @@ uint8_t i_vent_light_start = i_powercell_leds + i_cyclotron_leds;
 /*
  * Proton Pack Power Cell and Cyclotron lid LED pin.
  */
-CRGB pack_leds[FRUTTO_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX + JEWEL_NFILTER_LED_COUNT];
+CRGB pack_leds[MAX_POWERCELL_LED_COUNT + OUTER_CYCLOTRON_LED_MAX + JEWEL_NFILTER_LED_COUNT];
 
 /*
  * Inner Cyclotron LEDs (optional).
@@ -243,10 +248,9 @@ const uint16_t i_2021_ramp_length = 6000;
 const uint16_t i_1984_ramp_length = 3000;
 const uint16_t i_2021_ramp_down_length = 10500;
 const uint16_t i_1984_ramp_down_length = 2500;
+const uint16_t i_1989_ramp_down_length = 100;
 uint16_t i_outer_current_ramp_speed = i_2021_ramp_delay;
 uint8_t i_cyclotron_multiplier = 1;
-millisDelay ms_cyclotron_auto_speed_timer; // A timer that is active while firing only in Afterlife and Frozen Empire. Used to speed up the Cyclotron by small increments based on the wand power level.
-const uint16_t i_cyclotron_auto_speed_timer_length = 15000;
 bool b_ramp_up = true;
 bool b_ramp_up_start = true;
 bool b_ramp_down_start = false;
@@ -265,6 +269,7 @@ bool b_cyclotron_lid_on = true;
 bool b_brass_pack_sound_loop = false;
 
 // For the Afterlife and Frozen Empire Cyclotron matrix pattern, map a location on a circle of 40 positions to a target LED (where 0 is the top-right lens).
+const uint8_t i_cyclotron_4led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM  = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const uint8_t i_cyclotron_12led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM = { 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 4, 5, 6, 0, 0, 0, 0, 0, 0, 0, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 0, 0, 0, 0, 0, 0, 0 };
 const uint8_t i_cyclotron_20led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM = { 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 16, 17, 18, 19, 20, 0, 0, 0, 0, 0 };
 const uint8_t i_cyclotron_36led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 19, 20, 21, 22, 23, 24, 25, 26, 27, 0, 28, 29, 30, 31, 32, 33, 34, 35, 36, 0 };
@@ -272,9 +277,9 @@ const uint8_t i_cyclotron_40led_matrix[OUTER_CYCLOTRON_LED_MAX] PROGMEM = { 1, 2
 
 /*
  * Inner Cyclotron LED Panel
- * Disabled = Frutto Technology LED panel will be disabled; non-Addressable LEDs will continue working [ATMega only]
- * RGB Static = Use the Frutto Technology LED panel, but colors remain consistent for all stream modes
- * RGB Dynamic = Use the Frutto Technology LED panel, allowing colors to change based on stream modes [Default]
+ * Disabled = GPStar or Frutto Technology LED panel will be disabled; non-Addressable LEDs will continue working [ATMega only]
+ * RGB Static = Use the GPStar or Frutto Technology LED panel, but colors remain consistent for all stream modes
+ * RGB Dynamic = Use the GPStar or Frutto Technology LED panel, allowing colors to change based on stream modes [Default]
  * When enabled, this becomes the first in the chain from the Inner Cyclotron JST-XH connector from the Proton Pack.
  */
 enum INNER_CYC_PANEL_MODES { PANEL_DISABLED, PANEL_RGB_STATIC, PANEL_RGB_DYNAMIC };
@@ -325,6 +330,7 @@ ezButton switch_power(ION_ARM_SWITCH_PIN); // Red power switch under the Ion Arm
 ezButton switch_alarm(RIBBON_CABLE_SWITCH_PIN); // Ribbon cable removal switch
 ezButton switch_mode(YEAR_TOGGLE_PIN); // 1984 / 2021 mode toggle switch
 ezButton switch_vibration(VIBRATION_TOGGLE_PIN); // Vibration toggle switch
+uint8_t vibrationSwitchedCount = 0;
 #ifndef ESP32
 ezButton switch_cyclotron_direction(CYCLOTRON_DIRECTION_TOGGLE_PIN); // Newly added switch for controlling the direction of the Cyclotron lights. Not required. Defaults to clockwise.
 ezButton switch_smoke(SMOKE_TOGGLE_PIN); // Switch to enable smoke effects. Not required. Defaults to off/disabled.
@@ -336,8 +342,8 @@ ezButton switch_smoke(SMOKE_TOGGLE_PIN); // Switch to enable smoke effects. Not 
  * Vibration default is based on the toggle switch position. These are references for the EEPROM menu. Empty is a zero value, not used in the EEPROM.
  */
 enum VIBRATION_MODES { VIBRATION_EMPTY, VIBRATION_ALWAYS, VIBRATION_FIRING_ONLY, VIBRATION_NONE, VIBRATION_DEFAULT, CYCLOTRON_MOTOR };
-enum VIBRATION_MODES VIBRATION_MODE_EEPROM;
-enum VIBRATION_MODES VIBRATION_MODE;
+enum VIBRATION_MODES VIBRATION_MODE_EEPROM = VIBRATION_DEFAULT;
+enum VIBRATION_MODES VIBRATION_MODE = VIBRATION_FIRING_ONLY;
 uint8_t i_vibration_level = 0;
 uint8_t i_vibration_level_prev = 0;
 const uint8_t i_vibration_idle_level_2021 = 60; // Afterlife/Frozen Empire idle level is 23.5%.
@@ -381,15 +387,19 @@ bool b_vent_light_on = false; // To know if the light is on or off.
 /*
  * Wand Firing Modes + Settings
  */
-enum BARREL_STATES { BARREL_RETRACTED, BARREL_EXTENDED };
-enum BARREL_STATES BARREL_STATE;
+enum BARREL_STATES { BARREL_UNKNOWN, BARREL_RETRACTED, BARREL_EXTENDED };
+enum BARREL_STATES BARREL_STATE = BARREL_UNKNOWN;;
 enum POWER_LEVELS { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5 };
-enum POWER_LEVELS POWER_LEVEL = LEVEL_5;
-enum STREAM_MODES { PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
+enum POWER_LEVELS POWER_LEVEL = LEVEL_5; // Default power level is 5.
+enum STREAM_MODES { UNSET_STREAM, PROTON, STASIS, SLIME, MESON, SPECTRAL, HOLIDAY_HALLOWEEN, HOLIDAY_CHRISTMAS, SPECTRAL_CUSTOM, SETTINGS };
 enum STREAM_MODES STREAM_MODE = PROTON; // Default stream mode is Proton.
+enum STREAM_MODE_FLAGS : uint8_t { FLAG_NONE = 0, FLAG_VG = 1, FLAG_SPECTRAL = 2, FLAG_SPECTRAL_CUSTOM = 4, FLAG_HOLIDAY_HALLOWEEN = 8, FLAG_HOLIDAY_CHRISTMAS = 16 };
+uint8_t STREAM_MODE_FLAG = FLAG_VG | FLAG_SPECTRAL | FLAG_SPECTRAL_CUSTOM | FLAG_HOLIDAY_HALLOWEEN | FLAG_HOLIDAY_CHRISTMAS; // By default, enable all modes.
 enum RED_SWITCH_MODES { SWITCH_ON, SWITCH_OFF };
 enum RED_SWITCH_MODES RED_SWITCH_MODE = SWITCH_OFF; // Default to ion arm switch off until we set otherwise.
 bool b_settings = false; // Used to keep track of being in the wand settings menu.
+millisDelay ms_streamchange; // Debounce for change of stream via dial.
+uint16_t i_stream_change_delay = 500; // Delay between stream mode changes.
 
 /*
  * System modes.
@@ -398,13 +408,13 @@ bool b_settings = false; // Used to keep track of being in the wand settings men
  * Super Hero will be the default system mode.
  */
 enum SYSTEM_MODES { MODE_SUPER_HERO, MODE_ORIGINAL };
-enum SYSTEM_MODES SYSTEM_MODE;
+enum SYSTEM_MODES SYSTEM_MODE = MODE_SUPER_HERO;
 
 /*
  * Cross The Streams Status
  */
 enum STATUS_CROSS_THE_STREAMS { CTS_FIRING_1984, CTS_FIRING_2021, CTS_NOT_FIRING };
-enum STATUS_CROSS_THE_STREAMS STATUS_CTS;
+enum STATUS_CROSS_THE_STREAMS STATUS_CTS = CTS_NOT_FIRING;
 
 /*
  * Wand Status
@@ -488,9 +498,9 @@ enum device {
  * SYSTEM_EMPTY is just a empty place holder. We need this as we write this data to the EEPROM.
  */
 enum SYSTEM_YEARS { SYSTEM_EMPTY, SYSTEM_TOGGLE_SWITCH, SYSTEM_1984, SYSTEM_1989, SYSTEM_AFTERLIFE, SYSTEM_FROZEN_EMPIRE };
-enum SYSTEM_YEARS SYSTEM_YEAR;
-enum SYSTEM_YEARS SYSTEM_YEAR_TEMP;
-enum SYSTEM_YEARS SYSTEM_EEPROM_YEAR;
+enum SYSTEM_YEARS SYSTEM_YEAR = SYSTEM_AFTERLIFE;
+enum SYSTEM_YEARS SYSTEM_YEAR_TEMP = SYSTEM_YEAR;
+enum SYSTEM_YEARS SYSTEM_EEPROM_YEAR = SYSTEM_TOGGLE_SWITCH;
 
 /*
  * Misc.
@@ -500,6 +510,7 @@ bool b_pack_on = false;
 bool b_pack_shutting_down = false;
 bool b_spectral_lights_on = false;
 bool b_fade_out = false;
+uint16_t i_wand_audio_version = 0;
 const uint16_t i_gbfe_brass_shutdown_delay = 8796;
 const uint8_t i_fadeout_duration = 50;
 millisDelay ms_fadeout;
@@ -512,7 +523,7 @@ enum DISPLAY_TYPES : uint8_t {
   STATUS_GRAPHIC = 1,
   STATUS_BOTH = 2
 };
-enum DISPLAY_TYPES DISPLAY_TYPE;
+enum DISPLAY_TYPES DISPLAY_TYPE = STATUS_GRAPHIC;
 
 /*
  * Temperature Sensor
@@ -548,6 +559,7 @@ void powercellDraw(uint8_t i_start = 0);
 #ifdef ESP32
   enum WIFI_MODES { WIFI_DEFAULT, WIFI_ENABLED, WIFI_DISABLED };
   enum WIFI_MODES WIFI_MODE = WIFI_DEFAULT;
+  bool b_initial_wifi_setup_finished = false; // Used to offset demo light mode startup by 1 loop.
 #endif
 
 /*

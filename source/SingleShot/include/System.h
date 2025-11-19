@@ -312,6 +312,9 @@ bool lowerMenuLevel() {
       }
     break;
     case MENU_LEVEL_2:
+      // For now we only have two levels; do not go deeper.
+      b_changed = false;
+      /*
       if(DEVICE_STATUS == MODE_OFF && DEVICE_ACTION_STATUS == ACTION_SETTINGS) {
         // Do not advance past level 2 for the settings menu when off.
         b_changed = false;
@@ -332,6 +335,7 @@ bool lowerMenuLevel() {
         stopEffect(S_VOICE_LEVEL_4);
         stopEffect(S_VOICE_LEVEL_5);
       }
+      */
     break;
     case MENU_LEVEL_3:
       DEVICE_MENU_LEVEL = MENU_LEVEL_4;
@@ -641,6 +645,9 @@ void checkGeneralTimers() {
   if(ms_slo_blo_blink.justFinished()) {
     ms_slo_blo_blink.start(i_slo_blo_blink_delay);
   }
+
+  // Check for any delayed execution callbacks that need to run.
+  checkDelayedExecutions();
 }
 
 void modeFireStart() {
@@ -763,7 +770,7 @@ void ventLightControl(uint8_t i_intensity) {
 void deviceLightControlCheck() {
   // Vent light and first stage of the safety system.
   if(switch_vent.on()) {
-    if(b_vent_light_control) {
+    if(blasterConfig.ventLightAutoIntensity) {
       // Vent light on, brightness dependent on mode.
       if(DEVICE_ACTION_STATUS == ACTION_FIRING || (ms_semi_automatic_firing.isRunning() && !ms_semi_automatic_firing.justFinished())) {
         ventLightControl(255);
@@ -847,9 +854,6 @@ void deviceOff() {
     case MODE_OFF:
       // Turn off all device lights.
       allLightsOff();
-
-      deviceSwitchedCount = 0;
-      ventSwitchedCount = 0;
     break;
     default:
       // Do nothing if we aren't MODE_OFF
@@ -881,6 +885,19 @@ void modePulseStart() {
 
   ms_firing_pulse.start(i_firing_pulse);
   ms_semi_automatic_firing.start(350);
+}
+
+// Use an attached infrared LED to send a command. Only available if using the Wand II (ESP32).
+void sendInfraredCommand(const String sType) {
+#ifdef ESP32
+  if(sType.equals("ghostintrap")) {
+    // Send the standard Ghost Trap (PKE) IR signal.
+    IrSender.sendRaw(ir_GhostInTrap, sizeof(ir_GhostInTrap) / sizeof(ir_GhostInTrap[0]), CARRIER_KHZ);
+  }
+  else {
+    debugln(F("Unknown IR Command"));
+  }
+#endif
 }
 
 // Check if we should fire, or if the device was turned off.
@@ -955,8 +972,18 @@ void fireControlCheck() {
   }
 }
 
+void activateBargraphRamp() {
+  if(bargraph.STATE == BG_OFF || bargraph.PATTERN != BG_POWER_RAMP) {
+    bargraph.reset(); // Enable bargraph for use (resets variables and turns it on).
+    bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
+  }
+}
+
 void postActivation() {
   if(DEVICE_STATUS != MODE_ERROR) {
+    // Activate the bargraph ramp animation.
+    executeDelayed(activateBargraphRamp, 200);
+
     // Turn on slo-blo light.
     led_SloBlo.turnOn();
 
@@ -971,15 +998,12 @@ void postActivation() {
     ms_warning_blink.stop();
     ms_error_blink.stop();
 
+    // Play bootup sound (runs only once).
     stopEffect(S_BOOTUP);
     playEffect(S_BOOTUP);
 
+    // Start idle loop sound (runs continuously).
     soundIdleLoop(true);
-
-    if(bargraph.STATE == BG_OFF) {
-      bargraph.reset(); // Enable bargraph for use (resets variables and turns it on).
-      bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
-    }
   }
 }
 
@@ -987,7 +1011,7 @@ void modeActivate() {
   setPowerOnReminder(false);
 
   // The device was started while the top switch was already on, so let's put the device into startup error mode.
-  if(switch_device.on() && b_device_boot_errors) {
+  if(switch_device.on() && blasterConfig.deviceBootErrorBeep) {
     b_device_boot_error_on = true;
     modeError();
   }
@@ -1003,9 +1027,9 @@ void modeActivate() {
 }
 
 void vibrationDevice(uint8_t i_level) {
-  if(VIBRATION_MODE != VIBRATION_NONE && i_level > 0) {
+  if(blasterConfig.deviceVibration != VIBRATION_NONE && i_level > 0) {
     // Vibrate the device during firing only when enabled.
-    if(VIBRATION_MODE == VIBRATION_FIRING_ONLY) {
+    if(blasterConfig.deviceVibration == VIBRATION_FIRING_ONLY) {
       if(ms_semi_automatic_firing.isRunning()) {
         if(i_vibration_level_current != (i_level * 2 < 64 ? i_level * 2 : 64)) {
           i_vibration_level_current = (i_level * 2 < 64 ? i_level * 2 : 64);
@@ -1014,10 +1038,16 @@ void vibrationDevice(uint8_t i_level) {
       }
       else {
         vibrationOff();
+
+        #ifdef ESP32
+          // Trigger infrared after firing pulse ends.
+          sendInfraredCommand("ghostintrap");
+        #endif
       }
     }
     else {
-      // Device vibrates even when idling, etc.
+    #ifndef ESP32
+      // VIBRATION_ALWAYS for ATMega Only: Device vibrates when idling, etc.
       if(ms_semi_automatic_firing.isRunning()) {
         if(i_vibration_level_current != (i_level * 2 < 64 ? i_level * 2 : 64)) {
           i_vibration_level_current = (i_level * 2 < 64 ? i_level * 2 : 64);
@@ -1028,6 +1058,7 @@ void vibrationDevice(uint8_t i_level) {
         i_vibration_level_current = i_level;
         analogWrite(VIBRATION_PIN, i_level);
       }
+    #endif
     }
   }
   else {
@@ -1060,16 +1091,6 @@ void vibrationSetting() {
   }
 }
 
-void ventSwitched(void* n) {
-  (void)(n); // Suppress unused variable warning
-  ventSwitchedCount++;
-}
-
-void deviceSwitched(void* n) {
-  (void)(n); // Suppress unused variable warning
-  deviceSwitchedCount++;
-}
-
 // Enter the device menu system.
 void deviceEnterMenu() {
   debug(F("deviceEnterMenu|"));
@@ -1096,6 +1117,14 @@ void deviceExitMenu() {
   DEVICE_MENU_LEVEL = MENU_LEVEL_1;
   MENU_OPTION_LEVEL = OPTION_5;
 
+  // If device is off, make sure we save our current settings to the EEPROM.
+  if(DEVICE_STATUS == MODE_OFF) {
+    saveConfigEEPROM();
+    stopEffect(S_VOICE_EEPROM_SAVE);
+    playEffect(S_VOICE_EEPROM_SAVE);
+  }
+
+  stopEffect(S_CLICK);
   playEffect(S_CLICK);
 
   DEVICE_ACTION_STATUS = ACTION_IDLE;
@@ -1107,25 +1136,4 @@ void deviceExitMenu() {
     bargraph.PATTERN = BG_POWER_RAMP; // Bargraph idling loop.
     led_SloBlo.turnOn(); // Turn on SLO-BLO if device is on.
   }
-}
-
-// Exit the device menu EEPROM system while the device is off.
-void deviceExitEEPROMMenu() {
-  debug(F("deviceExitEEPROMMenu|"));
-  debugln(DEVICE_ACTION_STATUS);
-
-  // Reset the menu level/option to default
-  DEVICE_MENU_LEVEL = MENU_LEVEL_1;
-  MENU_OPTION_LEVEL = OPTION_5;
-
-  playEffect(S_BEEPS);
-
-  DEVICE_ACTION_STATUS = ACTION_IDLE;
-
-  allLightsOff();
-
-  deviceSwitchedCount = 0;
-  ventSwitchedCount = 0;
-
-  vibrationOff(); // Make sure we stop any menu-related vibration, if any.
 }

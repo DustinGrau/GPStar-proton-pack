@@ -26,6 +26,7 @@
 #define FASTLED_INTERNAL
 
 // Set to 1 to enable built-in debug messages via Serial device output.
+// Use with DEBUG_SEND_TO_CONSOLE and other DEBUG_'s in Configuration.h
 #define DEBUG 0
 
 // Debug macros
@@ -53,16 +54,25 @@
 #include <SerialTransfer.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
+#include <Preferences.h>
+
+// Shared Libraries
+#include <Communication.h>
+#include <WirelessManager.h>
 
 // Local Files
 #include "Configuration.h"
-#include "Communication.h"
 #include "Header.h"
 #include "Bargraph.h"
 #include "Colours.h"
 #include "Serial.h"
 #include "Wireless.h"
+#include "Webhandler.h"
 #include "System.h"
+
+// Define the WirelessManager pointer globally (initialized to nullptr).
+// This matches the extern declaration in Wireless.h
+WirelessManager* wirelessMgr = nullptr;
 
 // Task Handles
 TaskHandle_t AnimationTaskHandle = NULL;
@@ -181,16 +191,25 @@ void PreferencesTask(void *parameter) {
    * Get Local Device Preferences
    * Accesses the "device" namespace in read-only mode under the "nvs" partition.
    */
-  bool b_namespace_opened = preferences.begin("device", true);
-  if(b_namespace_opened) {
+  Preferences preferences;
+  if(preferences.begin("device", true)) {
     // Return stored values if available, otherwise use a default value.
+    bool b_invert_dial = preferences.getBool("invert_dial", false);
     b_invert_leds = preferences.getBool("invert_led", false);
+    b_grb_leds = preferences.getBool("grb_led", false);
     b_enable_buzzer = preferences.getBool("use_buzzer", true);
     b_enable_vibration = preferences.getBool("use_vibration", true);
     b_overheat_feedback = preferences.getBool("use_overheat", true);
     b_firing_feedback = preferences.getBool("fire_feedback", false);
 
-    switch(preferences.getShort("radiation_idle", 0)) {
+    if(b_invert_dial) {
+      encoder.setRotationInverted(true);
+    }
+    else {
+      encoder.setRotationInverted(false);
+    }
+
+    switch(preferences.getUShort("radiation_idle", 0)) {
       case 0:
         RAD_LENS_IDLE = AMBER_PULSE;
       break;
@@ -202,7 +221,7 @@ void PreferencesTask(void *parameter) {
       break;
     }
 
-    switch(preferences.getShort("display_type", 0)) {
+    switch(preferences.getUShort("display_type", 0)) {
       case 0:
         DISPLAY_TYPE = STATUS_TEXT;
       break;
@@ -221,13 +240,15 @@ void PreferencesTask(void *parameter) {
   else {
     // If namespace is not initialized, open in read/write mode and set defaults.
     if(preferences.begin("device", false)) {
+      preferences.putBool("invert_dial", encoder.isRotationInverted());
       preferences.putBool("invert_led", b_invert_leds);
+      preferences.putBool("grb_led", b_grb_leds);
       preferences.putBool("use_buzzer", b_enable_buzzer);
       preferences.putBool("use_vibration", b_enable_vibration);
       preferences.putBool("use_overheat", b_overheat_feedback);
       preferences.putBool("fire_feedback", b_firing_feedback);
-      preferences.putShort("radiation_idle", RAD_LENS_IDLE);
-      preferences.putShort("display_type", DISPLAY_TYPE);
+      preferences.putUShort("radiation_idle", RAD_LENS_IDLE);
+      preferences.putUShort("display_type", DISPLAY_TYPE);
       preferences.putString("track_list", "");
       preferences.end();
     }
@@ -358,6 +379,17 @@ void WiFiSetupTask(void *parameter) {
     debugln(xPortGetCoreID());
   #endif
 
+  // Define the WirelessManager object only after NVS/Preferences are initialized.
+  if(wirelessMgr == nullptr) {
+    wirelessMgr = new WirelessManager("Attenuator", "192.168.1.2");
+
+    #if defined(RESET_AP_SETTINGS)
+      // Reset the WiFi password to the expected default on every startup.
+      wirelessMgr->resetWifiPassword();
+      debugln(F("WARNING: Firmware forced a reset of the local WiFi password!"));
+    #endif
+  }
+
   // Begin by setting up WiFi as a prerequisite to all else.
   if(startWiFi()) {
     // Start the local web server.
@@ -382,7 +414,17 @@ void WiFiSetupTask(void *parameter) {
 
 void setup() {
   Serial.begin(115200); // Serial monitor via USB connection.
-  delay(1000); // Provide a delay to allow serial output.
+
+#if DEBUG == 1
+  // When debugging is enabled, wait for Serial to be ready (max 3 seconds).
+  unsigned long startMillis = millis();
+  while (!Serial && millis() - startMillis < 3000) {
+    delay(10);
+  }
+  Serial.flush(); // Ensure buffer is clear.
+  Serial.setTxTimeoutMs(0); // Optional: reduce USB-CDC transmission delay.
+  Serial.println(F("Serial is Ready")); // Should appear after Serial is ready.
+#endif
 
   // Expect a PackSerial connection with communication to a GPStar Proton Pack PCB.
   PackSerial.begin(9600, SERIAL_8N1, RXD2, TXD2);
@@ -393,28 +435,16 @@ void setup() {
 
   // Provide an opportunity to set the CPU Frequency MHz: 80, 160, 240 [Default = 240]
   // Lower frequency means less power consumption, but slower performance (obviously).
-  setCpuFrequencyMhz(240);
+  // Reduce CPU frequency to 160 MHz to save ~33% power compared to 240 MHz.
+  // Alternatively set CPU to 80 MHz to save ~50% power compared to 240 MHz.
+  // Do not set below 80 MHz as it will affect WiFi and other peripherals.
+  setCpuFrequencyMhz(160);
   #if defined(DEBUG_SEND_TO_CONSOLE)
     debug(F("CPU Freq (MHz): "));
     debugln(getCpuFrequencyMhz());
   #endif
 
   btStop(); // Disable Bluetooth which is not needed for this hardware.
-
-  // Assume the Super Hero arming mode with Afterlife (default for Haslab).
-  SYSTEM_MODE = MODE_SUPER_HERO;
-  RED_SWITCH_MODE = SWITCH_OFF;
-  SYSTEM_YEAR = SYSTEM_AFTERLIFE;
-
-  // Boot into proton mode (default for pack and wand).
-  STREAM_MODE = PROTON;
-
-  // Set a default animation for the radiation indicator.
-  RAD_LENS_IDLE = AMBER_PULSE;
-  DISPLAY_TYPE = STATUS_TEXT;
-
-  // Begin at menu level one. This affects the behavior of the rotary dial.
-  MENU_LEVEL = MENU_1;
 
   if(!b_wait_for_pack) {
     // If not waiting for the pack set power level to 5.
@@ -439,10 +469,8 @@ void setup() {
   switch_right.setDebounceTime(switch_debounce_time);
   encoder_center.setDebounceTime(switch_debounce_time);
 
-  // Rotary encoder on the top of the Attenuator.
-  pinMode(r_encoderA, INPUT_PULLUP);
-  pinMode(r_encoderB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(r_encoderA), readEncoder, CHANGE);
+  // Rotary encoder on the top of the device.
+  encoder.initialize();
 
   // Setup the bargraph after a brief delay.
   delay(10);

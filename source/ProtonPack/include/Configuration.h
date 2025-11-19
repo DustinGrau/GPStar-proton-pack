@@ -23,14 +23,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250925081904";
-
-/*
- * Preferred WiFi Network Defaults (only for ESP32)
- * Directly provides information for an external WiFi network for the device to join.
- */
-String user_wifi_ssid = ""; // Preferred network SSID for external WiFi
-String user_wifi_pass = ""; // Preferred network password for external WiFi
+String build_date = "V6_20251119061156";
 
 /*
  * Control debug messages for various actions during normal operation.
@@ -80,7 +73,7 @@ uint8_t i_cyclotron_leds = 36;
  *
  * CYCLOTRON_DELAY_2021_12_LED is for the stock Haslab 12 LED setup.
  * CYCLOTRON_DELAY_2021_20_LED is for the Frutto Technology 20 LED setup.
- * CYCLOTRON_DELAY_2021_36_LED is for the Frutto Technology Max 36 LED setup.
+ * CYCLOTRON_DELAY_2021_36_LED is for the GPStar 36 LED setup.
  * CYCLOTRON_DELAY_2021_40_LED is for a 40 LED NeoPixel ring.
  */
 #define CYCLOTRON_DELAY_1984 300 // 300ms as seen on-screen in GB1/GB2.
@@ -96,11 +89,14 @@ uint16_t i_1984_delay = CYCLOTRON_DELAY_TVG; // Default to TVG as b_fade_cyclotr
  * This is the middle LED aligned in each lens window. (0 is the first LED). Adjust these settings if you use different LED setups and installations.
  * Put the sequence in order from lowest to highest in both directions. (Top right lens as Cyclotron lens #1)
  *
+ * i_1984_cyclotron_4_leds is for a DIY 4 LED setup.
  * i_1984_cyclotron_12_leds is for the stock Haslab 12 LED setup.
  * i_1984_cyclotron_20_leds is for the Frutto Technology 20 LED setup.
- * i_1984_cyclotron_36_leds is for the Frutto Technology Max 36 LED setup.
+ * i_1984_cyclotron_36_leds is for the GPStar 36 LED setup.
  * i_1984_cyclotron_40_leds is for a 40 LED NeoPixel ring.
  */
+const uint8_t i_1984_cyclotron_4_leds_cw[4] PROGMEM  = { 0, 1, 2, 3 };
+const uint8_t i_1984_cyclotron_4_leds_ccw[4] PROGMEM  = { 0, 3, 2, 1 };
 const uint8_t i_1984_cyclotron_12_leds_cw[4] PROGMEM = { 1, 4, 7, 10 };
 const uint8_t i_1984_cyclotron_12_leds_ccw[4] PROGMEM = { 1, 10, 7, 4 };
 const uint8_t i_1984_cyclotron_20_leds_cw[4] PROGMEM = { 2, 7, 12, 17 };
@@ -143,7 +139,7 @@ bool b_cyclotron_simulate_ring = true;
 
 /*
  * Cyclotron Video Game Colour Toggle
- * If you are using Cyclotron Lid LEDs and Inner Cyclotron LEDs with RGB support, such as the Frutto Technology Cyclotron LEDs or NeoPixel Rings etc.
+ * If you are using Cyclotron Lid LEDs and Inner Cyclotron LEDs with RGB support, such as the GPStar or Frutto Technology Cyclotron LEDs or NeoPixel Rings etc.
  * You can toggle if you want it to change colours to match the Video Game Modes or stay the default red at all times.
  * Note that this has no effect on the stock HasLab Cyclotron Lid LEDs, which are red only.
  * The default setting is true, which makes the Cyclotron Lid and Inner Cyclotron change colours to match the Video Game Modes.
@@ -162,7 +158,7 @@ const bool b_cyclotron_haslab_chsv_colour_change = false;
 /*
  * Power Cell LEDs
  * The number of Power Cell LEDs. Stock HasLab has 13.
- * If you are installing a Frutto Technology Power Cell which has 15 LEDs, then change this to 15.
+ * If you are installing a GPStar or Frutto Power Cell which has 15 LEDs, then change this to 15.
  * Note that you may need to adjust the i_powercell_delay_1984 and i_powercell_delay_2021 to a lower number to increase the Power Cell update speed.
  * Any settings saved in the EEPROM menu will overwrite these settings.
  */
@@ -177,20 +173,22 @@ uint8_t i_powercell_leds = 15;
  */
 #define POWERCELL_DELAY_1984_13_LED 46 // 1984/1989 delay for HasLab 13-LED Power Cell.
 #define POWERCELL_DELAY_2021_13_LED 40 // Afterlife/Frozen Empire delay for HasLab 13-LED Power Cell.
-#define POWERCELL_DELAY_1984_15_LED 40 // 1984/1989 delay for Frutto 15-LED Power Cell.
-#define POWERCELL_DELAY_2021_15_LED 34 // Afterlife/Frozen Empire delay for Frutto 15-LED Power Cell.
+#define POWERCELL_DELAY_1984_15_LED 40 // 1984/1989 delay for GPStar or Frutto 15-LED Power Cell.
+#define POWERCELL_DELAY_2021_15_LED 34 // Afterlife/Frozen Empire delay for GPStar or Frutto 15-LED Power Cell.
 uint8_t i_powercell_delay_1984 = POWERCELL_DELAY_1984_15_LED;
 uint8_t i_powercell_delay_2021 = POWERCELL_DELAY_2021_15_LED;
 
 /*
  * Invert the Power Cell animation.
- * Default is false.
+ * Hasbro 13-LED and Frutto 15-LED use a non-inverted pattern.
+ * GPStar 15-LED use an inverted pattern.
+ * Default is true.
  */
-bool b_powercell_invert = false;
+bool b_powercell_invert = true;
 
 /*
  * Power Cell Video Game Colour Toggle
- * If you are using Power Cell LEDs with RGB support, such as the Frutto Technology Power Cells,
+ * If you are using Power Cell LEDs with RGB support, such as the GPStar Power Cells,
  * You can toggle if you want it to change colours to match the Video Game Modes or stay the default blue at all times.
  * Note that this has no effect on the stock HasLab Power Cell LEDs, which are blue only.
  * The default setting is false; true makes the Power Cell change colours to match the Video Game Modes.
@@ -343,10 +341,22 @@ const uint8_t VOLUME_EFFECTS_MULTIPLIER = 5;
 const bool b_onboard_amp_enabled = false;
 
 /*
+ * Set to true to have the LED on the GPStar Audio stay on while the system is running.
+ */
+bool b_gpstar_audio_led_enabled = false;
+
+/*
  * When set to true, the Proton Pack will turn on automatically when it receives power.
  * If you want your Proton Pack to be silent, change your STARTUP_VOLUME to be 0 and or unplug the power to your amplifier.
  */
 bool b_demo_light_mode = false;
+
+/*
+ * When set to false, when powering up the Proton Pack via the Neutrona Wand, the startup sequence will be abbreviated.
+ * Setting to true will perform a longer startup matching the Ion Arm switch startup.
+ * Applies primarily to the Afterlife and Frozen Empire themes only.
+ */
+bool b_wand_long_startup = false;
 
 /*
  * When set to true, various impact and other stream effects will overlap and mix randomly into the Proton Stream for an added experience.
@@ -357,7 +367,7 @@ bool b_stream_effects = true;
 /*
  * If you want the optional N-Filter NeoPixel jewel to strobe during overheat venting.
  * If false, the light will stay solid during overheat venting.
- * This does not affect the LED-W optional light nor does it affect the jewel during continuous fire venting which always strobes.
+ * This does not affect the LED-W optional light nor does it affect the jewel during sustained fire venting which always strobes.
  * LED-W always stays solid during any venting sequences.
  */
 bool b_overheat_strobe = true;
@@ -390,8 +400,8 @@ bool b_smoke_enabled = true;
  */
 
 /*
- * Enable or disable smoke during continuous firing.
- * Control which of the 4 pins go high during continuous firing smoke effects.
+ * Enable or disable smoke during sustained firing.
+ * Control which of the 4 pins go high during sustained firing smoke effects.
  * This can be overridden if b_smoke_enabled is set to false.
  */
 bool b_smoke_nfilter_continuous_firing = true;
@@ -400,8 +410,8 @@ bool b_fan_nfilter_continuous_firing = true;
 bool b_fan_booster_continuous_firing = true;
 
 /*
- * Enable or disable smoke in individual wand power levels for continuous firing smoke.
- * Example: if b_smoke_continuous_level_1 is true, smoke will happen in continuous firing in wand power level 1. If false, no smoke in mode 1.
+ * Enable or disable smoke in individual wand power levels for sustained firing smoke.
+ * Example: if b_smoke_continuous_level_1 is true, smoke will happen in sustained firing in wand power level 1. If false, no smoke in mode 1.
  * This is overridden if b_smoke_enabled or can be by the continuous_firing settings above when they are set to false.
  */
 bool b_smoke_continuous_level_1 = true;
@@ -411,7 +421,7 @@ bool b_smoke_continuous_level_4 = true;
 bool b_smoke_continuous_level_5 = true;
 
 /*
- * How long (in milliseconds) until the smoke pins (+ fan) are activated during continuous firing in each firing power level (not overheating venting).
+ * How long (in milliseconds) until the smoke pins (+ fan) are activated during sustained firing in each firing power level (not overheating venting).
  * Example: 30,000 milliseconds (30 seconds)
  */
 const uint16_t i_smoke_timer_level_1 = 30000;
@@ -425,7 +435,7 @@ const uint16_t i_smoke_timer_level_5 = 6000;
  * When the pins are high (controlled by the i_smoke_timer above), then smoke will be generated if you have smoke machines wired up.
  * Default is 3000 milliseconds (3 seconds).
  * This does not affect smoke during overheat.
- * This only affects how long your smoke stays on after it has been triggered in continuous firing.
+ * This only affects how long your smoke stays on after it has been triggered in sustained firing.
  */
 const uint16_t i_smoke_on_time_level_1 = 3000;
 const uint16_t i_smoke_on_time_level_2 = 3000;

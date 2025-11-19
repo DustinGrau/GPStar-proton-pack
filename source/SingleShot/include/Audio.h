@@ -27,7 +27,7 @@
  * https://github.com/gpstar81/haslab-proton-pack/tree/main/extras
  *
  * Information on how to update your WAV Trigger devices can be found on the GPStar github repository.
- * https://github.com/gpstar81/haslab-proton-pack/blob/main/WAVTRIGGER.md
+ * https://github.com/gpstar81/haslab-proton-pack/blob/main/docs/WAVTRIGGER.md
  */
 #include <GPStarAudio.h>
 gpstarAudio audio;
@@ -65,12 +65,13 @@ uint16_t i_current_music_track = 0; // Sets the ID number for the music track to
 uint16_t i_audio_version = 0; // Contains the firmware version for GPStar Audio (if applicable).
 const uint16_t i_music_track_start = 500; // Music tracks start on file named 500_ and higher.
 const int8_t i_volume_abs_min = -70; // System (absolute) minimum volume possible.
-int8_t i_volume_abs_max = 0; // System (absolute) maximum volume possible. 0 dB for unity gain.
+int8_t i_volume_abs_max = 0; // System (absolute) maximum volume possible. 0 dB for WAV Trigger, +10 dB for GPStar Audio.
 const int8_t i_track_volume_abs_max = 0; // Maximum gain for effects/music is 0 dB (unity gain).
 bool b_playing_music = false; // Sets whether a music track is currently playing or not.
 bool b_music_paused = false; // Sets whether a music track is currently paused or not.
 bool b_repeat_track = false; // Sets whether to repeat one music track or loop through all music tracks.
 bool b_preload_tracks = false; // Sets whether to add a 50ms delay before playing any file to allow slower SD cards more time to fill the buffer.
+String s_track_listing = ""; // Utilized only for the web UI to display the music track listing.
 
 /*
  * Music Control/Checking
@@ -94,7 +95,6 @@ uint8_t i_volume_music_percentage = STARTUP_VOLUME_MUSIC; // Music volume.
  * Effects/Music: i_volume_abs_min = Quietest, i_track_volume_abs_max = Loudest
  */
 int8_t i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100); // Master overall volume.
-int8_t i_volume_master_eeprom = i_volume_master; // Master overall volume that is saved into the eeprom menu and loaded during bootup in standalone mode.
 int8_t i_volume_revert = i_volume_master; // Used to restore volume level from a muted state.
 int8_t i_volume_effects = i_volume_abs_min - (i_volume_abs_min * i_volume_effects_percentage / 100); // Sound effects.
 int8_t i_volume_music = i_volume_abs_min - (i_volume_abs_min * i_volume_music_percentage / 100); // Music volume.
@@ -463,7 +463,7 @@ void updateMasterVolume(bool startup) {
 }
 
 void increaseVolumeEEPROM() {
-  if(i_volume_master_eeprom == i_volume_abs_max) {
+  if(i_volume_master == i_volume_abs_max) {
     // Cannot go any higher.
   }
   else {
@@ -474,16 +474,15 @@ void increaseVolumeEEPROM() {
       i_volume_master_percentage += VOLUME_MULTIPLIER;
     }
 
-    i_volume_master_eeprom = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
-    i_volume_master = i_volume_master_eeprom;
-    i_volume_revert = i_volume_master_eeprom;
+    i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
+    i_volume_revert = i_volume_master;
 
     updateMasterVolume();
   }
 }
 
 void decreaseVolumeEEPROM() {
-  if(i_volume_master_eeprom == MINIMUM_VOLUME) {
+  if(i_volume_master == MINIMUM_VOLUME) {
     // Cannot go any lower.
   }
   else {
@@ -494,9 +493,8 @@ void decreaseVolumeEEPROM() {
       i_volume_master_percentage -= VOLUME_MULTIPLIER;
     }
 
-    i_volume_master_eeprom = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
-    i_volume_master = i_volume_master_eeprom;
-    i_volume_revert = i_volume_master_eeprom;
+    i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100);
+    i_volume_revert = i_volume_master;
 
     updateMasterVolume();
   }
@@ -786,6 +784,20 @@ void toggleMusicLoop() {
   }
 }
 
+void setAudioLED(bool on) {
+  switch(AUDIO_DEVICE) {
+    case A_GPSTAR_AUDIO:
+    case A_GPSTAR_AUDIO_ADV:
+      // Set GPStar Audio LED state immediately.
+      audio.gpstarLEDStatus(on);
+    break;
+
+    default:
+      // Do nothing if not GPStar Audio.
+    break;
+  }
+}
+
 /*
  * Audio Setup Routines
  * Used to detect, update, and reset the available audio devices.
@@ -820,7 +832,6 @@ bool setupAudioDevice() {
     }
 
     i_volume_master = MINIMUM_VOLUME - ((MINIMUM_VOLUME - i_volume_abs_max) * i_volume_master_percentage / 100); // Master overall volume.
-    i_volume_master_eeprom = i_volume_master; // Master overall volume that is saved into the eeprom menu and loaded during bootup.
     i_volume_revert = i_volume_master; // Used to restore volume level from a muted state.
 
     debugln(F("Using GPStar Audio"));
@@ -828,7 +839,7 @@ bool setupAudioDevice() {
     debugln(audio.getVersionNumber());
 
     buildMusicCount(audio.getNumTracks());
-    audio.gpstarLEDStatus(false);
+    setAudioLED(blasterConfig.gpstarAudioLed);
 
     return true;
   }

@@ -23,14 +23,7 @@
 /*
  * Used to reflect the last build date for the binary.
  */
-String build_date = "V6_20250925081904";
-
-/*
- * Preferred WiFi Network Defaults (only for ESP32)
- * Directly provides information for an external WiFi network for the device to join.
- */
-String user_wifi_ssid = ""; // Preferred network SSID for external WiFi
-String user_wifi_pass = ""; // Preferred network password for external WiFi
+String build_date = "V6_20251118082808";
 
 /*
  * Control debug messages for various actions during normal operation.
@@ -132,6 +125,11 @@ const uint8_t VOLUME_EFFECTS_MULTIPLIER = 5;
 const bool b_onboard_amp_enabled = true;
 
 /*
+ * Set to true to have the LED on the GPStar Audio stay on while the system is running.
+ */
+bool b_gpstar_audio_led_enabled = false;
+
+/*
  * When set to true, the bargraph will invert the sequence.
  */
 bool b_bargraph_invert = false;
@@ -140,7 +138,7 @@ bool b_bargraph_invert = false;
  * Enables the optional addressable RGB vent/top light board.
  */
 #ifdef ESP32
-  bool b_rgb_vent_light = true; // Only RGB for ESP32 builds, user settings are ignored.
+  const bool b_rgb_vent_light = true; // Only RGB for ESP32 builds, user settings are ignored.
 #else
   bool b_rgb_vent_light = false; // Assumes stock LED for ATMega, overridden with EEPROM.
 #endif
@@ -171,7 +169,7 @@ bool b_power_on_indicator = true;
  * Spectral modes are only supported by the gpstar Neutrona Wand board.
  */
 bool b_spectral_mode_enabled = false;
-bool b_holiday_mode_enabled = false;
+bool b_holiday_modes_enabled = false;
 bool b_spectral_custom_mode_enabled = false;
 
 /*
@@ -259,4 +257,4 @@ const bool b_eeprom = true;
  * When set to true, the Neutrona Wand will function without a Proton Pack connected.
  * This prevents the Neutrona Wand from sending and reading serial data. Set to false return communication back to the Proton Pack.
  */
-bool b_gpstar_benchtest = false;
+bool b_wand_standalone = false;

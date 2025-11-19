@@ -39,7 +39,7 @@ bool b_power_meter_available = false; // Whether a power meter device exists on 
 bool b_pack_started_by_meter = false; // Whether the pack was started via detection through the power meter.
 bool b_wand_just_started = false; // Whether the wand was just started via the power meter, used to debounce the startup process.
 bool b_wand_overheated = false; // Whether the wand overheated, as if it did we should ignore power off events.
-const uint16_t i_wand_overheat_delay = 14480; // How many milliseconds of continuous firing before we lock into overheating mode.
+const uint16_t i_wand_overheat_delay = 14480; // How many milliseconds of sustained firing before we lock into overheating mode.
 const uint16_t i_wand_overheat_duration = 2500; // How long to play the alarm for before going into the full overheat sequence on the pack.
 const uint16_t i_wand_startup_delay = 2750; // How many milliseconds after wand startup before we allow detecting firing events.
 const float f_ema_alpha = 0.2; // Smoothing factor (<1) for Exponential Moving Average (EMA) [Lower Value = Smoother Averaging].
@@ -71,7 +71,7 @@ PowerMeter wandReading;
 PowerMeter packReading;
 
 // Forward function declarations.
-void packStartup(bool firstStart);
+void packStartup(bool fullStartup);
 void wandFiring();
 void wandStoppedFiring();
 void cyclotronSpeedRevert();
@@ -163,7 +163,9 @@ void doWandPowerReading() {
 void doPackVoltageReading() {
 #ifdef ESP32
   // For the ESP32 we cannot get the bandgap voltage so we'll use the INA219 chip to return a voltage.
-  packReading.BusVoltage = monitor.busVoltage();
+  if(b_power_meter_available) {
+    packReading.BusVoltage = monitor.busVoltage();
+  }
 #else
   // REFS1 REFS0               --> 0 1, AVcc internal ref. -Selects AVcc reference
   // MUX4 MUX3 MUX2 MUX1 MUX0  --> 11110 1.1V (VBG)        -Selects channel 30, bandgap voltage, to measure
@@ -222,7 +224,7 @@ void updateWandPowerState() {
     ms_delay_post_2.stop();
   }
 
-  // Handle wand overheating sequence. Hasbro wand locks into overheating at 15 seconds of continuous fire.
+  // Handle wand overheating sequence. Hasbro wand locks into overheating at 15 seconds of sustained fire.
   if(ms_delay_post_2.justFinished() && !b_wand_overheated) {
     // We're locked into the overheating sequence. Start playing the overheat sound.
     switch(SYSTEM_YEAR) {
@@ -277,7 +279,8 @@ void updateWandPowerState() {
 
       // Turn the pack on.
       if(PACK_STATE != MODE_ON) {
-        packStartup(false);
+        // When starting the pack via the wand, perform the user-preferred startup sequence.
+        packStartup(b_wand_long_startup);
         b_pack_started_by_meter = true;
         b_wand_overheated = false;
 
@@ -357,10 +360,21 @@ void updateWandPowerState() {
 
         if((f_diff_average > 0.0285 && f_diff_average < 0.045) || (f_range > 0.26 && b_positive_rate)) {
           // With this big a jump, we must have started firing.
-          ms_delay_post_2.start(i_wand_overheat_delay);
-          i_wand_power_level = 5;
+          if(SYSTEM_YEAR == SYSTEM_1989 && i_wand_power_level != 4) {
+            // In GB2 mode, switch to PL4 for unique GB2 firing sound.
+            i_wand_power_level = 4;
+            POWER_LEVEL = LEVEL_4;
+            attenuatorSerialSend(A_POWER_LEVEL_4);
+          }
+          else if(SYSTEM_YEAR != SYSTEM_1989 && i_wand_power_level != 5) {
+            // Make sure we are back in PL5 otherwise.
+            i_wand_power_level = 5;
+            POWER_LEVEL = LEVEL_5;
+            attenuatorSerialSend(A_POWER_LEVEL_5);
+          }
           f_idle_value = f_sliding_window[0];
           b_firing_intensify = true;
+          ms_delay_post_2.start(i_wand_overheat_delay);
           wandFiring();
         }
       }
