@@ -36,6 +36,7 @@ for file in $TARGET_FILES; do
         fi
     fi
 done
+
 if [ ! -z "$TAB_FILES" ]; then
     echo ""
     echo "❌ COMMIT BLOCKED!"
